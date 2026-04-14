@@ -1,0 +1,83 @@
+#!/bin/bash
+source _pre_cmd
+
+source buildbox_utils.sh
+
+# name
+if [ $# -eq 0 ]; then
+	target=${BB_TARGET}
+	if [ -z ${target} ]; then
+		>&2 echo "No current target defined ! please use 'target set <target> to set a target"
+		exit 1
+	fi
+elif [ $# -eq 1 ]; then
+	target=${1}
+fi
+
+# profile
+profile=$(bb_get_target_profile_path ${target})
+if [ $? -ne 0 ]; then
+	>&2 echo "Target profile not found !"
+	exit 1
+fi
+source ${profile}
+
+# path
+path=${BB_PROJECT_DIR}/${target}
+
+# testable
+if [ -n "${TESTS}" ]; then
+	tests=1
+else
+	tests=0
+fi
+
+# distributable
+if [ -n "${DIST}" ]; then
+	dist=1
+else
+	dist=0
+fi
+
+# packages
+pkg_count=0
+cloned_count=0
+while read -r pkg_name; do
+	pkg_count=$(($pkg_count+1))
+	bb_is_package_cloned ${target} ${pkg_name}
+	if [ $? -eq 1 ]; then
+		cloned_count=$(($cloned_count+1))
+	fi
+done < <(bb_get_packages ${BB_TARGET})
+if [ $pkg_count -eq $cloned_count ]; then
+	is_cloned=1
+elif [ $cloned_count -eq 0 ]; then
+	is_cloned=0
+else
+	is_cloned=2
+fi
+
+# display
+echo -e "\e[1mTarget:\e[0m \e[34m${target}\e[0m"
+echo -e "\e[1mPath:\e[0m ${path}"
+echo -e "\e[1mProfile path:\e[0m ${profile}"
+if [ $tests -eq 1 ]; then
+	echo -e "\e[1mTestable:\e[0m \e[32myes\e[0m"
+	echo -e "\t\e[1mScript:\e[0m ${TESTS}"
+else
+	echo -e "\e[1mTestable:\e[0m \e[31mno\e[0m"
+fi
+if [ $dist -eq 1 ]; then
+	echo -e "\e[1mDistributable:\e[0m \e[32myes\e[0m"
+	echo -e "\t\e[1mScript:\e[0m ${DIST}"
+else
+	echo -e "\e[1mDistributable:\e[0m \e[31mno\e[0m"
+fi
+echo -e "\e[1mPackages count:\e[0m ${pkg_count}"
+if [ $is_cloned -eq 1 ]; then
+	echo -e "\e[1mIs cloned:\e[0m \e[32myes\e[0m"
+elif [ $is_cloned -eq 0 ]; then
+	echo -e "\e[1mIs cloned:\e[0m \e[31mno\e[0m"
+else
+	echo -e "\e[1mIs cloned:\e[0m \e[33mpartially\e[0m"
+fi

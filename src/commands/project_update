@@ -1,0 +1,59 @@
+#!/bin/bash
+## @brief Update the project profile (.bbx/) from its remote.
+## - If .bbx/ is a git submodule of the project, runs 'git submodule update --remote .bbx'.
+## - If .bbx/ has its own git history, runs 'git pull' inside .bbx/.
+## - If .bbx/packages is a submodule (of the project or of .bbx/), updates it.
+## At least one of the above must apply, otherwise an error is returned.
+source _pre_cmd
+
+source buildbox_utils.sh
+
+if [ -z "${BB_PROJECT_DIR}" ]; then
+	>&2 echo "Not in a BuildBox project directory"
+	exit 1
+fi
+
+profile_dir="${BB_PROJECT_PROFILE_DIR}"
+updated=0
+
+# Update .bbx/ if it has its own tracking
+if git -C "${BB_PROJECT_DIR}" submodule status 2>/dev/null | grep -q ' \.bbx '; then
+	git -C "${BB_PROJECT_DIR}" submodule update --remote .bbx
+	if [ $? -ne 0 ]; then
+		>&2 echo "Unable to update project profile submodule"
+		exit 1
+	fi
+	updated=1
+elif [ -e "${profile_dir}/.git" ]; then
+	git -C "${profile_dir}" pull
+	if [ $? -ne 0 ]; then
+		>&2 echo "Unable to update project profile"
+		exit 1
+	fi
+	updated=1
+fi
+
+# Update .bbx/packages if it's a submodule, independently of .bbx/ tracking
+if git -C "${BB_PROJECT_DIR}" submodule status 2>/dev/null | grep -q ' \.bbx/packages '; then
+	git -C "${BB_PROJECT_DIR}" submodule update --remote .bbx/packages
+	if [ $? -ne 0 ]; then
+		>&2 echo "Unable to update packages submodule"
+		exit 1
+	fi
+	updated=1
+elif [ -e "${profile_dir}/.git" ] && \
+     git -C "${profile_dir}" submodule status 2>/dev/null | grep -q ' packages '; then
+	git -C "${profile_dir}" submodule update --remote packages
+	if [ $? -ne 0 ]; then
+		>&2 echo "Unable to update packages submodule"
+		exit 1
+	fi
+	updated=1
+fi
+
+if [ $updated -eq 0 ]; then
+	>&2 echo "Project profile (.bbx/) has no remote to update from."
+	exit 1
+fi
+
+echo "Project profile updated."

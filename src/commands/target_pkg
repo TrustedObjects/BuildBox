@@ -1,0 +1,46 @@
+#!/bin/bash
+source _pre_cmd
+
+source buildbox_utils.sh
+
+if [ -z ${BB_TARGET} ]; then
+	echo "Please set current project target with 'target set <name>'"
+	exit 1
+fi
+
+verbose=0
+only_modified=0
+while getopts "vm" OPTION; do
+	case $OPTION in
+	v)
+		verbose=1
+		;;
+	m)
+		only_modified=1
+		;;
+	*)
+		echo "Invalid parameters, please read man page"
+		exit 1
+		;;
+	esac
+done
+
+# Get PACKAGES var
+source $(bb_get_target_profile_path ${BB_TARGET})
+
+while read -r line; do
+	readarray -d : -t package <<< "${line}"
+	pkg_name=${package[0]/$'\n'/}
+	pkg_opts=${package[1]/$'\n'/}
+	if [ ${only_modified} -eq 1 ]; then
+		bb_package_is_modified ${pkg_name}
+		pkg_is_modified=$?
+		if [ ${pkg_is_modified} -eq 1 ]; then
+			pkg_info_txt=$(_pkg ${pkg_name} "${pkg_opts}" ${verbose})
+			echo -e "${pkg_info_txt}"
+		fi
+	else
+		pkg_info_txt=$(_pkg ${pkg_name} "${pkg_opts}" ${verbose})
+		echo -e "${pkg_info_txt}"
+	fi
+done < <(bb_get_packages_with_options ${BB_TARGET})

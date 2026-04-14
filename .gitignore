@@ -1,0 +1,10 @@
+docs/node_modules
+docs/package-lock.json
+docs/src/.vuepress/dist
+docs/src/dev/api.md
+tests/log
+tests/workspace
+tests/repositories/foo_project/
+tests/repositories/bar_project/
+tests/repositories/projects/
+tests/repositories/remote/

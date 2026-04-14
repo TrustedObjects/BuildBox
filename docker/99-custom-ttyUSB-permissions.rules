@@ -1,0 +1,3 @@
+# Grant all users read/write permissions on /dev/ttyUSB* devices
+SUBSYSTEMS=="usb-serial", KERNEL=="ttyUSB*", MODE="0666"
+SUBSYSTEMS=="usb-serial", KERNEL=="ttyACM*", MODE="0666"

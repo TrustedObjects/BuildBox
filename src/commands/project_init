@@ -1,0 +1,85 @@
+#!/bin/bash
+## @brief Initialize a new BuildBox project in the current directory.
+## Creates a git repository and the .bbx/ profile directory.
+source _pre_cmd
+
+function help {
+	>&2 echo "Usage: project_init [--target NAME] [DIR]"
+	>&2 echo ""
+	>&2 echo "  DIR            Directory to initialize (default: current directory)"
+	>&2 echo "  --target NAME  Name for the default target (default: default)"
+}
+
+target_name="default"
+init_dir="$(pwd)"
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+	--target)
+		shift
+		if [ -z "$1" ]; then
+			help
+			exit 1
+		fi
+		target_name="$1"
+		;;
+	--help|-h)
+		help
+		exit 0
+		;;
+	-*)
+		help
+		exit 1
+		;;
+	*)
+		init_dir="$(realpath "$1")"
+		;;
+	esac
+	shift
+done
+
+if [ -d "${init_dir}/.bbx" ]; then
+	>&2 echo "Already a BuildBox project: ${init_dir}"
+	exit 1
+fi
+
+mkdir -p "${init_dir}"
+
+# Initialize git repository if needed
+if ! git -C "${init_dir}" rev-parse --git-dir > /dev/null 2>&1; then
+	git -C "${init_dir}" init
+	if [ $? -ne 0 ]; then
+		>&2 echo "Unable to initialize git repository"
+		exit 1
+	fi
+fi
+
+# Create .bbx/ structure
+mkdir -p "${init_dir}/.bbx/packages"
+
+# Create default target profile
+cat > "${init_dir}/.bbx/target.${target_name}" <<EOF
+CPU=x86
+PACKAGES=packages.${target_name}
+DESCRIPTION="${target_name} target"
+EOF
+
+# Create empty packages list
+touch "${init_dir}/.bbx/packages.${target_name}"
+
+# Create default_target symlink
+ln -s "target.${target_name}" "${init_dir}/.bbx/default_target"
+
+# Add gitignore entries to the project root
+gitignore="${init_dir}/.gitignore"
+for entry in "src/" "${target_name}/" ".bbx/.state" ".bbx/.cache/" ".bbx/.tools/" ".bbx/.trash/" ".bbx/tmp/"; do
+	if ! grep -qxF "${entry}" "${gitignore}" 2>/dev/null; then
+		echo "${entry}" >> "${gitignore}"
+	fi
+done
+
+echo "Initialized BuildBox project in ${init_dir}"
+echo "  Profile:  ${init_dir}/.bbx/"
+echo "  Target:   ${target_name}"
+echo ""
+echo "Edit .bbx/target.${target_name} and .bbx/packages.${target_name} to configure your project."

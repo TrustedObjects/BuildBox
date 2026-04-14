@@ -1,0 +1,8 @@
+#compdef _pkg pkg clone build fastbuild clean mrproper
+
+source buildbox_utils.sh
+
+function _pkg {
+	local packages=$(bb_get_packages ${BB_TARGET})
+	_sep_parts "(${packages})"
+}

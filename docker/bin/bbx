@@ -1,0 +1,586 @@
+#!/bin/bash
+## @brief bbx - BuildBox 2.x host-side launcher
+##
+## Detects the project root from the current working directory, starts (or
+## reuses) a per-project Docker container, and delegates all commands to the
+## bbx CLI inside the container.
+##
+## Usage: bbx <command> [options]
+## See 'bbx help' for available commands.
+
+BBX_IMAGE="${BBX_IMAGE:-buildbox:latest}"
+BBX_CONTAINER_PREFIX="${BBX_CONTAINER_PREFIX:-bbx}"
+BBX_HUB_REPOSITORY="trustedobjects/buildbox"
+
+# Installed share directory, replaced at install time by 'make install'.
+# When empty, falls back to source-tree auto-detection.
+_BBX_SHARE=""
+
+if [ -n "${_BBX_SHARE}" ]; then
+	BBX_DIR="${_BBX_SHARE}"
+	BBX_COMMANDS="${BBX_DIR}/commands"
+	BBX_LIB="${BBX_DIR}/lib"
+else
+	BBX_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." > /dev/null 2>&1 && pwd)"
+	BBX_COMMANDS="${BBX_DIR}/src/commands"
+	BBX_LIB="${BBX_DIR}/src"
+fi
+
+function help {
+	echo "Usage: bbx <command> [options]"
+	echo ""
+	echo "Run 'bbx --help' inside a project for the full command list."
+	echo ""
+	echo "Host-only commands:"
+	echo "  init [DIR]                         Initialize a new BuildBox project"
+	echo "  clone <url> [dir]                  Clone a project"
+	echo "  migrate --url U --branch B         Migrate a legacy 1.x project branch"
+	echo "  image list [--all]                 List local images (--all includes Docker Hub)"
+	echo "  image fetch [TAG]                  Pull image from Docker Hub (default: latest)"
+	echo "  instance list                      List all running BuildBox instances"
+	echo "  instance stop [--force] [NAME...]  Stop idle instances"
+	echo "  instance upgrade [--image IMG] [NAME...]  Upgrade instances to a local image"
+}
+
+# --- helpers ---
+
+# Host agent: executes commands sent by the container via named pipes.
+# The container writes a command line to send_pipe; the agent runs it on the
+# host, writes stdout+stderr to out_file and the exit code to ret_pipe.
+# Runs as a background process for the lifetime of bbx_exec.
+function bbx_host_agent {
+	local send_pipe="${1}"
+	local ret_pipe="${2}"
+	local out_file="${3}"
+	local cmd
+	while true; do
+		# Re-open send_pipe each iteration: each bb_host_send call opens/closes it
+		read -r cmd < "${send_pipe}" || break
+		[ "${cmd}" = "__bbx_agent_exit__" ] && break
+		eval "${cmd}" > "${out_file}" 2>&1
+		printf '%s\n' $? > "${ret_pipe}"
+	done
+}
+
+function bbx_find_project_root {
+	local dir
+	dir=$(pwd)
+	while true; do
+		if [ -d "${dir}/.bbx" ]; then
+			echo "${dir}"
+			return 0
+		fi
+		local parent
+		parent=$(dirname "${dir}")
+		if [ "${parent}" == "${dir}" ]; then
+			return 1
+		fi
+		dir="${parent}"
+	done
+}
+
+# Derive a stable container name from the project root path
+function bbx_container_name {
+	local project_root="${1}"
+	local hash
+	hash=$(echo -n "${project_root}" | md5sum | cut -c1-8)
+	local basename
+	basename=$(basename "${project_root}" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/-$//')
+	echo "${BBX_CONTAINER_PREFIX}-${basename}-${hash}"
+}
+
+function bbx_ensure_container {
+	local project_root="${1}"
+	local container
+	container=$(bbx_container_name "${project_root}")
+
+	if ! docker inspect "${container}" > /dev/null 2>&1; then
+		>&2 echo "Starting BuildBox container for ${project_root}..."
+		local retries=0
+		local extra_args=()
+		# buildbox user has the same UID/GID as the host user (aligned by entrypoint.sh),
+		# so host dotfiles can be bind-mounted directly without ownership issues.
+		[ -d "${HOME}/.ssh" ]       && extra_args+=(-v "${HOME}/.ssh:/home/buildbox/.ssh:ro")
+		[ -f "${HOME}/.gitconfig" ] && extra_args+=(-v "${HOME}/.gitconfig:/home/buildbox/.gitconfig")
+		[ -f "${HOME}/.vimrc" ]     && extra_args+=(-v "${HOME}/.vimrc:/home/buildbox/.vimrc")
+		[ -d "${HOME}/.vim" ]       && extra_args+=(-v "${HOME}/.vim:/home/buildbox/.vim")
+		if [ -n "${SSH_AUTH_SOCK}" ] && [ -S "${SSH_AUTH_SOCK}" ]; then
+			extra_args+=(-v "${SSH_AUTH_SOCK}:${SSH_AUTH_SOCK}")
+		fi
+		until docker run -d \
+			--pull never \
+			--privileged \
+			--name "${container}" \
+			--network="host" \
+			--hostname "bbx-$(basename "${project_root}")" \
+			--label "bbx.project_root=${project_root}" \
+			-v "${project_root}:${project_root}" \
+			-v "${BBX_DIR}:${BBX_DIR}" \
+			"${extra_args[@]}" \
+			-e HOST_UID=$(id -u) \
+			-e HOST_GID=$(id -g) \
+			"${BBX_IMAGE}" \
+			sleep infinity > /dev/null 2>&1; do
+			retries=$((retries + 1))
+			if [ ${retries} -ge 5 ]; then
+				>&2 echo "Unable to start BuildBox container"
+				exit 1
+			fi
+			sleep 1
+		done
+		# Wait until the container is ready to accept exec calls
+		local ready=0
+		for i in $(seq 1 20); do
+			if docker exec "${container}" true > /dev/null 2>&1; then
+				ready=1
+				break
+			fi
+			sleep 0.5
+		done
+		if [ ${ready} -eq 0 ]; then
+			>&2 echo "Container did not become ready in time"
+			exit 1
+		fi
+		# Trust all bind-mounted directories for git. Project files are owned by
+		# the host user (UID != 0 inside the container for buildbox).
+		# Git 2.35.2+ refuses to operate in such directories without this config.
+		# Use --system (writes to /etc/gitconfig) so it applies to all users.
+		docker exec "${container}" git config --system --add safe.directory '*' > /dev/null 2>&1
+		>&2 echo "Container ready."
+	elif [ "$(docker inspect -f '{{.State.Running}}' "${container}" 2>/dev/null)" != "true" ]; then
+		docker start "${container}" > /dev/null
+	fi
+	echo "${container}"
+}
+
+function bbx_exec {
+	local container="${1}"
+	local project_root="${2}"
+	shift 2
+
+	# Set up named pipes for the host agent (bb_host_send mechanism).
+	# Pipes live under .bbx/tmp/ which is bind-mounted at the same path in the
+	# container, so both sides can access them without any path translation.
+	local launcher_id="$$"
+	local tmp_dir="${project_root}/.bbx/tmp"
+	mkdir -p "${tmp_dir}"
+	local send_pipe="${tmp_dir}/launcher-${launcher_id}_send.pipe"
+	local ret_pipe="${tmp_dir}/launcher-${launcher_id}_ret.pipe"
+	local out_file="${tmp_dir}/launcher-${launcher_id}_send.out"
+	rm -f "${send_pipe}" "${ret_pipe}" "${out_file}"
+	mkfifo "${send_pipe}" "${ret_pipe}"
+	touch "${out_file}"
+
+	bbx_host_agent "${send_pipe}" "${ret_pipe}" "${out_file}" &
+	local agent_pid=$!
+
+	docker exec -it \
+		--user buildbox \
+		-w "${project_root}" \
+		-e BB_DIR="${BBX_DIR}" \
+		-e BB_LAUNCHER_ID="${launcher_id}" \
+		-e BB_WORKDIR="${project_root}/.bbx" \
+		$( [ -n "${SSH_AUTH_SOCK}" ] && echo "-e SSH_AUTH_SOCK=${SSH_AUTH_SOCK}" ) \
+		-e BUILDBOX_ENV=1 \
+		-e BB_BUILD_JOBS="${BB_BUILD_JOBS:-9}" \
+		-e BB_PREBUILT_SERVER="${BB_PREBUILT_SERVER:-}" \
+		-e BB_PREBUILT_USERNAME="${BB_PREBUILT_USERNAME:-}" \
+		-e BB_PREBUILT_PATH="${BB_PREBUILT_PATH:-}" \
+		-e BB_PREBUILT_ONLY_TAGGED="${BB_PREBUILT_ONLY_TAGGED:-1}" \
+		-e BB_DEBUG="${BB_DEBUG:-}" \
+		"${container}" "${BBX_COMMANDS}/bbx" "$@"
+	local ret=$?
+
+	# Shut down host agent
+	kill "${agent_pid}" 2>/dev/null || true
+	wait "${agent_pid}" 2>/dev/null || true
+	rm -f "${send_pipe}" "${ret_pipe}" "${out_file}"
+	rmdir "${tmp_dir}" 2>/dev/null || true
+
+	return $ret
+}
+
+# Returns 0 if the project's source lock is held (a build/clone is running).
+# The lock is a directory at ${project_root}/src/lock (see _locks.sh).
+function bbx_project_is_busy {
+	local project_root="${1}"
+	[ -d "${project_root}/src/lock" ]
+}
+
+function bbx_image_list {
+	local all=0
+	while [ -n "${1}" ]; do
+		case "${1}" in
+			--all|-a) all=1 ;;
+			*) >&2 echo "Unknown option: ${1}"; >&2 echo "Usage: bbx image list [--all|-a]"; exit 1 ;;
+		esac
+		shift
+	done
+
+	echo "Local images:"
+	local local_images
+	local_images=$(docker images buildbox --format "{{.Tag}}\t{{.ID}}\t{{.Size}}\t{{.CreatedAt}}" 2>/dev/null)
+	if [ -z "${local_images}" ]; then
+		echo "  (none)"
+	else
+		printf "  %-20s %-15s %-10s %s\n" "TAG" "IMAGE ID" "SIZE" "CREATED"
+		while IFS=$'\t' read -r tag id size created; do
+			printf "  %-20s %-15s %-10s %s\n" "${tag}" "${id}" "${size}" "${created}"
+		done <<< "${local_images}"
+	fi
+
+	if [ ${all} -eq 1 ]; then
+		echo ""
+		echo "Available on Docker Hub (${BBX_HUB_REPOSITORY}):"
+		local tags
+		tags=$(curl -sf \
+			"https://hub.docker.com/v2/repositories/${BBX_HUB_REPOSITORY}/tags/?page_size=100&ordering=last_updated" \
+			| python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for t in data.get('results', []):
+    print('{}\t{}'.format(t['name'], t.get('last_updated', '')[:10]))
+" 2>/dev/null)
+		if [ -z "${tags}" ]; then
+			>&2 echo "  (unable to fetch tags from Docker Hub)"
+		else
+			printf "  %-20s %s\n" "TAG" "LAST UPDATED"
+			while IFS=$'\t' read -r tag updated; do
+				printf "  %-20s %s\n" "${tag}" "${updated}"
+			done <<< "${tags}"
+		fi
+	fi
+}
+
+function bbx_image_fetch {
+	local tag="${1:-latest}"
+	echo "Fetching ${BBX_HUB_REPOSITORY}:${tag} from Docker Hub..."
+	docker pull "${BBX_HUB_REPOSITORY}:${tag}" || return 1
+	docker tag "${BBX_HUB_REPOSITORY}:${tag}" "buildbox:${tag}"
+	echo "Image buildbox:${tag} is ready."
+}
+
+function bbx_instance_list {
+	local containers
+	containers=$(docker ps \
+		--filter "name=^${BBX_CONTAINER_PREFIX}-" \
+		--format "{{.Names}}" 2>/dev/null)
+	if [ -z "${containers}" ]; then
+		echo "No running BuildBox instances."
+		return 0
+	fi
+	printf "%-35s %-40s %-30s %s\n" "CONTAINER" "PROJECT" "IMAGE" "STATUS"
+	while IFS= read -r container; do
+		local project_root image status
+		project_root=$(docker inspect \
+			--format '{{index .Config.Labels "bbx.project_root"}}' \
+			"${container}" 2>/dev/null)
+		image=$(docker inspect \
+			--format '{{.Config.Image}}' \
+			"${container}" 2>/dev/null)
+		status="idle"
+		if [ -n "${project_root}" ] && bbx_project_is_busy "${project_root}"; then
+			status="busy"
+		fi
+		printf "%-35s %-40s %-30s %s\n" "${container}" "${project_root:-unknown}" "${image:-unknown}" "${status}"
+	done <<< "${containers}"
+}
+
+function bbx_stop_container {
+	local container="${1}"
+	local project_root="${2}"
+	docker exec \
+		--user buildbox \
+		-w "${project_root}" \
+		-e BB_DIR="${BBX_DIR}" \
+		-e PATH="${BBX_COMMANDS}:${BBX_LIB}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+		"${container}" \
+		bash -c "source buildbox_utils.sh && bb_unload_tools" 2>/dev/null || true
+	docker rm -f "${container}" > /dev/null
+}
+
+function bbx_instance_stop {
+	local force=0
+	local -a requested=()
+	while [ -n "${1}" ]; do
+		case "${1}" in
+			--force) force=1 ;;
+			--*) >&2 echo "Unknown option: ${1}"; >&2 echo "Usage: bbx instance stop [--force] [NAME...]"; exit 1 ;;
+			*) requested+=("${1}") ;;
+		esac
+		shift
+	done
+
+	local all_containers
+	all_containers=$(docker ps \
+		--filter "name=^${BBX_CONTAINER_PREFIX}-" \
+		--format "{{.Names}}" 2>/dev/null)
+	if [ -z "${all_containers}" ]; then
+		echo "No running BuildBox instances."
+		return 0
+	fi
+
+	local containers
+	if [ ${#requested[@]} -gt 0 ]; then
+		containers=""
+		local name
+		for name in "${requested[@]}"; do
+			if echo "${all_containers}" | grep -qx "${name}"; then
+				containers+="${name}"$'\n'
+			else
+				>&2 echo "Warning: '${name}' not found, skipping."
+			fi
+		done
+	else
+		containers="${all_containers}"
+	fi
+
+	if [ -z "${containers}" ]; then
+		echo "No matching BuildBox instances found."
+		return 0
+	fi
+
+	local stopped=0
+	local skipped=0
+	while IFS= read -r container; do
+		[ -z "${container}" ] && continue
+		local project_root
+		project_root=$(docker inspect \
+			--format '{{index .Config.Labels "bbx.project_root"}}' \
+			"${container}" 2>/dev/null)
+		if [ -n "${project_root}" ] && bbx_project_is_busy "${project_root}"; then
+			if [ ${force} -eq 0 ]; then
+				>&2 echo "Warning: ${container} (${project_root}) is busy, skipping. Use --force to stop anyway."
+				skipped=$((skipped + 1))
+				continue
+			fi
+			# --force: release the lock so in-container processes do not stall
+			rm -rf "${project_root}/src/lock"
+		fi
+		echo -n "Stopping ${container}... "
+		bbx_stop_container "${container}" "${project_root:-/}"
+		echo "done."
+		stopped=$((stopped + 1))
+	done <<< "${containers}"
+
+	[ ${stopped} -gt 0 ] && echo "${stopped} instance(s) stopped."
+	[ ${skipped} -gt 0 ] && echo "${skipped} busy instance(s) skipped."
+}
+
+function bbx_instance_upgrade {
+	local image="${BBX_IMAGE}"
+	local -a requested=()
+	while [ -n "${1}" ]; do
+		case "${1}" in
+			--image)
+				shift
+				[ -z "${1}" ] && { >&2 echo "Error: --image requires a value"; exit 1; }
+				image="${1}"
+				;;
+			--*) >&2 echo "Unknown option: ${1}"; >&2 echo "Usage: bbx instance upgrade [--image IMAGE] [NAME...]"; exit 1 ;;
+			*) requested+=("${1}") ;;
+		esac
+		shift
+	done
+
+	# All bbx containers, running or stopped
+	local all_containers
+	all_containers=$(docker ps -a \
+		--filter "name=^${BBX_CONTAINER_PREFIX}-" \
+		--format "{{.Names}}" 2>/dev/null)
+
+	if [ -z "${all_containers}" ]; then
+		echo "No BuildBox instances found."
+		return 0
+	fi
+
+	# If specific names were given, validate and filter
+	local containers
+	if [ ${#requested[@]} -gt 0 ]; then
+		containers=""
+		local name
+		for name in "${requested[@]}"; do
+			if echo "${all_containers}" | grep -qx "${name}"; then
+				containers+="${name}"$'\n'
+			else
+				>&2 echo "Warning: '${name}' not found, skipping."
+			fi
+		done
+	else
+		containers="${all_containers}"
+	fi
+
+	if [ -z "${containers}" ]; then
+		echo "No matching BuildBox instances found."
+		return 0
+	fi
+
+	# ID of the target local image
+	local target_image_id
+	target_image_id=$(docker inspect --format '{{.Id}}' "${image}" 2>/dev/null)
+	if [ -z "${target_image_id}" ]; then
+		>&2 echo "Error: image '${image}' not found locally."
+		return 1
+	fi
+
+	printf "%-35s %-45s %s\n" "CONTAINER" "PROJECT" "STATUS"
+	local upgraded=0
+	local skipped=0
+	while IFS= read -r container; do
+		[ -z "${container}" ] && continue
+		local project_root
+		project_root=$(docker inspect \
+			--format '{{index .Config.Labels "bbx.project_root"}}' \
+			"${container}" 2>/dev/null)
+		local container_image_id
+		container_image_id=$(docker inspect --format '{{.Image}}' "${container}" 2>/dev/null)
+
+		if [ "${container_image_id}" = "${target_image_id}" ]; then
+			printf "%-35s %-45s %s\n" "${container}" "${project_root:-unknown}" "up-to-date"
+			skipped=$((skipped + 1))
+		else
+			printf "%-35s %-45s %s\n" "${container}" "${project_root:-unknown}" "upgrading..."
+			bbx_stop_container "${container}" "${project_root:-/}"
+			if [ -n "${project_root}" ]; then
+				bbx_ensure_container "${project_root}" > /dev/null 2>&1
+			fi
+			upgraded=$((upgraded + 1))
+		fi
+	done <<< "${containers}"
+
+	echo ""
+	[ ${upgraded} -gt 0 ] && echo "${upgraded} instance(s) upgraded and restarted with the new image."
+	[ ${skipped} -gt 0 ] && echo "${skipped} instance(s) already up-to-date."
+	return 0
+}
+
+# --- command dispatch ---
+
+cmd="${1}"
+
+# 'target goto', 'project goto', 'tg', 'pg': print path on the host so the
+# shell function can cd to it without starting a container.
+if [ "${cmd}" = "tg" ]; then
+	project_root=$(bbx_find_project_root) || { >&2 echo "Not in a BuildBox project directory"; exit 1; }
+	target=$(cat "${project_root}/.bbx/.state" 2>/dev/null)
+	[ -z "${target}" ] && { >&2 echo "No current target defined"; exit 1; }
+	target_dir="${project_root}/${target}"
+	[ ! -d "${target_dir}" ] && { >&2 echo "Target ${target} not created yet"; exit 1; }
+	echo "${target_dir}"
+	exit 0
+fi
+if [ "${cmd}" = "pg" ]; then
+	project_root=$(bbx_find_project_root) || { >&2 echo "Not in a BuildBox project directory"; exit 1; }
+	echo "${project_root}"
+	exit 0
+fi
+if [ "${cmd}" = "pp" ]; then
+	project_root=$(bbx_find_project_root) || { >&2 echo "Not in a BuildBox project directory"; exit 1; }
+	echo "${project_root}/.bbx"
+	exit 0
+fi
+if [ "${cmd}" = "target" ] && [ "${2}" = "goto" ]; then
+	project_root=$(bbx_find_project_root) || { >&2 echo "Not in a BuildBox project directory"; exit 1; }
+	target=$(cat "${project_root}/.bbx/.state" 2>/dev/null)
+	[ -z "${target}" ] && { >&2 echo "No current target defined"; exit 1; }
+	target_dir="${project_root}/${target}"
+	[ ! -d "${target_dir}" ] && { >&2 echo "Target ${target} not created yet"; exit 1; }
+	echo "${target_dir}"
+	exit 0
+fi
+if [ "${cmd}" = "project" ] && [ "${2}" = "goto" ]; then
+	project_root=$(bbx_find_project_root) || { >&2 echo "Not in a BuildBox project directory"; exit 1; }
+	if [ "${3}" = "-p" ]; then
+		echo "${project_root}/.bbx"
+	else
+		echo "${project_root}"
+	fi
+	exit 0
+fi
+
+# Commands that do not require a running container
+case "${cmd}" in
+	init)
+		shift
+		# Delegate to project_init directly on the host, no container needed.
+		# PRE_CMD must be set to pass the _pre_cmd guard; PATH must include the
+		# lib and commands dirs so that 'source _pre_cmd' resolves correctly.
+		export PRE_CMD="bbx init $*"
+		export PATH="${BBX_LIB}:${BBX_COMMANDS}:${PATH}"
+		exec "${BBX_COMMANDS}/project_init" "$@"
+		;;
+	clone)
+		shift
+		git clone --recurse-submodules "$@"
+		exit $?
+		;;
+	migrate)
+		shift
+		# Migration does not require a running container, the output dir
+		# does not exist yet, so there is no project root to find.
+		export PRE_CMD="bbx migrate $*"
+		export PATH="${BBX_LIB}:${BBX_COMMANDS}:${PATH}"
+		exec "${BBX_COMMANDS}/project_migrate" "$@"
+		;;
+	stop)
+		# Stop the container for the current project
+		project_root=$(bbx_find_project_root)
+		if [ $? -ne 0 ]; then
+			>&2 echo "Not in a BuildBox project directory"
+			exit 1
+		fi
+		container=$(bbx_container_name "${project_root}")
+		bbx_stop_container "${container}" "${project_root}"
+		echo "Container stopped."
+		exit 0
+		;;
+	image)
+		shift
+		subcmd="${1:-list}"
+		shift || true
+		case "${subcmd}" in
+			list)  bbx_image_list "$@" ;;
+			fetch) bbx_image_fetch "$@" ;;
+			*)
+				>&2 echo "Unknown subcommand: ${subcmd}"
+				>&2 echo "Usage: bbx image {list [--all]|fetch [TAG]}"
+				exit 1
+				;;
+		esac
+		exit 0
+		;;
+	instance)
+		shift
+		subcmd="${1:-list}"
+		shift || true
+		case "${subcmd}" in
+			list)    bbx_instance_list ;;
+			stop)    bbx_instance_stop "$@" ;;
+			upgrade) bbx_instance_upgrade "$@" ;;
+			*)
+				>&2 echo "Unknown subcommand: ${subcmd}"
+				>&2 echo "Usage: bbx instance {list|stop [--force] [NAME...]|upgrade [--image IMG] [NAME...]}"
+				exit 1
+				;;
+		esac
+		exit 0
+		;;
+esac
+
+# All other commands: find project root and delegate to container
+project_root=$(bbx_find_project_root)
+if [ $? -ne 0 ]; then
+	# Not in a project: show host-only help or error
+	case "${cmd}" in
+		help|--help|-h|"")
+			help
+			exit 0
+			;;
+	esac
+	>&2 echo "Not in a BuildBox project directory (no .bbx/ found)"
+	exit 1
+fi
+
+container=$(bbx_ensure_container "${project_root}")
+bbx_exec "${container}" "${project_root}" "$@"
+exit $?

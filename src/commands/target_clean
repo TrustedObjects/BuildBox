@@ -1,0 +1,22 @@
+#!/bin/bash
+source _pre_cmd
+
+source buildbox_utils.sh
+
+options=$@
+if [ -z ${BB_TARGET} ]; then
+	echo "Please set current project target with 'target set <name>'"
+	exit 1
+fi
+target_path=$(bb_get_target_profile_path ${BB_TARGET})
+if [ -z ${target_path} ]; then
+	echo "Project target ${BB_TARGET} not found !"
+	exit 1
+fi
+
+while read -r pkg_name; do
+	bb_clean_package ${pkg_name} > /dev/null 2>&1
+done < <(bb_get_packages ${BB_TARGET})
+rm -rf ${BB_TARGET_BUILD_DIR} > /dev/null 2>&1
+
+echo "Target ${BB_TARGET} clean."

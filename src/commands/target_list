@@ -1,0 +1,6 @@
+#!/bin/bash
+source _pre_cmd
+
+source buildbox_utils.sh
+
+bb_get_project_targets_formatted 1

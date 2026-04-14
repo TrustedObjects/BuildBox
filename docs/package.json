@@ -1,0 +1,20 @@
+{
+  "name": "buildbox_doc",
+  "version": "1.0.0",
+  "description": "BuildBox documentation",
+  "main": "index.js",
+  "authors": {
+    "name": "Trusted Objects"
+  },
+  "repository": "/buildbox_doc",
+  "scripts": {
+    "dev": "vuepress dev src",
+    "build": "vuepress build src"
+  },
+  "devDependencies": {
+    "vuepress": "^1.5.3"
+  },
+  "dependencies": {
+    "git-describe": "^4.1.1"
+  }
+}

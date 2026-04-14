@@ -1,0 +1,46 @@
+#!/bin/bash
+
+source buildbox_utils.sh
+
+function help {
+	echo "Usage: bbx clean <PKG...>"
+	echo ""
+	echo "Clean build artifacts for one or more packages."
+	echo "  PKG...   Package name(s) to clean (glob patterns supported)"
+}
+
+case "$1" in
+	help|-h|--help) help; exit 0 ;;
+esac
+
+if [ $# -lt 1 ]; then
+	help >&2
+	exit 1
+fi
+if [ -z "${BB_PROJECT_DIR}" ] || [ ! -d "${BB_PROJECT_DIR}" ]; then
+	>&2 echo "Not in a BuildBox project directory"
+	exit 1
+fi
+packages_list=$@
+if [ ! -d ${BB_TARGET_SRC_DIR} ]; then
+	>&2 echo "No packages pulled for this project yet."
+	exit 0
+fi
+
+selected_packages=$(bb_find_matching_packages 0 ${packages_list})
+if [ "${selected_packages}" == "" ]; then
+	>&2 echo "No matching packages !"
+	exit 1
+fi
+
+# Clean individual packages
+bb_trap_errors_nolog
+while read -r line
+do
+	readarray -d : -t package <<< "${line}"
+	pkg_name=${package[0]/$'\n'/}
+	bb_clean_package ${pkg_name}
+	echo "Cleaned ${pkg_name}"
+done < <(echo "${selected_packages}")
+
+exit 0

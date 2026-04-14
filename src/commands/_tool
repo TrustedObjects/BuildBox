@@ -1,0 +1,37 @@
+#!/bin/bash
+
+tool_name=$1
+shift
+
+source buildbox_utils.sh
+
+if [ -z "${BB_PROJECT_DIR}" ] || [ ! -d "${BB_PROJECT_DIR}" ]; then
+	>&2 echo "Not in a BuildBox project directory"
+	exit 1
+fi
+
+bb_source $(bb_get_target_profile_path ${BB_TARGET})
+
+bb_load_package ${tool_name}
+[ $? -ne 0 ] && exit 1
+tool_path=$(bb_get_package_path ${tool_name})
+tool_name_short=$(basename ${tool_name})
+cached_file=$(bb_cache_known_file ${SRC_REVISION})
+if [ $? -eq 0 ]; then
+	cached=1
+else
+	cached=0
+fi
+echo -e "\e[1m${tool_name}\e[0m"
+echo -e "\t\e[1mRevision:\e[0m ${SRC_REVISION}"
+echo -e "\t\e[1mPackage:\e[0m ${tool_path}"
+echo -e "\t\e[1mRemote:\e[0m [${SRC_PROTO}] ${SRC_URI}"
+echo -e "\t\e[1mLocal:\e[0m ${BB_TOOLS_DIR}/${tool_name}"
+if [ $cached -eq 1 ]; then
+	echo -e "\t\t\e[1mCache:\e[0m ${cached_file}"
+fi
+unset SRC_PROTO
+unset SRC_URI
+unset SRC_REVISION
+unset SRC_BUILD
+unset SRC_CONFIG

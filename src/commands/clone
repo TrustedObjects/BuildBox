@@ -1,0 +1,58 @@
+#!/bin/bash
+
+source buildbox_utils.sh
+
+function help {
+	echo "Usage: bbx fetch <PKG...>"
+	echo ""
+	echo "Fetch (clone) package sources for the current target."
+	echo "  PKG...   Package name(s) to fetch (glob patterns supported)"
+}
+
+case "$1" in
+	help|-h|--help) help; exit 0 ;;
+esac
+
+if [ $# -lt 1 ]; then
+	help >&2
+	exit 1
+fi
+if [ -z "${BB_PROJECT_DIR}" ] || [ ! -d "${BB_PROJECT_DIR}" ]; then
+	>&2 echo "Not in a BuildBox project directory"
+	exit 1
+fi
+packages_list=$@
+
+bb_trap_errors_nolog
+
+cd ${BB_PROJECT_DIR}
+mkdir -p ${BB_TARGET_SRC_DIR}
+source $(bb_get_target_profile_path ${BB_TARGET})
+
+# Select packages matching given list, and make results unique
+selected_packages=$(bb_find_matching_packages 1 ${packages_list})
+if [ "${selected_packages}" == "" ]; then
+	>&2 echo "No matching packages !"
+	exit 1
+fi
+
+# Packages lock (lock automatically released on process end)
+bb_lock_acquire ${BB_PROJECT_SRC_DIR}/lock "(waiting ongoing packages operations to end...)"
+if [ $? -ne 0 ]; then
+	>&2 echo "Unable to acquire sources lock !"
+	exit 1
+fi
+
+# Clone individual packages
+total_warning_count=0
+while read -r line
+do
+	readarray -d : -t package <<< "${line}"
+	pkg_name=${package[0]/$'\n'/}
+	echo "Cloning ${pkg_name} ..."
+	bb_clone_package ${pkg_name}
+	echo
+done < <(echo "${selected_packages}")
+
+echo "Done."
+exit 0

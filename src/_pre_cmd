@@ -1,0 +1,4 @@
+if [ -z "${PRE_CMD}" ]; then
+	echo -e "Do not call \e[1m$(basename $0)\e[0m directly !"
+	exit 1
+fi

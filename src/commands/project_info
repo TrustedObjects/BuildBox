@@ -1,0 +1,45 @@
+#!/bin/bash
+source _pre_cmd
+
+source buildbox_utils.sh
+
+if [ -z "${BB_PROJECT_DIR}" ]; then
+	>&2 echo "Not in a BuildBox project directory"
+	exit 1
+fi
+
+# git info
+branch=$(bb_project_get_branch_name)
+tag=$(bb_project_get_tag)
+if [ -z "${tag}" ]; then
+	tag="(no tag)"
+fi
+if git -C "${BB_PROJECT_DIR}" rev-parse HEAD > /dev/null 2>&1; then
+	changeset=$(git -C "${BB_PROJECT_DIR}" rev-parse HEAD)
+	changeset_age=$(git -C "${BB_PROJECT_DIR}" show -s --format=%cr HEAD)
+else
+	changeset="(not a git repository)"
+	changeset_age=""
+fi
+
+# profile status
+if bb_is_project_profile_clean; then
+	profile_status_txt="\e[32mclean\e[0m"
+else
+	profile_status_txt="\e[31mmodified\e[0m"
+fi
+
+# display
+echo -e "\e[1mProject:\e[0m \e[34m$(basename "${BB_PROJECT_DIR}")\e[0m"
+echo -e "\e[1mPath:\e[0m ${BB_PROJECT_DIR}"
+echo -e "\e[1mBranch:\e[0m ${branch}"
+echo -e "\e[1mTag:\e[0m ${tag}"
+if [ -n "${changeset_age}" ]; then
+	echo -e "\e[1mChangeset:\e[0m ${changeset} - ${changeset_age}"
+else
+	echo -e "\e[1mChangeset:\e[0m ${changeset}"
+fi
+echo -e "\e[1mProfile status:\e[0m ${profile_status_txt}"
+targets_txt=$(bb_get_project_targets_formatted 0)
+echo -e "\e[1mTargets:\e[0m ${targets_txt}"
+echo -e "\e[1mCurrent target:\e[0m ${BB_TARGET}"

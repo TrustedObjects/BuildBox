@@ -1,0 +1,10 @@
+# BuildBox API
+
+The API is used by BuildBox itself, and also can be used to develop shell
+scripts dealing with BuildBox. Functions are provided to handle everything
+that is managed by BuildBox.
+
+The API is implemented in the `usr/sbin` folder of BuildBox repository, its
+files names are ending with `.sh`, and are not executable.
+Every file of the API is included by `buildbox_utils.sh`, which stands for the
+user API entry point.

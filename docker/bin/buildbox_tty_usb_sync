@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+
+import syslog
+import subprocess
+import os
+
+HOOK_NAME = "Buildbox USB TTY sync"
+USB_BUS_DEV_ROOT = "/dev/bus/usb"
+
+def log(message):
+    print(message)
+    syslog.syslog(message)
+
+def buildbox_exec(cmd, name="buildbox"):
+    return subprocess.check_output("docker exec {} bash -c '{}'".format(name, cmd),
+        universal_newlines=True,
+        shell=True
+    )
+
+# Populate /dev/bus/usb entries
+for bus_num in os.listdir(USB_BUS_DEV_ROOT):
+    bus_path = os.path.join(USB_BUS_DEV_ROOT, bus_num)
+    buildbox_devices = buildbox_exec("find " + bus_path + " \
+            -maxdepth 1 \
+            -type c \
+            -printf \"%f\\n\"").split("\n")
+    host_devices = os.listdir(bus_path)
+    # Add new connected devices
+    for host_device in host_devices:
+        if host_device not in buildbox_devices:
+            stat = os.stat(os.path.join(bus_path, host_device))
+            device = os.path.join(bus_path, host_device)
+            major = os.major(stat.st_rdev)
+            minor = os.minor(stat.st_rdev)
+            buildbox_exec("mknod %s c %u %u" % (device, major, minor))
+            log("%s: added %s (%u:%u)" % (HOOK_NAME, device, major, minor))
+    # Remove disconnected devices
+    for buildbox_device in buildbox_devices:
+        if buildbox_device and buildbox_device not in host_devices:
+            device = os.path.join(bus_path, buildbox_device)
+            buildbox_exec("rm " + os.path.join(bus_path, device))
+            log("%s: removed %s" % (HOOK_NAME, device))
+
+# Populate /dev entries
+buildbox_ttys = buildbox_exec("find /dev \
+        -maxdepth 1 \
+        -type c \
+        \\( -name 'ttyUSB*' -or -name 'ttyACM*' \\) \
+        -printf \"%f\\n\"").split("\n")
+host_ttys = [filename for filename in os.listdir("/dev")
+             if filename.startswith("ttyUSB")
+             or filename.startswith("/dev/ttyACM")]
+# Add new connected devices
+for host_tty in host_ttys:
+    if host_tty not in buildbox_ttys:
+        stat = os.stat(os.path.join("/dev", host_tty))
+        device = os.path.join("/dev", host_tty)
+        major = os.major(stat.st_rdev)
+        minor = os.minor(stat.st_rdev)
+        buildbox_exec("mknod %s c %u %u" % (device, major, minor))
+        buildbox_exec("chgrp uucp %s" % (device))
+        buildbox_exec("chmod g+w %s" % (device))
+        log("%s: added %s (%u:%u)" % (HOOK_NAME, device, major, minor))
+# Remove disconnected devices
+for buildbox_tty in buildbox_ttys:
+    if buildbox_tty and buildbox_tty not in host_ttys:
+        device = os.path.join("/dev", buildbox_tty)
+        buildbox_exec("rm " + os.path.join("/dev", device))
+        log("%s: removed %s" % (HOOK_NAME, device))
+
+

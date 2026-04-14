@@ -1,0 +1,64 @@
+#!/bin/bash
+
+export BUILDBOX_ENV=1
+export BB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null 2>&1 && pwd)"
+export BB_BINDIR=${BB_DIR}/src/commands:${BB_DIR}/src
+export PATH=${BB_BINDIR}:${PATH}
+export DEFAULT_PATH=${PATH}
+if [[ "${XDG_DATA_DIRS}" == "" ]]; then
+	export DEFAULT_XDG_DATA_DIRS="/usr/local/share/:/usr/share/"
+else
+	export DEFAULT_XDG_DATA_DIRS=${XDG_DATA_DIRS}
+fi
+
+export BB_TEST_REPOSITORY_URI="file://${BB_DIR}/tests/repositories/remote"
+
+# Ensure test fixture repos exist (idempotent)
+"${BB_DIR}/tests/repositories/setup.sh"
+
+export BB_TRASH_KEEP_DAYS=15
+export BB_BUILD_JOBS=9
+
+export LANG="en_US.UTF-8"
+
+
+export BB_CUSTOM_CONFIG="${BB_DIR}/tests/workspace/etc/custom_config"
+if [ -f "${BB_CUSTOM_CONFIG}" ]; then
+	source "${BB_CUSTOM_CONFIG}"
+fi
+
+# Test workspace: each test gets a fresh project directory created here
+export BB_TEST_WORKSPACE="${BB_DIR}/tests/workspace"
+mkdir -p "${BB_TEST_WORKSPACE}"
+
+# Temporary directory (per test run, cleaned up in testsuite)
+export TMPDIR="${BB_TEST_WORKSPACE}/tmp"
+mkdir -p "${TMPDIR}"
+
+if [ -z "${MODE}" ]; then
+	mode_not_defined=1
+	MODE="bash"
+	echo -e "\e[33mWarning\e[0m: MODE not set, testing with \e[1m${MODE}\e[0m\n"
+else
+	mode_not_defined=0
+fi
+
+if [[ "${MODE}" == "bash" ]]; then
+	export SHELL_CMD="/bin/bash"
+	/bin/bash ${BB_DIR}/tests/testsuite.sh $@
+	ret=$?
+elif [[ "${MODE}" == "zsh" ]]; then
+	export SHELL_CMD="/bin/zsh"
+	/bin/zsh ${BB_DIR}/tests/testsuite.sh $@
+	ret=$?
+else
+	echo -e "\e[31mError\e[0m: unsupported MODE"
+	exit 1
+fi
+
+if [ ${mode_not_defined} -eq 1 ]; then
+	echo -e "\n\e[33mWarning\e[0m: MODE not set, tested with \e[1m${MODE}\e[0m"
+else
+	echo -e "\nTested with \e[1m${MODE}\e[0m"
+fi
+exit $ret

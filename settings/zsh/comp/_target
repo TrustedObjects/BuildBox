@@ -1,0 +1,60 @@
+#compdef _target target
+
+source buildbox_utils.sh
+
+function _target {
+	export PRE_CMD=_target
+	local line
+
+	_arguments -C \
+		"1: :(help list set clone build test dist clean mrproper pkg tools info goto dist-prebuilt)" \
+		"*::arg:->args"
+
+	case $line[1] in
+	set)
+		_target_set
+		;;
+	pkg)
+		_target_pkg
+		;;
+	build)
+		_target_build
+		;;
+	test)
+		_target_test
+		;;
+	info)
+		_target_info
+		;;
+	esac
+
+	unset PRE_CMD
+}
+
+function _target_set {
+	local targets=$(bb_get_project_targets ${BB_PROJECT})
+	_arguments -C \
+		"1: :(${targets})"
+}
+
+function _target_pkg {
+	_arguments -C \
+		"1: :(-m -v)"
+}
+
+function _target_build {
+	_arguments -C \
+		"1: :(--attach)"
+}
+
+function _target_test {
+	_arguments -C \
+		"1: :(--attach)"
+}
+
+function _target_info {
+	local targets=$(bb_get_project_targets ${BB_PROJECT})
+	_arguments -C \
+		"1: :(${targets})"
+}
+

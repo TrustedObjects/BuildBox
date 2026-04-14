@@ -1,0 +1,57 @@
+#!/bin/bash
+source _pre_cmd
+
+source buildbox_utils.sh
+
+if [ -z "${BB_PROJECT_DIR}" ]; then
+	>&2 echo "Not in a BuildBox project directory"
+	exit 1
+fi
+if [ -z "${BB_PROJECT_SRC_DIR}" ]; then
+	>&2 echo "Invalid project directory"
+	exit 1
+fi
+
+bb_confirm "Wipe project sources and built files for all targets?"
+if [ $? -eq 0 ]; then
+	exit 0
+fi
+
+# Packages lock (lock automatically released on process end)
+if [ -d "${BB_PROJECT_SRC_DIR}" ]; then
+	bb_lock_acquire ${BB_PROJECT_SRC_DIR}/lock "(waiting ongoing packages operations to end...)"
+	if [ $? -ne 0 ]; then
+		>&2 echo "Unable to acquire sources lock !"
+		exit 1
+	fi
+fi
+
+# Remove built files definitively
+bb_unload_tools
+BB_DISABLE_TOOLS_SCRIPTS=1
+saved_target="${BB_TARGET}"
+targets=$(bb_get_project_targets)
+for target in ${targets}; do
+	bb_set_project_current_target ${target}
+	while read -r pkg_name; do
+		bb_clean_package ${pkg_name} > /dev/null 2>&1
+	done < <(bb_get_packages ${BB_TARGET})
+	bb_run_tools_cleanup_hook
+	# Ensure all directories have search bit to be able to remove all
+	if [ -d ${BB_TARGET_DIR} ]; then
+		chmod -R u+rwX ${BB_TARGET_DIR} > /dev/null 2>&1
+		rm -rf ${BB_TARGET_DIR}
+	fi
+done
+if [ -n "${saved_target}" ]; then
+	bb_set_project_current_target "${saved_target}" > /dev/null 2>&1
+fi
+unset BB_DISABLE_TOOLS_SCRIPTS
+bb_load_tools
+
+# Trash remaining sources
+if [ -d "${BB_PROJECT_SRC_DIR}" ]; then
+	bb_trash ${BB_PROJECT_SRC_DIR} > /dev/null
+fi
+
+echo "Project wiped."

@@ -1,0 +1,160 @@
+#!/bin/bash
+## @brief bbx - BuildBox 2.x CLI entry point (runs inside container)
+
+# Installed share directory — replaced at install time by 'make install'.
+# When empty, falls back to source-tree auto-detection.
+_BB_SHARE=""
+
+if [ -n "${_BB_SHARE}" ]; then
+	export BB_DIR="${_BB_SHARE}"
+	export BB_BINDIR="${BB_DIR}/commands:${BB_DIR}/lib"
+else
+	export BB_DIR="${BB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." > /dev/null 2>&1 && pwd)}"
+	export BB_BINDIR="${BB_DIR}/src/commands:${BB_DIR}/src"
+fi
+export PATH=${BB_BINDIR}:${PATH}
+export BUILDBOX_ENV=1
+export PRE_CMD="$0 $@"
+
+if [[ "${XDG_DATA_DIRS}" == "" ]]; then
+	export DEFAULT_XDG_DATA_DIRS="/usr/local/share/:/usr/share/"
+else
+	export DEFAULT_XDG_DATA_DIRS=${XDG_DATA_DIRS}
+fi
+export DEFAULT_PATH=${PATH}
+
+export BB_BUILD_JOBS=${BB_BUILD_JOBS:-9}
+export BB_TRASH_KEEP_DAYS=${BB_TRASH_KEEP_DAYS:-15}
+export LANG="en_US.UTF-8"
+
+
+function help {
+	echo "Usage: bbx <command> [options]"
+	echo ""
+	echo "Project commands:"
+	echo "  init               Initialize a new BuildBox project"
+	echo "  clone <url> [dir]  Clone an existing project"
+	echo "  migrate            Migrate a legacy 1.x project branch to 2.x"
+	echo "  project info       Show project information"
+	echo "  project clean      Clean all targets built files"
+	echo "  project mrproper   Wipe all sources and built files"
+	echo "  project update     Update project profile (.bbx/)"
+	echo ""
+	echo "Build commands:"
+	echo "  fetch  [PKG...]    Fetch package sources"
+	echo "  build  [PKG...]    Build packages"
+	echo "  fastbuild [PKG...] Fast build packages"
+	echo "  clean  [PKG...]    Clean package build artifacts"
+	echo "  mrproper           Wipe sources and built files (current target)"
+	echo ""
+	echo "Target commands:"
+	echo "  target list                List available targets"
+	echo "  target set <NAME>          Set current target"
+	echo "  target info [NAME]         Show target info"
+	echo "  target build               Build all target packages"
+	echo "  target fastbuild           Fast build all target packages"
+	echo "  target clean               Clean all target build artifacts"
+	echo "  target mrproper            Wipe target sources and built files"
+	echo "  target clone               Fetch all target package sources"
+	echo "  target test                Run target tests"
+	echo "  target dist                Create target distribution"
+	echo "  target dist-prebuilt       Archive prebuilt binaries"
+	echo "  target tools               Show target tools"
+	echo "  target pkg [PKG...]        Show package information"
+	echo ""
+	echo "Other:"
+	echo "  pkg [PKG...]       Show package information"
+	echo "  env                Show BuildBox environment variables"
+	echo "  shell              Start an interactive shell"
+}
+
+cmd=${1}
+shift
+
+case "${cmd}" in
+	help|--help|-h|"")
+		help
+		exit 0
+		;;
+	init)
+		project_init "$@"
+		exit $?
+		;;
+	migrate)
+		project_migrate "$@"
+		exit $?
+		;;
+	clone)
+		project_clone "$@"
+		exit $?
+		;;
+	fetch)
+		clone "$@"
+		exit $?
+		;;
+	build)
+		build "$@"
+		exit $?
+		;;
+	fastbuild)
+		fastbuild "$@"
+		exit $?
+		;;
+	clean)
+		clean "$@"
+		exit $?
+		;;
+	mrproper)
+		mrproper "$@"
+		exit $?
+		;;
+	project)
+		subcmd=${1}
+		shift
+		case "${subcmd}" in
+			--help|-h|help)
+				echo "Usage: bbx project <subcommand>"
+				echo ""
+				echo "  info       Show project information"
+				echo "  clean      Clean all targets built files"
+				echo "  mrproper   Wipe all sources and built files (asks confirmation)"
+				echo "  update     Update project profile (.bbx/)"
+				exit 0
+				;;
+			clean)    project_clean "$@" ;;
+			mrproper) project_mrproper "$@" ;;
+			info)     project_info "$@" ;;
+			update)   project_update "$@" ;;
+			*)
+				>&2 echo "Unknown project subcommand: ${subcmd}"
+				help
+				exit 1
+				;;
+		esac
+		exit $?
+		;;
+	target)
+		target "${@}"
+		exit $?
+		;;
+	goto)
+		goto "$@"
+		exit $?
+		;;
+	pkg)
+		pkg "$@"
+		exit $?
+		;;
+	env)
+		bbenv "$@"
+		exit $?
+		;;
+	shell)
+		ZDOTDIR=${BB_DIR}/settings/zsh/ exec /bin/zsh
+		;;
+	*)
+		>&2 echo "Unknown command: ${cmd}"
+		help
+		exit 1
+		;;
+esac

@@ -1,0 +1,10 @@
+#compdef _goto goto
+
+source buildbox_utils.sh
+
+function _goto {
+	local packages=$(bb_get_packages ${BB_TARGET})
+	_arguments -C \
+		"1: :(${packages})" \
+		"2: :(-b)"
+}

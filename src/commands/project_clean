@@ -1,0 +1,42 @@
+#!/bin/bash
+source _pre_cmd
+
+source buildbox_utils.sh
+
+if [ -z "${BB_PROJECT_DIR}" ]; then
+	>&2 echo "Not in a BuildBox project directory"
+	exit 1
+fi
+if [ -z "${BB_PROJECT_SRC_DIR}" ]; then
+	>&2 echo "Invalid project directory"
+	exit 1
+fi
+
+if [ ! -d "${BB_PROJECT_SRC_DIR}" ]; then
+	echo "Nothing to clean."
+	exit 0
+fi
+
+# Packages lock (lock automatically released on process end)
+bb_lock_acquire ${BB_PROJECT_SRC_DIR}/lock "(waiting ongoing packages operations to end...)"
+if [ $? -ne 0 ]; then
+	>&2 echo "Unable to acquire sources lock !"
+	exit 1
+fi
+
+# Remove built files for all targets
+saved_target="${BB_TARGET}"
+targets=$(bb_get_project_targets)
+for target in ${targets}; do
+	bb_set_project_current_target ${target}
+	while read -r pkg_name; do
+		bb_clean_package ${pkg_name} > /dev/null 2>&1
+	done < <(bb_get_packages ${BB_TARGET})
+	rm -rf ${BB_TARGET_BUILD_DIR} > /dev/null 2>&1
+done
+# Restore previously active target
+if [ -n "${saved_target}" ]; then
+	bb_set_project_current_target "${saved_target}" > /dev/null 2>&1
+fi
+
+echo "Project cleaned."

@@ -1,0 +1,38 @@
+#!/bin/bash
+## @brief Clone a BuildBox project from a remote git repository.
+source _pre_cmd
+
+function help {
+	>&2 echo "Usage: project_clone <url> [<dir>]"
+	>&2 echo ""
+	>&2 echo "  url   Git URL of the project to clone"
+	>&2 echo "  dir   Local directory name (default: inferred from url)"
+}
+
+if [ $# -eq 0 ] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+	help
+	exit 0
+fi
+
+url="$1"
+dir="$2"
+
+git clone --quiet --recurse-submodules "${url}" ${dir:+"${dir}"}
+if [ $? -ne 0 ]; then
+	>&2 echo "Unable to clone project"
+	exit 1
+fi
+
+if [ -n "${dir}" ]; then
+	clone_dir="${dir}"
+else
+	clone_dir="$(basename "${url}" .git)"
+fi
+
+if [ ! -d "${clone_dir}/.bbx" ]; then
+	>&2 echo "Warning: cloned repository does not contain a .bbx/ profile directory."
+	>&2 echo "This may not be a BuildBox 2.x project."
+fi
+
+echo "Project cloned into ${clone_dir}"
+echo "Run 'cd ${clone_dir}' then 'bbx target set <TARGET>' to get started."

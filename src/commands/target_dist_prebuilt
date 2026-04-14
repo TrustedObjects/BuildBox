@@ -1,0 +1,47 @@
+#!/bin/bash
+source _pre_cmd
+
+source buildbox_utils.sh
+
+options=$@
+
+if [ -z ${BB_TARGET} ]; then
+	echo "Please set current project target with 'target set <name>'"
+	exit 1
+fi
+if [ -z "${BB_TARGET_BUILD_DIR}" ] || [ ! -d ${BB_TARGET_BUILD_DIR} ]; then
+	echo "Target must be built !"
+	exit 1
+fi
+if [ -z "${BB_PREBUILT_SERVER}" ]; then
+	echo "Please define BB_PREBUILT_SERVER in ${BB_CUSTOM_CONFIG}, and reopen BuildBox shell"
+	exit 1
+fi
+if [ -z "${BB_PREBUILT_USERNAME}" ]; then
+	echo "Please define BB_PREBUILT_USERNAME in ${BB_CUSTOM_CONFIG}, and reopen BuildBox shell"
+	exit 1
+fi
+if [ -z "${BB_PREBUILT_PATH}" ]; then
+	echo "Please define BB_PREBUILT_PATH in ${BB_CUSTOM_CONFIG}, and reopen BuildBox shell"
+	exit 1
+fi
+
+archive_dir=
+function cleanup {
+	if [ -d "${archive_dir}" ]; then
+		rm -r "${archive_dir}"
+	fi
+}
+function error {
+	cleanup
+	bb_error
+}
+bb_trap_errors_custom error
+
+echo -n "Archiving built files... "
+archive_dir=$(bb_archive_prebuilt_target)
+echo -e "\e[32mok\e[0m"
+echo -n "Releasing archive... "
+bb_export_prebuilt_target "${archive_dir}"
+echo -e "\e[32mok\e[0m"
+cleanup

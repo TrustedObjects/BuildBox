@@ -1,0 +1,122 @@
+#!/bin/bash
+
+pkg_name=$1
+shift
+pkg_opts=$1
+shift
+verbose=$1
+shift
+
+source buildbox_utils.sh
+
+if [ -z "${BB_PROJECT_DIR}" ] || [ ! -d "${BB_PROJECT_DIR}" ]; then
+	>&2 echo "Not in a BuildBox project directory"
+	exit 1
+fi
+
+bb_source $(bb_get_target_profile_path ${BB_TARGET})
+
+bb_load_package ${pkg_name}
+[ $? -ne 0 ] && exit 1
+pkg_path=$(bb_get_package_path ${pkg_name})
+pkg_name_short=$(bb_escape_package_name ${pkg_name})
+if [ -n "${SRC_CONFIG}" ]; then
+	default_opts=${SRC_CONFIG}
+else
+	default_opts="(none)"
+fi
+if [ -n "${pkg_opts}" ]; then
+	pkg_opts="${pkg_opts}"
+else
+	pkg_opts="(none)"
+fi
+pkg_src=${BB_TARGET_SRC_DIR}/${pkg_name_short}
+if [ -d ${pkg_src} ]; then
+	if [[ "${SRC_PROTO}" == "git" ]]; then
+		cd ${pkg_src}
+		pkg_tag="$(git describe --tags 2>/dev/null)"
+		pkg_changeset=$(git rev-parse HEAD)
+		pkg_branch=$(git branch --contains $(git rev-parse HEAD)|grep -v HEAD|awk 'END {print $NF}')
+		bb_package_is_modified ${pkg_name}
+		pkg_is_modified=$?
+	fi
+fi
+bb_package_supports_sources_sharing ${pkg_name}
+sources_shared=$?
+cached_file=$(bb_cache_known_file ${SRC_REVISION})
+if [ $? -eq 0 ]; then
+	cached=1
+else
+	cached=0
+fi
+installed=$(bb_stat_package ${pkg_name} installed)
+if [ $? -ne 0 ]; then
+	installed=""
+fi
+if [ ${verbose} -eq 1 ]; then
+	echo -e "\e[1m${pkg_name}\e[0m"
+	echo -en "\t\e[1mRevision:\e[0m ${SRC_REVISION}"
+	if [ -z ${installed} ]; then
+		echo
+	else
+		echo -e " \e[35m(installed: ${installed})\e[0m"
+	fi
+	echo -e "\t\e[1mOptions:\e[0m"
+	echo -e "\t\t\e[1mpackage:\e[0m ${default_opts}"
+	echo -e "\t\t\e[1mtarget:\e[0m ${pkg_opts}"
+	echo -e "\t\e[1mBuild mode:\e[0m ${SRC_BUILD}"
+	if [[ "${SRC_BUILD}" == "autotools" ]]; then
+		echo -e -n "\e[35m"
+		if [ -f ${pkg_src}/build/build.log ]; then
+			echo -e "\t\tBuild log: ${pkg_src}/build/build.log"
+		fi
+		echo -e -n "\e[0m"
+	fi
+	echo -e "\t\e[1mPath:\e[0m ${pkg_path}"
+	echo -e "\t\e[1mSources:\e[0m [${SRC_PROTO}] ${SRC_URI}"
+	if [ -d ${pkg_src} ]; then
+		echo -e "\t\t\e[1mClone:\e[0m ${pkg_src}"
+		echo -en "\t\t\e[1mShared:\e[0m "
+		if [ $sources_shared -eq 1 ]; then
+			echo -e "\e[31myes\e[0m"
+		else
+			echo -e "\e[32mno\e[0m"
+		fi
+		if [[ "${SRC_PROTO}" == "git" ]]; then
+			if [ $pkg_is_modified -ne -1 ]; then
+				echo -en "\t\t\e[1mModified:\e[0m "
+				if [ $pkg_is_modified -eq 1 ]; then
+					echo -e "\e[31myes\e[0m"
+				else
+					echo -e "\e[32mno\e[0m"
+				fi
+			fi
+			echo -e -n "\e[35m"
+			echo -e "\t\tBranch: ${pkg_branch}"
+			echo -e "\t\tTag: ${pkg_tag}"
+			echo -e "\t\tChangeset: ${pkg_changeset}"
+			echo -e -n "\e[0m"
+		fi
+		if [ $cached -eq 1 ]; then
+			echo -e "\t\t\e[1mCache:\e[0m ${cached_file}"
+		fi
+	fi
+	echo -en "\e[0m"
+else
+	echo -en "\e[1m${pkg_name}\e[0m"
+	if [ -d ${pkg_src} ]; then
+		if [[ "${SRC_PROTO}" == "git" ]]; then
+			if [ $pkg_is_modified -ne -1 ]; then
+				if [ $pkg_is_modified -eq 1 ]; then
+					echo -en " \e[31m(modified)\e[0m"
+				fi
+			fi
+		fi
+	fi
+	echo -e "\e[0m"
+fi
+unset SRC_PROTO
+unset SRC_URI
+unset SRC_REVISION
+unset SRC_BUILD
+unset SRC_CONFIG

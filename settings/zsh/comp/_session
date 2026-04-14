@@ -1,0 +1,23 @@
+#compdef _session session
+
+source buildbox_utils.sh
+
+function _session {
+	local line
+
+	_arguments -C \
+		"1: :(list persistent goto)" \
+		"*::arg:->args"
+
+	case $line[1] in
+	persistent)
+		_session_persistent
+		;;
+	esac
+}
+
+function _session_persistent {
+	_arguments -C \
+		"1: :(1 0)"
+}
+

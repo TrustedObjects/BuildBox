@@ -1,0 +1,50 @@
+#!/bin/bash
+source _pre_cmd
+
+source buildbox_utils.sh
+
+options=$@
+
+if [ -z ${BB_TARGET} ]; then
+	echo "Please set current project target with 'target set <name>'"
+	exit 1
+fi
+if [ -z "${BB_TARGET_BUILD_DIR}" ] || [ ! -d ${BB_TARGET_BUILD_DIR} ]; then
+	echo "Target must be built before generating deliverables !"
+	exit 1
+fi
+
+source $(bb_get_target_profile_path ${BB_TARGET})
+if [ -z ${DIST} ]; then
+	echo "No target dist script !"
+	echo "Define DIST in target profile file."
+	exit 1
+fi
+
+function cleanup {
+	# Restore initial target, if changed
+	bb_restore_last_target
+}
+function error {
+	cleanup
+	bb_error
+}
+bb_trap_errors_custom error
+dist_log_file=${BB_TARGET_DIR}/dist.log
+bb_set_current_log_file ${dist_log_file}
+bb_clear_log_file
+bb_save_last_target
+
+echo -n "Generating ${BB_TARGET} deliverables ... "
+# Use the hack below to prevent malformed scripts to seek on output file.
+# The pipe makes seeking impossible on output file.
+bb_enable_log_file
+set -o pipefail
+${DIST} ${options} 2>&1 | cat
+set +o pipefail
+bb_disable_log_file
+
+cleanup
+
+echo -e "\e[32msuccess\e[0m."
+echo "Deliverables generation logs are available at ${dist_log_file}"

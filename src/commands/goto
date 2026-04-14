@@ -1,0 +1,87 @@
+#!/bin/bash
+## @brief Go to a package source or build directory
+## @usage goto <package> [-b]
+## Prints the package source directory (or build directory with -b).
+## The caller (host shell 'goto' function) captures the output and cd's to it.
+
+source buildbox_utils.sh
+
+if [ ! -d "${BB_PROJECT_DIR}" ]; then
+	>&2 echo "No current project defined"
+	exit 1
+fi
+if [ -z "${BB_TARGET}" ]; then
+	>&2 echo "No current target defined"
+	exit 1
+fi
+if [ ! -d "${BB_TARGET_DIR}" ]; then
+	>&2 echo "Target ${BB_TARGET} not created yet"
+	exit 1
+fi
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+	>&2 echo "Usage: goto <package> [-b]"
+	exit 1
+fi
+if [ $# -eq 2 ] && [ "${2}" != "-b" ]; then
+	>&2 echo "Usage: goto <package> [-b]"
+	exit 1
+fi
+
+goto_build=0
+[ $# -eq 2 ] && goto_build=1
+
+search="${1}"
+packages=$(bb_find_matching_packages 0 "${search}")
+if [ -z "${packages}" ]; then
+	>&2 echo "No matching package"
+	exit 1
+fi
+
+matches=$(echo "${packages}" | grep -c '^.')
+if [ "${matches}" -ne 1 ]; then
+	package=""
+	# Try exact name match
+	while IFS= read -r p; do
+		[ -z "${p}" ] && continue
+		if [ "$(basename "${p}")" = "${search}" ] || [ "${p}" = "${search}" ]; then
+			package="${p}"
+			break
+		fi
+	done <<< "${packages}"
+	# Try match without revision suffix
+	if [ -z "${package}" ]; then
+		while IFS= read -r p; do
+			[ -z "${p}" ] && continue
+			p_no_rev=$(bb_get_package_name_no_revision "${p}")
+			if [ "$(basename "${p_no_rev}")" = "${search}" ] || [ "${p_no_rev}" = "${search}" ]; then
+				package="${p}"
+				break
+			fi
+		done <<< "${packages}"
+	fi
+	if [ -z "${package}" ]; then
+		>&2 echo "Multiple matching packages:"
+		>&2 echo "${packages}"
+		exit 1
+	fi
+else
+	package="${packages}"
+	package="${package%$'\n'}"
+fi
+
+if [ "${goto_build}" -ne 1 ]; then
+	goto_dir=$(bb_get_package_src_dir "${package}")
+	if [ $? -ne 0 ]; then
+		>&2 echo "Package not cloned yet"
+		exit 1
+	fi
+else
+	goto_dir=$(bb_get_package_build_dir "${package}")
+	if [ $? -ne 0 ]; then
+		>&2 echo "Package not built yet"
+		exit 1
+	fi
+fi
+
+echo "${goto_dir}"
+exit 0

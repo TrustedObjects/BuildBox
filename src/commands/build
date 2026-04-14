@@ -1,0 +1,90 @@
+#!/bin/bash
+
+source buildbox_utils.sh
+
+function help {
+	local cmd
+	cmd=$(basename "$0")
+	if [ "${cmd}" = "fastbuild" ]; then
+		echo "Usage: bbx fastbuild <PKG...>"
+		echo ""
+		echo "Build packages skipping the configure step."
+	else
+		echo "Usage: bbx build <PKG...>"
+		echo ""
+		echo "Build one or more packages for the current target."
+	fi
+	if [ "${cmd}" = "fastbuild" ]; then
+		echo "  PKG...   Package name(s) to fast build (glob patterns supported)"
+	else
+		echo "  PKG...   Package name(s) to build (glob patterns supported)"
+	fi
+}
+
+case "$1" in
+	help|-h|--help) help; exit 0 ;;
+esac
+
+if [ $# -lt 1 ]; then
+	help >&2
+	exit 1
+fi
+if [ -z "${BB_PROJECT_DIR}" ] || [ ! -d "${BB_PROJECT_DIR}" ]; then
+	>&2 echo "Not in a BuildBox project directory"
+	exit 1
+fi
+packages_list=$@
+
+bb_trap_errors_nolog
+
+cd "${BB_PROJECT_DIR}"
+mkdir -p ${BB_TARGET_SRC_DIR}
+mkdir -p ${BB_TARGET_BUILD_DIR}
+source $(bb_get_target_profile_path ${BB_TARGET})
+bb_set_local_env ${BB_TARGET_BUILD_DIR} ${CPU}
+
+# Select packages matching given list, and make results unique
+selected_packages=$(bb_find_matching_packages 1 ${packages_list})
+if [ "${selected_packages}" == "" ]; then
+	>&2 echo "No matching packages !"
+	exit 1
+fi
+
+# Packages lock (lock automatically released on process end)
+bb_lock_acquire ${BB_PROJECT_SRC_DIR}/lock "(waiting ongoing packages operations to end...)"
+if [ $? -ne 0 ]; then
+	>&2 echo "Unable to acquire sources lock !"
+	exit 1
+fi
+
+# Build individual packages
+total_warning_count=0
+while read -r line
+do
+	readarray -d : -t package <<< "${line}"
+	pkg_name=${package[0]/$'\n'/}
+	pkg_opts=${package[1]/$'\n'/}
+	echo "Building ${pkg_name} ..."
+	cmd=$(basename ${0})
+	if [ "${cmd}" != "fastbuild" ]; then
+		bb_build_package ${pkg_name} ${pkg_opts}
+	else
+		bb_build_package_fast ${pkg_name} ${pkg_opts}
+	fi
+	warning_count=$(bb_stat_package ${pkg_name} warning)
+	if [ -n "${warning_count}" ]; then
+		if [ ${warning_count} -ne 0 ]; then
+			echo -e "${pkg_name} built with \e[35m${warning_count} warning(s)\e[0m"
+		fi
+		total_warning_count=$((${total_warning_count}+${warning_count}))
+	fi
+	echo
+done < <(echo "${selected_packages}")
+
+if [ ${total_warning_count} -eq 0 ]; then
+	echo "Done."
+else
+	echo -e "Done, with \e[35m${total_warning_count} warning(s)\e[0m"
+fi
+
+exit 0

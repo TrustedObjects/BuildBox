@@ -1,0 +1,65 @@
+#!/bin/bash
+source _pre_cmd
+
+source buildbox_utils.sh
+
+get_prebuilt=0
+
+if [ "${1}" == "-p" ]; then
+	get_prebuilt=1
+fi
+
+if [ -z ${BB_TARGET} ]; then
+	>&2 echo "Please set current project target with 'target set <name>'"
+	exit 1
+fi
+
+bb_trap_errors
+
+bb_set_current_log_file "${BB_TARGET_DIR}/${BB_API_CALLER}.log"
+bb_clear_log_file
+
+source $(bb_get_target_profile_path ${BB_TARGET})
+
+if [ -n "${TOOLS}" ]; then
+	echo -e "Cloning \e[1m${BB_TARGET}\e[0m target required tools... "
+	while read -r tool_name; do
+		echo -e -n "\t${tool_name} ... "
+		bb_enable_log_file
+		bb_clone_tool ${tool_name}
+		bb_disable_log_file
+		echo -e "\e[32mok\e[0m"
+	done < <(bb_get_tools)
+fi
+
+echo -e "Cloning \e[1m${BB_TARGET}\e[0m target packages... "
+
+# Packages lock (lock automatically released on process end)
+bb_lock_acquire ${BB_PROJECT_SRC_DIR}/lock "(waiting ongoing packages operations to end...)"
+if [ $? -ne 0 ]; then
+	>&2 echo "Unable to acquire packages lock !"
+	exit 1
+fi
+
+mkdir -p ${BB_TARGET_SRC_DIR}
+while read -r pkg_name; do
+	echo -e -n "\t${pkg_name} ... "
+	bb_enable_log_file
+	bb_clone_package ${pkg_name}
+	bb_disable_log_file
+	echo -e "\e[32mok\e[0m"
+done < <(bb_get_packages ${BB_TARGET})
+
+if [ ${get_prebuilt} -eq 1 ]; then
+	echo -n "Getting prebuilt files... "
+	if bb_target_has_prebuilt; then
+		bb_import_prebuilt_target
+		echo -e "\e[32mok\e[0m"
+	else
+		echo -e "\e[33mnot available\e[0m"
+	fi
+fi
+
+bb_lock_release ${BB_PROJECT_SRC_DIR}/lock
+
+echo "done."

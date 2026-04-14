@@ -1,0 +1,155 @@
+#!/bin/bash
+
+source buildbox_utils.sh
+
+export PRE_CMD="$0 $@"
+
+function help {
+	echo "Usage: bbx target <subcommand> [options]"
+	echo ""
+	echo "  list               List available targets"
+	echo "  set <NAME>         Set current target"
+	echo "  info [NAME]        Show target info"
+	echo "  build [-c] [-v]    Build all target packages"
+	echo "  fastbuild [-c]     Fast build all target packages"
+	echo "  clean              Clean all target build artifacts"
+	echo "  mrproper           Wipe target sources and built files"
+	echo "  clone              Fetch all target package sources"
+	echo "  test [-q]          Run target tests"
+	echo "  dist               Create target distribution"
+	echo "  dist-prebuilt      Archive prebuilt binaries"
+	echo "  tools              Show target tools"
+	echo "  pkg [-v] [-m] PKG  Show package information"
+}
+
+function list {
+	target_list
+}
+
+function set {
+	if [ $# -eq 0 ]; then
+		help
+		exit 1
+	fi
+	local target=$1
+	target_set $target
+}
+
+function clone {
+	target_clone $@
+}
+
+function build {
+	target_build $@
+}
+
+function fastbuild {
+	target_fastbuild $@
+}
+
+function run_tests {
+	target_test $@
+}
+
+function dist {
+	target_dist $@
+}
+
+function dist_prebuilt {
+	target_dist_prebuilt $@
+}
+
+function clean {
+	target_clean $@
+}
+
+function mrproper {
+	target_mrproper $@
+}
+
+function pkg {
+	target_pkg $@
+}
+
+function tools {
+	target_tools
+}
+
+function info {
+	if [ $# -gt 1 ]; then
+		help
+		exit 1
+	fi
+	target_info $@
+}
+
+if [ -z "${BB_PROJECT_DIR}" ] || [ ! -d "${BB_PROJECT_DIR}" ]; then
+	>&2 echo "Not in a BuildBox project directory"
+	exit 1
+fi
+
+case "$1" in
+	help|--help|-h|"")
+		help
+		exit 0
+		;;
+	list)
+		shift
+		list "$@"
+		;;
+	set)
+		shift
+		set "$@"
+		;;
+	clone)
+		shift
+		clone "$@"
+		;;
+	build)
+		shift
+		build "$@"
+		;;
+	fastbuild)
+		shift
+		fastbuild "$@"
+		;;
+	test)
+		shift
+		run_tests "$@"
+		;;
+	dist)
+		shift
+		dist "$@"
+		;;
+	dist-prebuilt)
+		shift
+		dist_prebuilt "$@"
+		;;
+	clean)
+		shift
+		clean "$@"
+		;;
+	mrproper)
+		shift
+		mrproper "$@"
+		;;
+	pkg)
+		shift
+		pkg "$@"
+		;;
+	tools)
+		shift
+		tools "$@"
+		;;
+	info)
+		shift
+		info "$@"
+		;;
+	*)
+		>&2 echo "Unknown command $1 !"
+		help
+		exit 1
+		;;
+esac
+
+exit $?

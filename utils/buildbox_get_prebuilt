@@ -1,0 +1,121 @@
+#!/bin/bash
+set -e
+
+log_file=/tmp/$(basename ${0}).log
+echo "$@" > ${log_file}
+
+function usage {
+	echo "This utility is made to easily get and be ready to use prebuilt targets binaries."
+	echo "Usage: $0 <project_tag> <target> [buildbox_version image_version]"
+	echo "BuildBox version must be at least 1.3.15."
+	echo "You can use KEEP=1 environment to keep prebuilt target after use."
+	exit 1
+}
+if [ $# -lt 2 ] || [ $# -gt 4 ] || [ $# -eq 3 ]; then
+	usage
+fi
+project_tag=${1}
+target=${2}
+project_label="${project_tag}_${target}-prebuilt"
+if [ $# -eq 4 ]; then
+	bb_version=${3}
+	bb_image_version=${4}
+	bb_orig_version=$(buildbox -s -x "cd \$BB_DIR && git describe --tags")
+	bb_orig_image_version=$(buildbox -s -x "cat /etc/version")
+fi
+
+function success {
+	echo -e "\e[32mOK\e[0m"
+}
+function skip {
+	echo -e "\e[33mSKIPPED\e[0m"
+}
+function error {
+	nbexpr='^[0-9]+$'
+	if ! [[ $1 =~ $nbexpr ]] ; then
+		echo -e "\e[31mERROR\e[0m ${1}"
+	else
+		echo -e "\e[31mERROR ${1}\e[0m ${2}"
+	fi
+	echo "See ${log_file} for more details"
+	return 1
+}
+
+function sanity_check {
+	if ! buildbox -x "test -n \"\${BB_PREBUILT_USERNAME}\""; then
+		error "Please set BB_PREBUILT_USERNAME in workspace etc/custum_config file"
+	fi
+	if ! buildbox -x "test -n \"\${BB_PREBUILT_SERVER}\""; then
+		error "Please set BB_PREBUILT_SERVER in workspace etc/custum_config file"
+	fi
+	if ! buildbox -x "test -n \"\${BB_PREBUILT_PATH}\""; then
+		error "Please set BB_PREBUILT_PATH in workspace etc/custum_config file"
+	fi
+}
+sanity_check
+
+log_file=/tmp/${0}.log
+echo $@ > ${log_file}
+function cleanup {
+	if [ -n "${session}" ]; then
+		if [ -z "${KEEP}" ]; then
+			echo -n "Removing project... "
+			if [ -n "${project_label}" ] && buildbox -j ${session} -x "test -d \"\${BB_PROJECTS_DIR}/${project_label}\""; then
+				buildbox -j ${session} -x "bb_delete_project ${project_label}"
+			fi
+			success
+		fi
+		buildbox -j ${session} -x "session persistent 0"
+		unset session
+		if [ -n "${bb_version}" ] && [ -n "${bb_image_version}" ]; then
+			echo -n "Restoring BuildBox version... "
+			buildbox -s -y -o -c "${bb_orig_image_version}" -u "${bb_orig_version}" -x "exit" >> ${log_file} 2>&1
+			success
+		fi
+	fi
+}
+trap 'error "$LINENO"' ERR
+trap cleanup EXIT
+
+session=$(buildbox -x "bb_is_session_using_project ${project_label}") || true
+if [ -z "${session}" ]; then
+	session="$(buildbox -s -x "session persistent 1 && session")" >> ${log_file} 2>&1
+fi
+
+if [ -n "${bb_version}" ] && [ -n "${bb_image_version}" ]; then
+	echo -n "Installing relevant BuildBox version (it may take a while)... "
+	buildbox -s -y -c "${bb_image_version}" -u "${bb_version}" -x "exit" >> ${log_file} 2>&1
+	success
+fi
+
+echo -n "Cloning project as ${project_label}... "
+if buildbox -j ${session} -x "test -d \${BB_PROJECTS_DIR}/${project_label}" >> ${log_file} 2>&1; then
+	buildbox -j ${session} -x "project set ${project_label}" >> ${log_file} 2>&1
+	echo -n "already cloned, "
+	skip
+else
+	buildbox -j ${session} -x "bb_project_clone ${project_label} ${project_tag}" >> ${log_file} 2>&1
+	buildbox -j ${session} -x "project set ${project_label}" >> ${log_file} 2>&1
+	success
+fi
+
+echo -n "Getting pre-built target (it may take a while)... "
+if buildbox -j ${session} -x "test -d \${BB_PROJECTS_DIR}/${project_label}/${target}" >> ${log_file} 2>&1; then
+	buildbox -j ${session} -x "target set ${target}" >> ${log_file} 2>&1
+	echo -n "already present, "
+	skip
+else
+	buildbox -j ${session} -x "target set ${target}" >> ${log_file} 2>&1
+	if ! buildbox -j ${session} -x "bb_target_has_prebuilt" >> ${log_file} 2>&1; then
+		error "there is no pre-built archive for this target"
+	fi
+	buildbox -j ${session} -x "bb_import_prebuilt_target" >> ${log_file} 2>&1
+	success
+fi
+
+# Enter BuildBox
+echo -e "\nNow entering BuildBox !"
+echo -e "\n\e[33mWARNING\e[0m: when this shell will be closed, the project will be deleted and BuildBox restored to its latest local versions !\n"
+buildbox -j ${session}
+echo
+

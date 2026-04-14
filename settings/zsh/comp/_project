@@ -1,0 +1,84 @@
+#compdef _project project
+
+source buildbox_utils.sh
+
+function _project {
+	export PRE_CMD=_project
+	local line
+
+	_arguments -C \
+		"1: :(help sync browse clone update list set clean mrproper del info goto fork)" \
+		"*::arg:->args"
+
+	case $line[1] in
+	browse)
+		_project_browse
+		;;
+	clone)
+		_project_clone
+		;;
+	set)
+		_project_set
+		;;
+	del)
+		_project_del
+		;;
+	info)
+		_project_info
+		;;
+	goto)
+		_project_goto
+		;;
+	fork)
+		_project_fork
+		;;
+	esac
+
+	unset PRE_CMD
+}
+
+function _project_browse {
+	local available_projects=$(bb_browse_projects 0)
+	_arguments -C \
+		"1: :(${available_projects})"
+}
+
+function _project_clone {
+	local available_projects=$(bb_browse_projects 0)
+	_arguments -C \
+		"1: :(${available_projects})" \
+		"2: :(-l)" \
+		"3: :(-m -a)"
+}
+
+function _project_set {
+	local cloned_projects=$(bb_get_projects)
+	_arguments -C \
+		"1: :(${cloned_projects})" \
+		"2: :(${$(bb_get_project_targets $line[2])})"
+}
+
+function _project_del {
+	local cloned_projects=$(bb_get_projects)
+	_arguments -C \
+		"1: :(${cloned_projects})"
+}
+
+function _project_info {
+	local cloned_projects=$(bb_get_projects)
+	_arguments -C \
+		"1: :(${cloned_projects})"
+}
+
+function _project_goto {
+	local cloned_projects=$(bb_get_projects)
+	_arguments -C \
+		"1: :(-p)"
+}
+
+function _project_fork {
+	local cloned_projects=$(bb_get_projects)
+	_arguments -C \
+		"1: :()" \
+		"2: :(-l)"
+}
