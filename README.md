@@ -25,6 +25,8 @@ BuildBox organizes work around four concepts:
 - **Familiar workflow**: `bbx` works like any other command-line tool, from inside the project directory.
 - **Host integration**: SSH keys, Git and Vim configuration are automatically shared from the host into the container. An optional shell plugin displays the active project and target in the prompt and provides tab-completion for all `bbx` commands.
 
+Visit the [BuildBox official website](https://buildbox.trusted-objects.com).
+
 ## Usage
 
 ```
@@ -33,7 +35,7 @@ bbx --help
 
 Run `bbx` from any project directory. The container is started automatically if needed.
 
-See the [user manual](docs/src/user/README.md) for the full documentation.
+See the [user manual](https://buildbox.trusted-objects.com/user/) for the full documentation.
 
 ## Installation
 
@@ -42,7 +44,7 @@ sudo make install
 ```
 
 Installs the `bbx` launcher to `/usr/local/bin` and supporting files to `/usr/local/share/buildbox`.
-See the [installation guide](docs/src/getting-started/install.md) for prerequisites and details.
+See the [installation guide](https://buildbox.trusted-objects.com/getting-started/install.html) for prerequisites and details.
 
 ## License
 
