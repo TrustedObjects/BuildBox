@@ -18,7 +18,8 @@ module.exports = {
 
   themeConfig: {
     logo: '/buildbox.png',
-    repo: '',
+    repo: 'https://github.com/TrustedObjects/BuildBox',
+    repoLabel: 'GitHub',
     editLinks: false,
     docsDir: '',
     editLinkText: '',
