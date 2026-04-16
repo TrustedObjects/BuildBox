@@ -55,7 +55,7 @@ bb_exportfn bb_foo
 If not required, API functions must not affect caller with environment or
 current working directory changes.
 To prevent this, if your function is declaring environment variables or
-changing directory, you can declare use the following syntax to use a subshell:
+changing directory, you can use the following syntax to use a subshell:
 ``` shell
 function bb_foo () (
 	bar=0
@@ -160,7 +160,7 @@ On error, assertions terminate test case and the test is marked as failed.
 Helpers are also available:
 - `skip <message>`: skip the test without error
 - `unformat_string <string>`: remove ANSI string formatting
-- `minspace_string <string>`: remove useless spaces between words, startingi/ending spaces, and blank lines
+- `minspace_string <string>`: remove useless spaces between words, starting/ending spaces, and blank lines
 - `is_subpath_of <p> <c>`: success (0) if `p` path is parent of `c` path
 
 [Test data](#test-data) is available to help writing tests.
@@ -214,7 +214,7 @@ VERBOSE=1 MODE=zsh ./tests/run_tests test_bb_set_current_project
 When running tests, some temporary files are created:
 - `tests/workspace`: temporary project copies used by tests, automatically cleaned up before every test.
 - `log`: tests log output.
-- `run`: test suite runtime ressources.
+- `run`: test suite runtime resources.
 
 ### Test data
 

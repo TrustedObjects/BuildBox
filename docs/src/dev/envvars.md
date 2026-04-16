@@ -48,13 +48,13 @@ Here is a partial list of these variables and their meaning:
 There are also the following variables, not listed by `bbx env`:
 - `CPU`
 - `CPU_FAMILY`
-- `CPU_DESCRIPTION` (do not rely on its value to condition code flow as it is an human readable string subject to evolve)
+- `CPU_DESCRIPTION` (do not rely on its value to condition code flow as it is a human-readable string subject to change)
 - `CPUDEF`
 - `CHOST`
 
 ## Standard variables managed by BuildBox
 
-Moreover, BuildBox [local environment mechanism](api.md#local-environment) keep
+Moreover, BuildBox [local environment mechanism](api.md#local-environment) keeps
 up-to-date the following environment variables:
 - `PATH`
 - `LD_LIBRARY_PATH`

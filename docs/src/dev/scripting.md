@@ -2,10 +2,10 @@
 
 To use BuildBox, scripts can rely on [BuildBox API](api), and on [BuildBox environment variables](envvars).
 
-These scripts should carefully cleanup temporary created ressources on exit.
+These scripts should carefully cleanup temporary created resources on exit.
 You can use `trap ... EXIT` to help to do this.
 
-Temporary ressources created by these scripts should be stored in a temporary folder under `$TMPDIR`.
+Temporary resources created by these scripts should be stored in a temporary folder under `$TMPDIR`.
 For example, by using:
 ```
 tmpdir=$(mktemp -d)

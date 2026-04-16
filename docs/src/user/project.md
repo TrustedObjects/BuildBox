@@ -1,7 +1,7 @@
 # Projects
 
-A project stands for a deliveries building context, for example to produce a client project deliverables.
-It aims to concern all the software and hardware targets for a particular delivery.
+A project stands for a deliverable build context, for example to produce a client project's deliverables.
+It encompasses all the software and hardware targets for a particular delivery.
 
 ## Project profile
 
@@ -89,14 +89,14 @@ bbx project update
 This updates the project profile (`.bbx/`) from its remote.
 
 ::: warning
-This only updates the project profile, and does not update the packages themselves. You have to fetch and build targets explicitely after project update.
+This only updates the project profile, and does not update the packages themselves. You have to fetch and build targets explicitly after project update.
 :::
 
 ## Commit project profile
 
 The project directory is a Git repository, so you can use Git directly to commit and push profile changes.
 
-Don't forget the project profile may have a `packages` submodule, which may need to be commited if you made changes on it.
+Don't forget the project profile may have a `packages` submodule, which may need to be committed if you made changes to it.
 
 ::: tip
 You can check if the project profile has to be commited by running `bbx project info` and checking the `Profile status` field.
@@ -122,5 +122,5 @@ This command wipes the current project by removing sources and built files for a
 It is asked to user to confirm before wiping.
 
 ::: tip
-Sources are sent to BuildBox trash, and are definively removed after a while.
+Sources are sent to BuildBox trash, and are definitively removed after a while.
 :::

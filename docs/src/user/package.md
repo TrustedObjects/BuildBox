@@ -1,7 +1,7 @@
 # Packages
 
 Packages are pieces of software components.
-Usually, packages are sources, but BuildBox also supports prebuilt packages made-up of binary files.
+Usually, packages consist of sources, but BuildBox also supports prebuilt packages made up of binary files.
 They are collected from Git repositories, or compressed archives, and represented by a package file.
 A package is built and installed in the targets requiring it, and can be shared across different targets,
 projects and even receive different built options according your needs.
@@ -14,7 +14,7 @@ Needed Packages are specified on a per-target basis through a packages listing f
 In this file, one package can be specified per line, optionally with their build options.
 Referenced packages are named like packages in project profile `.bbx/packages` sub-directory.
 
-You can use blank lines, as well a put comments by simply starting your line by `#`.
+You can use blank lines, as well as put comments by simply starting your line with `#`.
 
 Packages stored in SCM can have a generic file in project `.bbx/packages` sub-directory, named as the package.
 Then, in target packages listing file, a revision can be defined prefixed by `@` sign. It can be a tag, a branch, or a changeset to checkout when the package is cloned. Alternatively, revision can be prefixed by `-`, but only for numeric values separated by dots `.`.
