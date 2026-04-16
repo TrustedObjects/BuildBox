@@ -3,8 +3,8 @@
 BuildBox main key concepts are [projects](project.md), [targets](target.md), [packages](package.md) and [tools](tool.md).
 
 A [project](project.md) stands for deliverable components, and the way to build them.
-It is componed by one or several [targets](target.md), which is the platform of a deliverable, defining build, test and distribution method.
-[Targets](target.md) are embedding [packages](package.md), which are software components built for it.
+It is composed of one or several [targets](target.md), which define the platform of a deliverable, including build, test and distribution methods.
+[Targets](target.md) embed [packages](package.md), which are software components built for them.
 And [tools](tool.md) are used by [targets](target.md) and involved in the build, test and distribution to release the deliverable.
 
 BuildBox is used through the `bbx` command, directly from a project directory.

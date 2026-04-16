@@ -2,7 +2,7 @@
 
 # Get prebuilt target
 
-`buildbox_get_prebuilt` is an utility to easily get and be ready to use prebuilt targets binaries.
+`buildbox_get_prebuilt` is a utility to easily get and use prebuilt target binaries.
 
 Given a project tag and one of its target name, you can get prebuilt binaries
 locally and use them directly.
@@ -19,7 +19,7 @@ where:
 - `image_version` is the BuildBox container image version on which the project was built
 
 When using this utility, the right versions of BuildBox are set, and the project prebuilt target is downloaded.
-Once done, a BuildBox shell is opened on this target and you are ready to use prebuilt binaries and ressources.
+Once done, a BuildBox shell is opened on this target and you are ready to use prebuilt binaries and resources.
 When the shell is closed, the project is removed, and BuildBox restored to its original versions.
 
 If you want to keep the project and its prebuilt target for later use after shell close, set the `KEEP` environment:

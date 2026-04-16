@@ -26,7 +26,7 @@ Target file accepted fields are:
 Accepted values for `CPU`: `x86`, `arm-linux`, `cortex-m0`, `cortex-m3`, `cortex-m4`, `cortex-m7`, `cortex-m23`, `cortex-m33`, `cortex-m35P`, `cortex-m55`, `lx6`
 
 You can define specific target variables, with `VAR_xxx` entries (replace xxx with whatever you want).
-Target variables result in environment variables declaration when the target is active, nammed `BB_TARGET_VAR_xxx`.
+Target variables result in environment variables declaration when the target is active, named `BB_TARGET_VAR_xxx`.
 
 Strings in target file must be escaped like this: `\\\"my string\\\"`.
 
@@ -118,7 +118,7 @@ As `target build`, it is possible to use:
 bbx target fastbuild [-v] [-c|--continue]
 ```
 
-This command does not do package configuration step, it is assumed packages sources are already configured. This is why it is nammed "fast".
+This command does not do package configuration step, it is assumed packages sources are already configured. This is why it is named "fast".
 
 See [Build target](#build-target) for more details about options.
 
@@ -184,7 +184,7 @@ bbx target pkg [-m] [-v]
 
 It displays target packages information.
 
-The `-m` option displays only packages having locally modified sources. It help to identify uncommited changes.
+The `-m` option displays only packages having locally modified sources. It helps to identify uncommitted changes.
 
 The `-v` option enables verbose mode, which displays package details.
 
@@ -199,7 +199,7 @@ Current target required tools are listed with their details.
 
 ## Pre-built targets
 
-Pre-built targets stand for built files of specific project revision targets, which purpose is to avoid to spent time to locally build targets.
+Pre-built targets are built files of specific project revision targets, whose purpose is to avoid spending time building targets locally.
 
 Settings before using pre-built targets can be defined in `.bbx/custom_config`:
 - `BB_PREBUILT_SERVER`: pre-built targets SSH server
@@ -220,7 +220,7 @@ These scripts **should not use BuildBox user commands**, and should rely on [Bui
 
 These scripts **must** catch and return any error as a non-zero shell error code. You can use `set -e` for that.
 
-Also, these scripts should carefully cleanup temporary created ressources on exit.
+Also, these scripts should carefully clean up any temporary resources created on exit.
 Produced test report or delivery archive may be stored in target directory.
 
 Read [how to develop scripts using BuildBox](/dev/scripting.md) for more details.

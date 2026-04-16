@@ -128,5 +128,5 @@ sudo -i
 ```
 
 ::: danger
-If adding package or changing configuration as administrator, you should discuss with your BuildBox maintainer to make these changes available in the future container image release ! Else, you will have an environment not synchronized with other developers working on the same projets than you.
+If adding package or changing configuration as administrator, you should discuss with your BuildBox maintainer to make these changes available in the future container image release ! Else, you will have an environment not synchronized with other developers working on the same projects as you.
 :::

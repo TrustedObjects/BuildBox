@@ -5,7 +5,7 @@ Before reading this chapter, it is recommended to read the chapter related to
 [BuildBox API development](developing.md).
 :::
 
-Be default, BuildBox comes with several supported build modes: `autotools`,
+By default, BuildBox comes with several supported build modes: `autotools`,
 `make`, ...
 But it is possible to develop new build modes which can then be used by
 packages.
@@ -16,8 +16,8 @@ Most of the time, developing a new build mode is not mandatory as the
 :::
 
 New build mode implementation is to be added in the `src/` directory of
-BuildBox sources, and must be a `.sh` file with its name starting with `_build_`
-suffix.
+BuildBox sources, and must be a `.sh` file with its name starting with the `_build_`
+prefix.
 
 The following API has to be implemented in the build mode script (replace
 MODENAME with the new build mode name):

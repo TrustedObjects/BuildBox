@@ -12,7 +12,7 @@ purposes:
 ## Environment refresh
 
 Environment may be altered by different factors (target change,
-tool installation....), see [Local environment](/dev/api.md#local-environment).
+tool installation...), see [Local environment](/dev/api.md#local-environment).
 
 The environment is refreshed before every command, and before every prompt, ZSH
 `precmd` and `preexec` hooks are used for this.
