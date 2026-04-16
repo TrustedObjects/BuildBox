@@ -62,3 +62,10 @@ The `cleanup.sh` script has no access to environment defined for the tool. Indee
 So `PATH`, `XDG_DATA_DIRS`, `PYTHONPATH`, ... doesn't include your tool paths.
 
 The tools appearance order in tools list is used to execute `load.sh` scripts, and the reverse order is used to execute `unload.sh` scripts.
+
+## BuildBox official tools
+
+| Tool | Description |
+|---|---|
+| [Docker tools](https://github.com/TrustedObjects/BuildBox-docker-tools) | Manages a Docker daemon in a BuildBox target environment |
+| [Python tools](https://github.com/TrustedObjects/BuildBox-python-tools) | Manage BuildBox targets Python virtual environments |
