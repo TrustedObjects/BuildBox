@@ -123,12 +123,14 @@ function bbx_ensure_container {
 		if [ -n "${SSH_AUTH_SOCK}" ] && [ -S "${SSH_AUTH_SOCK}" ]; then
 			extra_args+=(-v "${SSH_AUTH_SOCK}:${SSH_AUTH_SOCK}")
 		fi
+		local hostname="bbx-$(basename "${project_root}")"
 		until docker run -d \
 			--pull never \
 			--privileged \
 			--name "${container}" \
 			--network="host" \
-			--hostname "bbx-$(basename "${project_root}")" \
+			--hostname "${hostname}" \
+			--add-host "${hostname}:127.0.0.1" \
 			--label "bbx.project_root=${project_root}" \
 			-v "${project_root}:${project_root}" \
 			-v "${BBX_DIR}:${BBX_DIR}" \
