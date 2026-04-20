@@ -224,7 +224,7 @@ function bb_package_supports_sources_sharing () {
 	bb_source _build_${SRC_BUILD}.sh
 	if [ -n "${SRC_SUPPORTS_SHARING}" ]; then
 		# Sources sharing support is declared in package file, use this
-		if [ ${SRC_SUPPORTS_SHARING} -eq 0 ]; then
+		if [ "${SRC_SUPPORTS_SHARING}" = "0" ]; then
 			ret=0
 		else
 			ret=1
