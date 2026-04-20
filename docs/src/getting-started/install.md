@@ -1,20 +1,43 @@
 # Installation
 
-As prerequisites, you have to install Docker, BuildBox needs it to run in an isolated environment.
-Please follow [the official guide](https://docs.docker.com/engine/install/).
+## Requirements
+
+The following tools must be installed on the host system before using BuildBox.
+
+### Ubuntu / Debian
+
+```bash
+sudo apt-get update
+sudo apt-get install -y bash make python3 curl git openssh-client
+```
+
+Docker must be installed separately following the [official guide](https://docs.docker.com/engine/install/debian).
 
 ::: tip
 The preferred way to install Docker on Ubuntu or Debian is using the official Docker `apt` repository.
-For ArchLinux, install the `docker` package with `pacman`.
 :::
 
 ::: warning
 Do not install Docker from Snap, and do not use Docker Desktop.
 :::
 
+### Fedora
+
+```bash
+sudo dnf install -y bash make python3 curl git openssh
+```
+
+Docker must be installed separately following the [official guide](https://docs.docker.com/engine/install/fedora).
+
+### ArchLinux
+
+```bash
+sudo pacman -S --needed bash make python curl git openssh docker
+```
+
 ## Docker settings
 
-To be able to manage Docker, ensure your user is in the `docker` group, if it is not the case, do:
+To be able to manage Docker, ensure your user is in the `docker` group. If it is not the case, do:
 ```
 sudo usermod -aG docker $(whoami)
 ```
@@ -22,7 +45,7 @@ sudo usermod -aG docker $(whoami)
 and reconnect your session.
 
 ::: warning
-On Ubuntu, it seems you have to reboot to refresh groups. So, if after reconnecting, the `groups` command do not shows `docker` group, you have to reboot.
+On Ubuntu, it seems you have to reboot to refresh groups. So, if after reconnecting, the `groups` command does not show the `docker` group, you have to reboot.
 :::
 
 ## Install BuildBox
