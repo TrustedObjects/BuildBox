@@ -70,3 +70,32 @@ function test_project_info_no_project {
 	assertn "${out}"
 }
 bb_declare_test test_project_info_no_project
+
+function test_project_info_image_default {
+	bb_use_test_project foo_project
+	asserteq $? 0
+
+	info=$(bbx project info)
+	asserteq $? 0
+	info="$(unformat_string "${info}")"
+	image=$(echo "${info}" | grep "Image:")
+	asserteq $? 0
+	echo "${image}" | grep -q "buildbox:latest"
+	asserteq $? 0
+}
+bb_declare_test test_project_info_image_default
+
+function test_project_info_image_custom {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	echo "mycompany/buildbox-custom:2.0" > "${BB_PROJECT_PROFILE_DIR}/image"
+
+	info=$(bbx project info)
+	asserteq $? 0
+	info="$(unformat_string "${info}")"
+	image=$(echo "${info}" | grep "Image:")
+	asserteq $? 0
+	echo "${image}" | grep -q "mycompany/buildbox-custom:2.0"
+	asserteq $? 0
+}
+bb_declare_test test_project_info_image_custom

@@ -105,10 +105,35 @@ function bbx_container_name {
 	echo "${BBX_CONTAINER_PREFIX}-${basename}-${hash}"
 }
 
+# Read the image declared for the given project in .bbx/image (single-line
+# file containing the image reference). Falls back to BBX_IMAGE if absent.
+function bbx_read_project_image {
+	local project_root="${1}"
+	local img
+	img=$(grep -v '^[[:space:]]*$' "${project_root}/.bbx/image" 2>/dev/null | head -1)
+	echo "${img:-${BBX_IMAGE}}"
+}
+
 function bbx_ensure_container {
 	local project_root="${1}"
 	local container
 	container=$(bbx_container_name "${project_root}")
+
+	local image
+	image=$(bbx_read_project_image "${project_root}")
+
+	# If the container was started with a different image (e.g. .bbx/image
+	# changed), stop and remove it so it is recreated with the new image.
+	if docker inspect "${container}" > /dev/null 2>&1; then
+		local current_image
+		current_image=$(docker inspect \
+			--format '{{index .Config.Labels "bbx.image"}}' \
+			"${container}" 2>/dev/null)
+		if [ "${current_image}" != "${image}" ]; then
+			>&2 echo "Image changed, recreating container..."
+			bbx_stop_container "${container}" "${project_root}"
+		fi
+	fi
 
 	if ! docker inspect "${container}" > /dev/null 2>&1; then
 		>&2 echo "Starting BuildBox container for ${project_root}..."
@@ -132,12 +157,13 @@ function bbx_ensure_container {
 			--hostname "${hostname}" \
 			--add-host "${hostname}:127.0.0.1" \
 			--label "bbx.project_root=${project_root}" \
+			--label "bbx.image=${image}" \
 			-v "${project_root}:${project_root}" \
 			-v "${BBX_DIR}:${BBX_DIR}" \
 			"${extra_args[@]}" \
 			-e HOST_UID=$(id -u) \
 			-e HOST_GID=$(id -g) \
-			"${BBX_IMAGE}" \
+			"${image}" \
 			sleep infinity > /dev/null 2>&1; do
 			retries=$((retries + 1))
 			if [ ${retries} -ge 5 ]; then

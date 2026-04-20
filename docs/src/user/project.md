@@ -19,7 +19,7 @@ Project packages sources are stored in `src/` at the project root.
 
 To create a new BuildBox project in the current directory (or a given `DIR`), use:
 ```
-bbx init [--target TARGET] [DIR]
+bbx init [--target TARGET] [--image IMAGE] [DIR]
 ```
 
 This creates a Git repository with a default `.bbx/` profile structure and an initial target profile.
@@ -30,6 +30,36 @@ If `--target` is omitted, the target name defaults to `default`.
 ```
 bbx init --target myplatform ~/workspace/my_project
 ```
+
+### Custom Docker image
+
+By default, BuildBox uses the `buildbox:latest` image (or the `BBX_IMAGE` environment variable if set).
+A project may declare a custom Docker image with the `--image` option:
+
+```
+bbx init --image mycompany/buildbox-custom:latest ~/workspace/my_project
+```
+
+This creates a `.bbx/image` file containing the image reference. The file can also be created or updated manually at any time.
+It accepts any Docker image reference: a Docker Hub name, a full registry URI, or a local image name:
+
+```
+# Official BuildBox image
+buildbox:1.2.3
+
+# Docker Hub image
+mycompany/buildbox-custom:latest
+
+# Private registry
+registry.mycompany.com/buildbox-custom:2.1.0
+
+# Local image (not pushed to any registry)
+buildbox-custom:dev
+```
+
+When `.bbx/image` changes (or is added/removed), the next `bbx` command automatically stops the existing container and starts a new one using the updated image. No manual `bbx stop` is required.
+
+The declared image is shown in `bbx project info`.
 
 ## Clone an existing project
 

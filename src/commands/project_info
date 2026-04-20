@@ -59,3 +59,5 @@ echo -e "\e[1mProfile status:\e[0m ${profile_status_txt}"
 targets_txt=$(bb_get_project_targets_formatted 0)
 echo -e "\e[1mTargets:\e[0m ${targets_txt}"
 echo -e "\e[1mCurrent target:\e[0m ${BB_TARGET}"
+image=$(grep -v '^[[:space:]]*$' "${BB_PROJECT_PROFILE_DIR}/image" 2>/dev/null | head -1)
+echo -e "\e[1mImage:\e[0m ${image:-buildbox:latest}"

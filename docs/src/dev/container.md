@@ -50,6 +50,54 @@ Once everything is right, the local image can be pushed remotely to be used by
 BuildBox users. By conviention, used BuildBox sources are tagged with
 `docker_M.m.r`.
 
+## Custom images
+
+A project may use a custom Docker image instead of the official BuildBox image.
+This is the recommended way to add project-specific tools, libraries, or
+configurations that are not part of the standard BuildBox image.
+
+### Creating a custom image
+
+Custom images are built with a standard `Dockerfile` that starts `FROM` the
+official BuildBox image:
+
+```dockerfile
+FROM buildbox:latest
+
+# Example: install a project-specific toolchain
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc-arm-none-eabi \
+    binutils-arm-none-eabi \
+    && rm -rf /var/lib/apt/lists/*
+
+# Example: install Python packages
+RUN pip install --break-system-packages pyserial==3.5
+
+# Example: add custom configuration
+COPY my-tool.conf /etc/my-tool.conf
+```
+
+Build and tag the image:
+
+```bash
+docker build -t mycompany/buildbox-custom:latest path/to/my-dockerfile/
+docker tag mycompany/buildbox-custom:latest mycompany/buildbox-custom:2.1.0
+```
+
+To push to a private registry:
+
+```bash
+docker push mycompany/buildbox-custom:latest
+```
+
+To declare a custom image for a project, see [Custom Docker image](/user/project.md#custom-docker-image).
+
+### Container recreation
+
+When `.bbx/image` changes (or is added/removed), the next `bbx` command
+automatically stops the existing container and starts a new one using the
+updated image. No manual `bbx stop` is required.
+
 ## TTY USB devices
 
 To deal with USB TTY devices from BuildBox container, there are two involved
