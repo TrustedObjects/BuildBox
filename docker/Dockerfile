@@ -55,7 +55,6 @@ RUN apt install --yes \
 
 # Text editors
 RUN apt install --yes \
-	vim \
 	nano
 
 # Utilities
