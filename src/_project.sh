@@ -45,7 +45,7 @@ bb_exportfn bb_detect_project_root
 ## subprocesses to inherit the project context set by the parent). If not set,
 ## walks up from the current working directory to find a .bbx/ directory.
 ## If no project is found, environment is left undefined. No error is raised.
-## @setenv Like bb_set_current_project(), plus target env from .bbx/.state
+## @setenv Like bb_set_current_project(), plus target env from state
 ## @return 0 on success (including "no project found")
 function bb_autodetect_project {
 	# If BB_PROJECT_DIR is already exported and valid, honour it
@@ -72,7 +72,7 @@ bb_exportfn bb_autodetect_project
 ## @setenv `BB_CACHE_DIR`: per-project cache directory
 ## @setenv `BB_TOOLS_DIR`: per-project tools directory
 ## @setenv `BB_TRASH_DIR`: per-project trash directory
-## @setenv and env set by bb_set_project_current_target() via .bbx/.state
+## @setenv and env set by bb_set_project_current_target() via state
 ## @return 0 on success
 function bb_set_current_project {
 	local project_root=${1}
@@ -84,14 +84,14 @@ function bb_set_current_project {
 	export BB_PROJECT="$(basename "${project_root}")"
 	export BB_PROJECT_PROFILE_DIR="${BB_PROJECT_DIR}/.bbx"
 	export BB_PROJECT_SRC_DIR="${BB_PROJECT_DIR}/src"
-	export BB_CACHE_DIR="${BB_PROJECT_PROFILE_DIR}/.cache"
-	export BB_TOOLS_DIR="${BB_PROJECT_PROFILE_DIR}/.tools"
-	export BB_TRASH_DIR="${BB_PROJECT_PROFILE_DIR}/.trash"
+	export BB_CACHE_DIR="${BB_PROJECT_DIR}/cache"
+	export BB_TOOLS_DIR="${BB_PROJECT_DIR}/tools"
+	export BB_TRASH_DIR="${BB_PROJECT_DIR}/trash"
 	mkdir -p "${BB_CACHE_DIR}" "${BB_TOOLS_DIR}" "${BB_TRASH_DIR}"
-	# Restore target from .bbx/.state
-	if [ -f "${BB_PROJECT_PROFILE_DIR}/.state" ]; then
+	# Restore target from state file
+	if [ -f "${BB_PROJECT_DIR}/state" ]; then
 		local target
-		target=$(cat "${BB_PROJECT_PROFILE_DIR}/.state")
+		target=$(cat "${BB_PROJECT_DIR}/state")
 		if [ -n "${target}" ] && [ -f "${BB_PROJECT_PROFILE_DIR}/target.${target}" ]; then
 			bb_set_project_current_target "${target}"
 		else

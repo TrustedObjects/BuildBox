@@ -234,10 +234,10 @@ function bbx_exec {
 	fi
 
 	# Set up named pipes for the host agent (bb_host_send mechanism).
-	# Pipes live under .bbx/tmp/ which is bind-mounted at the same path in the
+	# Pipes live under tmp/ which is bind-mounted at the same path in the
 	# container, so both sides can access them without any path translation.
 	local launcher_id="$$"
-	local tmp_dir="${project_root}/.bbx/tmp"
+	local tmp_dir="${project_root}/tmp"
 	mkdir -p "${tmp_dir}"
 	local send_pipe="${tmp_dir}/launcher-${launcher_id}_send.pipe"
 	local ret_pipe="${tmp_dir}/launcher-${launcher_id}_ret.pipe"
@@ -535,7 +535,7 @@ cmd="${1}"
 # shell function can cd to it without starting a container.
 if [ "${cmd}" = "tg" ]; then
 	project_root=$(bbx_find_project_root) || { >&2 echo "Not in a BuildBox project directory"; exit 1; }
-	target=$(cat "${project_root}/.bbx/.state" 2>/dev/null)
+	target=$(cat "${project_root}/state" 2>/dev/null)
 	[ -z "${target}" ] && { >&2 echo "No current target defined"; exit 1; }
 	target_dir="${project_root}/${target}"
 	[ ! -d "${target_dir}" ] && { >&2 echo "Target ${target} not created yet"; exit 1; }
@@ -554,7 +554,7 @@ if [ "${cmd}" = "pp" ]; then
 fi
 if [ "${cmd}" = "target" ] && [ "${2}" = "goto" ]; then
 	project_root=$(bbx_find_project_root) || { >&2 echo "Not in a BuildBox project directory"; exit 1; }
-	target=$(cat "${project_root}/.bbx/.state" 2>/dev/null)
+	target=$(cat "${project_root}/state" 2>/dev/null)
 	[ -z "${target}" ] && { >&2 echo "No current target defined"; exit 1; }
 	target_dir="${project_root}/${target}"
 	[ ! -d "${target_dir}" ] && { >&2 echo "Target ${target} not created yet"; exit 1; }

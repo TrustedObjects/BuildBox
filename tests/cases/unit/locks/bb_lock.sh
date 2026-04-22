@@ -17,7 +17,7 @@
 function test_bb_lock {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	lock="${BB_PROJECT_DIR}/.bbx/tmp/lock"
+	lock="${BB_PROJECT_DIR}/tmp/lock"
 	bb_lock_acquire "${lock}"
 	asserteq $? 0
 	assertd "${lock}"
@@ -38,7 +38,7 @@ bb_lock_acquire \${1}
 function lock_wait {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	lock="${BB_PROJECT_DIR}/.bbx/tmp/lock"
+	lock="${BB_PROJECT_DIR}/tmp/lock"
 	bb_lock_acquire "${lock}"
 	asserteq $? 0
 	>&2 echo "Acquired"
@@ -83,7 +83,7 @@ fi
 function test_bb_lock_auto_release {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	lock="${BB_PROJECT_DIR}/.bbx/tmp/lock"
+	lock="${BB_PROJECT_DIR}/tmp/lock"
 	echo "${auto_release_test_script}" > "${TMPDIR}/test.sh"
 	chmod +x ${TMPDIR}/test.sh
 	${TMPDIR}/test.sh ${lock}

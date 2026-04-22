@@ -16,7 +16,7 @@
 # <https://www.gnu.org/licenses/>.
 
 ## @brief Initialize a new BuildBox project in the current directory.
-## Creates a git repository and the .bbx/ profile directory.
+## Creates the .bbx/ profile git repository.
 source _pre_cmd
 
 function help {
@@ -98,15 +98,6 @@ if [ $? -ne 0 ]; then
 	>&2 echo "Unable to initialize git repository"
 	exit 1
 fi
-
-# Write .bbx/.gitignore covering volatile profile state only
-cat > "${init_dir}/.bbx/.gitignore" <<EOF
-.state
-.cache/
-.tools/
-.trash/
-tmp/
-EOF
 
 echo "Initialized BuildBox project in ${init_dir}"
 echo "  Profile:  ${init_dir}/.bbx/"

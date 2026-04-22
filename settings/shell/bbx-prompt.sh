@@ -116,7 +116,7 @@ function __bbx_target_goto {
 	local root
 	root="$(__bbx_find_project_root)" || { >&2 echo "Not in a BuildBox project directory"; return 1; }
 	local target
-	target="$(cat "${root}/.bbx/.state" 2>/dev/null)"
+	target="$(cat "${root}/state" 2>/dev/null)"
 	if [ -z "${target}" ]; then
 		>&2 echo "No current target defined"
 		return 1
@@ -261,15 +261,15 @@ function __bbx_undefine_subcmds {
 function __bbx_env_define {
 	local root="${1}"
 	local target=""
-	[ -f "${root}/.bbx/.state" ] && target="$(cat "${root}/.bbx/.state")"
+	[ -f "${root}/state" ] && target="$(cat "${root}/state")"
 
 	export BB_PROJECT_DIR="${root}"
 	export BB_PROJECT="${root##*/}"
 	export BB_PROJECT_PROFILE_DIR="${root}/.bbx"
 	export BB_PROJECT_SRC_DIR="${root}/src"
-	export BB_CACHE_DIR="${root}/.bbx/.cache"
-	export BB_TOOLS_DIR="${root}/.bbx/.tools"
-	export BB_TRASH_DIR="${root}/.bbx/.trash"
+	export BB_CACHE_DIR="${root}/cache"
+	export BB_TOOLS_DIR="${root}/tools"
+	export BB_TRASH_DIR="${root}/trash"
 	__BBX_DEFINED_VARS=(
 		BB_PROJECT_DIR BB_PROJECT BB_PROJECT_PROFILE_DIR BB_PROJECT_SRC_DIR
 		BB_CACHE_DIR BB_TOOLS_DIR BB_TRASH_DIR
@@ -341,10 +341,10 @@ function __bbx_prompt {
 		__bbx_env_undefine
 		__BBX_PREV_ROOT=""
 	elif [ -n "${root}" ] && [ "${BBX_ENV_EXPORT_ENABLED}" != "0" ]; then
-		# Same project: refresh target vars if .bbx/.state changed
+		# Same project: refresh target vars if state changed
 		# (e.g. user ran 'bbx target set' since last prompt).
 		local _bbx_target=""
-		[ -f "${root}/.bbx/.state" ] && _bbx_target="$(cat "${root}/.bbx/.state")"
+		[ -f "${root}/state" ] && _bbx_target="$(cat "${root}/state")"
 		if [ "${_bbx_target}" != "${BB_TARGET:-}" ]; then
 			__bbx_env_undefine
 			__bbx_env_define "${root}"
@@ -357,7 +357,7 @@ function __bbx_prompt {
 	fi
 
 	local target=""
-	[ -f "${root}/.bbx/.state" ] && target="$(cat "${root}/.bbx/.state")"
+	[ -f "${root}/state" ] && target="$(cat "${root}/state")"
 	local running=0
 	local cid
 	cid="$(docker ps --filter "label=bbx.project_root=${root}" --format "{{.ID}}" 2>/dev/null)"

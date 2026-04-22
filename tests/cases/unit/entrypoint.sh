@@ -28,7 +28,7 @@ function test_buildbox_utils_sourcing {
 	# entrypoint_init is run in a subshell, so the environment should not be modified
 	assertz "${BB_PROJECT_DIR}"
 	assertz "${BB_TARGET}"
-	# cd into the project workspace where entrypoint_init wrote .bbx/.state=bar
+	# cd into the project workspace where entrypoint_init wrote state=bar
 	cd "${BB_TEST_WORKSPACE}/foo_project"
 	source buildbox_utils.sh
 	asserteq $? 0

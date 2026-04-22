@@ -29,12 +29,6 @@ function test_project_init {
 	# .bbx/ is the git root; project dir itself is not a git repo
 	assertd "${init_dir}/.bbx/.git"
 	assertnd "${init_dir}/.git"
-	# .gitignore is inside .bbx/ and covers volatile state only
-	assertf "${init_dir}/.bbx/.gitignore"
-	grep -q ".state" "${init_dir}/.bbx/.gitignore"
-	asserteq $? 0
-	grep -q ".cache/" "${init_dir}/.bbx/.gitignore"
-	asserteq $? 0
 }
 bb_declare_test test_project_init
 

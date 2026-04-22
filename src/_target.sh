@@ -45,10 +45,10 @@ function bb_project_target_name_from_file {
 bb_exportfn bb_project_target_name_from_file
 
 ## @fn bb_get_project_current_target
-## Get current project target from .bbx/.state.
+## Get current project target from state file.
 ## @print Target name (empty string if no current target is defined)
 function bb_get_project_current_target {
-	local state_file="${BB_PROJECT_PROFILE_DIR}/.state"
+	local state_file="${BB_PROJECT_DIR}/state"
 	if [ ! -f "${state_file}" ]; then
 		echo ""
 	else
@@ -72,7 +72,7 @@ function bb_reset_project_current_target {
 bb_exportfn bb_reset_project_current_target
 
 ## @fn bb_set_project_current_target
-## Set current project target. Persists selection in .bbx/.state.
+## Set current project target. Persists selection in state.
 ## @param Target name
 ## @env `BB_TARGET`: target name
 ## @env `BB_TARGET_DIR`: target absolute path
@@ -92,7 +92,7 @@ function bb_set_project_current_target {
 	export BB_TARGET_SRC_DIR=${BB_TARGET_DIR}/src
 	export BB_TARGET_BUILD_DIR=${BB_TARGET_DIR}/build
 	# Persist current target selection
-	echo ${target} > "${BB_PROJECT_PROFILE_DIR}/.state"
+	echo ${target} > "${BB_PROJECT_DIR}/state"
 	[ $? -ne 0 ] && return 1
 	bb_set_local_env # for scripts calling bb_set_project_current_target
 	return $?
