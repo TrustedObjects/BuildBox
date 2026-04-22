@@ -226,6 +226,14 @@ function bbx_exec {
 	local project_root="${2}"
 	shift 2
 
+	# --no-tty: skip PTY allocation (non-interactive command execution).
+	# Without it docker adds CRLF to every output line, breaking piped use.
+	local tty_flag="-t"
+	if [ "${1}" = "--no-tty" ]; then
+		tty_flag=""
+		shift
+	fi
+
 	# Set up named pipes for the host agent (bb_host_send mechanism).
 	# Pipes live under .bbx/tmp/ which is bind-mounted at the same path in the
 	# container, so both sides can access them without any path translation.
@@ -242,7 +250,7 @@ function bbx_exec {
 	bbx_host_agent "${send_pipe}" "${ret_pipe}" "${out_file}" &
 	local agent_pid=$!
 
-	docker exec -it \
+	docker exec -i ${tty_flag} \
 		--user buildbox \
 		-w "${project_root}" \
 		-e BB_DIR="${BBX_DIR}" \
@@ -650,5 +658,10 @@ fi
 if ! container=$(bbx_ensure_container "${project_root}"); then
 	exit 1
 fi
-bbx_exec "${container}" "${project_root}" "$@"
+# shell with arguments: non-interactive, no TTY allocation
+if [ "${cmd}" = "shell" ] && [ "$#" -gt 1 ]; then
+	bbx_exec "${container}" "${project_root}" --no-tty "$@"
+else
+	bbx_exec "${container}" "${project_root}" "$@"
+fi
 exit $?

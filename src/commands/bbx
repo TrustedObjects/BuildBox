@@ -81,7 +81,7 @@ function help {
 	echo "Other:"
 	echo "  pkg [PKG...]       Show package information"
 	echo "  env                Show BuildBox environment variables"
-	echo "  shell              Start an interactive shell"
+	echo "  shell [CMD...]     Start an interactive shell, or run CMD in the container"
 }
 
 cmd=${1}
@@ -166,6 +166,10 @@ case "${cmd}" in
 		exit $?
 		;;
 	shell)
+		if [ "$#" -gt 0 ]; then
+			source buildbox_utils.sh 2>/dev/null || true
+			exec "$@"
+		fi
 		ZDOTDIR=${BB_DIR}/settings/zsh/ exec /bin/zsh
 		;;
 	*)

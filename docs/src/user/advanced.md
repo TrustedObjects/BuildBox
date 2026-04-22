@@ -26,6 +26,18 @@ build my_package
 
 The environment is refreshed before every command.
 
+An optional command can be passed to run it directly in the container and return immediately:
+```
+bbx shell <command> [args...]
+```
+
+Examples:
+```bash
+bbx shell bash -c "find /usr/lib -name '*.so' | wc -l"
+```
+
+The container's BuildBox environment (`BB_PROJECT_DIR`, `BB_TARGET`, etc.) is available to the command. For shell constructs (pipes, redirects), pass them to an explicit shell as shown above.
+
 ## Administration mode
 
 Although it is possible to use `sudo` inside BuildBox, you also have an administration shell available.
