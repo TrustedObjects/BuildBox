@@ -61,6 +61,7 @@ module.exports = {
             'package',
             'tool',
             'container',
+            'shell_plugin',
             'utils',
             'advanced',
           ]

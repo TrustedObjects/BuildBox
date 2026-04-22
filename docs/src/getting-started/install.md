@@ -78,9 +78,10 @@ bbx --help
 ```
 
 ::: tip
-Enable the [shell prompt plugin](../user/advanced.md#shell-prompt-integration) to display
-the active BuildBox project and target in your prompt, and to get shell completion for `bbx`
-commands. It takes a single line in your `~/.bashrc` or `~/.zshrc`.
+Enable the [shell plugin](../user/shell_plugin.md) to display the active BuildBox
+project and target in your prompt, get shell completion for `bbx` commands, and
+have BuildBox environment variables automatically exported when you `cd` into a
+project. It takes a single line in your `~/.bashrc` or `~/.zshrc`.
 :::
 
 ## SSH settings

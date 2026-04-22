@@ -43,8 +43,18 @@
 ## 'env' is intentionally excluded as it conflicts with the system command.
 ## Existing aliases and functions with the same name are never overridden.
 ##
-## To disable, set BBX_PROMPT_ENABLED=0 in ~/.config/buildbox/config
-## (or $XDG_CONFIG_HOME/buildbox/config).
+## While inside a project directory, BuildBox project and target environment
+## variables are also exported in the host shell so they can be referenced
+## from any command:
+##   BB_PROJECT_DIR, BB_PROJECT, BB_PROJECT_PROFILE_DIR, BB_PROJECT_SRC_DIR
+##   BB_CACHE_DIR, BB_TOOLS_DIR, BB_TRASH_DIR
+##   BB_TARGET, BB_TARGET_DIR, BB_TARGET_SRC_DIR, BB_TARGET_BUILD_DIR
+## These are unset when leaving the project tree.
+##
+## To disable the whole plugin, set BBX_PROMPT_ENABLED=0 in
+## ~/.config/buildbox/config (or $XDG_CONFIG_HOME/buildbox/config).
+## To keep the prompt and aliases but disable just the environment
+## auto-export, set BBX_ENV_EXPORT_ENABLED=0 in the same file.
 
 # Idempotency guard, safe to source multiple times
 [ -n "${_BBX_PROMPT_LOADED}" ] && return 0
@@ -73,6 +83,7 @@ fi
 
 # Defaults (overridable via user config)
 BBX_PROMPT_ENABLED=1
+BBX_ENV_EXPORT_ENABLED=1
 
 # Load user config if present
 _bbx_config="${XDG_CONFIG_HOME:-${HOME}/.config}/buildbox/config"
@@ -86,6 +97,7 @@ _BBX_SUBCMDS=(fetch build fastbuild clean mrproper pkg shell)
 __BBX_PREV_ROOT=""
 __BBX_DEFINED_SUBCMDS=()
 __BBX_DEFINED_FUNCS=()
+__BBX_DEFINED_VARS=()
 
 # Walk up from $PWD to find the nearest .bbx/ directory.
 # Prints the project root and returns 0 if found, returns 1 otherwise.
@@ -242,6 +254,46 @@ function __bbx_undefine_subcmds {
 	fi
 }
 
+# Export BuildBox project and target environment variables for the given
+# project root. Mirrors bb_set_current_project() in src/_project.sh, minus the
+# container-only build env. Tracks each exported name in __BBX_DEFINED_VARS so
+# __bbx_env_undefine can later unset exactly what was set.
+function __bbx_env_define {
+	local root="${1}"
+	local target=""
+	[ -f "${root}/.bbx/.state" ] && target="$(cat "${root}/.bbx/.state")"
+
+	export BB_PROJECT_DIR="${root}"
+	export BB_PROJECT="${root##*/}"
+	export BB_PROJECT_PROFILE_DIR="${root}/.bbx"
+	export BB_PROJECT_SRC_DIR="${root}/src"
+	export BB_CACHE_DIR="${root}/.bbx/.cache"
+	export BB_TOOLS_DIR="${root}/.bbx/.tools"
+	export BB_TRASH_DIR="${root}/.bbx/.trash"
+	__BBX_DEFINED_VARS=(
+		BB_PROJECT_DIR BB_PROJECT BB_PROJECT_PROFILE_DIR BB_PROJECT_SRC_DIR
+		BB_CACHE_DIR BB_TOOLS_DIR BB_TRASH_DIR
+	)
+	if [ -n "${target}" ]; then
+		export BB_TARGET="${target}"
+		export BB_TARGET_DIR="${root}/${target}"
+		export BB_TARGET_SRC_DIR="${root}/${target}/src"
+		export BB_TARGET_BUILD_DIR="${root}/${target}/build"
+		__BBX_DEFINED_VARS+=(
+			BB_TARGET BB_TARGET_DIR BB_TARGET_SRC_DIR BB_TARGET_BUILD_DIR
+		)
+	fi
+}
+
+# Unset every variable previously exported by __bbx_env_define.
+function __bbx_env_undefine {
+	local var
+	for var in "${__BBX_DEFINED_VARS[@]}"; do
+		unset "${var}"
+	done
+	__BBX_DEFINED_VARS=()
+}
+
 # Wrap the 'bbx' binary to intercept goto subcommands so they can cd in the
 # current shell. All other subcommands are delegated to the real binary via
 # 'command bbx'. Active globally (not just inside a project): the helpers
@@ -276,13 +328,27 @@ function __bbx_prompt {
 	# Detect project enter / leave transitions and update aliases/functions
 	if [ -n "${root}" ] && [ "${root}" != "${__BBX_PREV_ROOT}" ]; then
 		# Entered a project (or switched between projects)
-		[ -n "${__BBX_PREV_ROOT}" ] && __bbx_undefine_subcmds
+		if [ -n "${__BBX_PREV_ROOT}" ]; then
+			__bbx_undefine_subcmds
+			__bbx_env_undefine
+		fi
 		__bbx_define_subcmds
+		[ "${BBX_ENV_EXPORT_ENABLED}" != "0" ] && __bbx_env_define "${root}"
 		__BBX_PREV_ROOT="${root}"
 	elif [ -z "${root}" ] && [ -n "${__BBX_PREV_ROOT}" ]; then
 		# Left the project
 		__bbx_undefine_subcmds
+		__bbx_env_undefine
 		__BBX_PREV_ROOT=""
+	elif [ -n "${root}" ] && [ "${BBX_ENV_EXPORT_ENABLED}" != "0" ]; then
+		# Same project: refresh target vars if .bbx/.state changed
+		# (e.g. user ran 'bbx target set' since last prompt).
+		local _bbx_target=""
+		[ -f "${root}/.bbx/.state" ] && _bbx_target="$(cat "${root}/.bbx/.state")"
+		if [ "${_bbx_target}" != "${BB_TARGET:-}" ]; then
+			__bbx_env_undefine
+			__bbx_env_define "${root}"
+		fi
 	fi
 
 	if [ -z "${root}" ]; then
