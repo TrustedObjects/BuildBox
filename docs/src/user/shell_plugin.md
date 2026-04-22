@@ -37,7 +37,7 @@ to the prompt:
 
 - a green dot means the project container is running,
 - a red dot means it is stopped,
-- the target name after the colon comes from ``state` at the project root.
+- the target name after the colon comes from `state` at the project root.
 
 Outside a project, the segment disappears.
 
@@ -98,16 +98,16 @@ your shell so they can be used in any command:
 | `BB_PROJECT`               | project directory basename                    |
 | `BB_PROJECT_PROFILE_DIR`   | `$BB_PROJECT_DIR/.bbx`                        |
 | `BB_PROJECT_SRC_DIR`       | `$BB_PROJECT_DIR/src`                         |
-| `BB_CACHE_DIR`             | `$BB_PROJECT_PROFILE_DIR/.cache`              |
-| `BB_TOOLS_DIR`             | `$BB_PROJECT_PROFILE_DIR/.tools`              |
-| `BB_TRASH_DIR`             | `$BB_PROJECT_PROFILE_DIR/.trash`              |
-| `BB_TARGET`                | contents of ``state` (current target)    |
+| `BB_CACHE_DIR`             | `$BB_PROJECT_DIR/cache`                       |
+| `BB_TOOLS_DIR`             | `$BB_PROJECT_DIR/tools`                       |
+| `BB_TRASH_DIR`             | `$BB_PROJECT_DIR/trash`                       |
+| `BB_TARGET`                | contents of `state` (current target)     |
 | `BB_TARGET_DIR`            | `$BB_PROJECT_DIR/$BB_TARGET`                  |
 | `BB_TARGET_SRC_DIR`        | `$BB_TARGET_DIR/src`                          |
 | `BB_TARGET_BUILD_DIR`      | `$BB_TARGET_DIR/build`                        |
 
 The target variables are only exported when a current target is set in
-``state` at the project root. If you run `bbx target set <other>` inside the project, the
+`state` at the project root. If you run `bbx target set <other>` inside the project, the
 target variables are refreshed at the next prompt.
 
 When you leave the project tree, all of these variables are unset.
