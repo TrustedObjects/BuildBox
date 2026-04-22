@@ -26,7 +26,8 @@
 
 BBX_IMAGE="${BBX_IMAGE:-buildbox:latest}"
 BBX_CONTAINER_PREFIX="${BBX_CONTAINER_PREFIX:-bbx}"
-BBX_HUB_REPOSITORY="trustedobjects/buildbox"
+BBX_HUB_ORGANIZATION="trustedobjects"
+BBX_HUB_REPOSITORY="${BBX_HUB_ORGANIZATION}/buildbox"
 
 # Installed share directory, replaced at install time by 'make install'.
 # When empty, falls back to source-tree auto-detection.
@@ -52,7 +53,7 @@ function help {
 	echo "  clone <url> [dir]                  Clone a project"
 	echo "  migrate --url U --branch B         Migrate a legacy 1.x project branch"
 	echo "  image list [--all]                 List local images (--all includes Docker Hub)"
-	echo "  image fetch [TAG]                  Pull image from Docker Hub (default: latest)"
+	echo "  image fetch [IMAGE]                Pull image (default: buildbox)"
 	echo "  instance list                      List all running BuildBox instances"
 	echo "  instance stop [--force] [NAME...]  Stop idle instances"
 	echo "  instance upgrade [--image IMG] [NAME...]  Upgrade instances to a local image"
@@ -105,6 +106,26 @@ function bbx_container_name {
 	echo "${BBX_CONTAINER_PREFIX}-${basename}-${hash}"
 }
 
+# Pull an image, resolving short names (no slash) to the Trusted Objects
+# Docker Hub organisation. Full references (org/image or registry/image)
+# are pulled as-is. Short names are also tagged locally under their short
+# name after pulling so subsequent lookups find them without the org prefix.
+function bbx_pull_image {
+	local image="${1}"
+	local name="${image%%:*}"
+	if [[ "${name}" != *"/"* ]]; then
+		local tag="${image#*:}"
+		[ "${tag}" = "${image}" ] && tag="latest"
+		local pull_ref="${BBX_HUB_ORGANIZATION}/${name}:${tag}"
+		>&2 echo "Fetching ${pull_ref} from Docker Hub..."
+		docker pull "${pull_ref}" || return 1
+		docker tag "${pull_ref}" "${image}"
+	else
+		>&2 echo "Fetching ${image}..."
+		docker pull "${image}" || return 1
+	fi
+}
+
 # Read the image declared for the given project in .bbx/image (single-line
 # file containing the image reference). Falls back to BBX_IMAGE if absent.
 function bbx_read_project_image {
@@ -136,6 +157,9 @@ function bbx_ensure_container {
 	fi
 
 	if ! docker inspect "${container}" > /dev/null 2>&1; then
+		if ! docker image inspect "${image}" > /dev/null 2>&1; then
+			bbx_pull_image "${image}" || exit 1
+		fi
 		>&2 echo "Starting BuildBox container for ${project_root}..."
 		local retries=0
 		local extra_args=()
@@ -297,11 +321,9 @@ for t in data.get('results', []):
 }
 
 function bbx_image_fetch {
-	local tag="${1:-latest}"
-	echo "Fetching ${BBX_HUB_REPOSITORY}:${tag} from Docker Hub..."
-	docker pull "${BBX_HUB_REPOSITORY}:${tag}" || return 1
-	docker tag "${BBX_HUB_REPOSITORY}:${tag}" "buildbox:${tag}"
-	echo "Image buildbox:${tag} is ready."
+	local image="${1:-buildbox}"
+	bbx_pull_image "${image}" || return 1
+	echo "Image ${image} is ready."
 }
 
 function bbx_instance_list {
@@ -625,6 +647,8 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
-container=$(bbx_ensure_container "${project_root}")
+if ! container=$(bbx_ensure_container "${project_root}"); then
+	exit 1
+fi
 bbx_exec "${container}" "${project_root}" "$@"
 exit $?

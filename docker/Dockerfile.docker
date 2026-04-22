@@ -1,0 +1,44 @@
+FROM buildbox:latest
+
+###############################################################################
+# Install packages
+###############################################################################
+
+# Containers and isolation
+RUN apt install --yes \
+	uidmap \
+	fuse-overlayfs \
+	slirp4netns
+
+# Docker (from official distribution)
+RUN apt-get install --yes ca-certificates curl gnupg
+RUN install -m 0755 -d /etc/apt/keyrings
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg \
+	| gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+RUN chmod a+r /etc/apt/keyrings/docker.gpg
+RUN echo \
+	"deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+	"$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+	tee /etc/apt/sources.list.d/docker.list > /dev/null
+RUN apt-get update
+RUN apt-get install --yes \
+	docker-ce \
+	docker-ce-cli \
+	containerd.io \
+	docker-buildx-plugin \
+	docker-compose-plugin \
+	docker-ce-rootless-extras
+
+###############################################################################
+# Settings
+###############################################################################
+
+# Docker
+RUN chmod u+s /usr/bin/newuidmap /usr/bin/newgidmap
+RUN echo "kernel.unprivileged_userns_clone=1" >> /etc/sysctl.d/rootless-docker.conf
+RUN echo "net.ipv4.ping_group_range = 0 2147483647" >> /etc/sysctl.d/rootless-docker.conf
+RUN echo "net.ipv4.ip_unprivileged_port_start=0" >> /etc/sysctl.d/rootless-docker.conf
+RUN usermod -aG docker buildbox
+# rootlesskit-docker-proxy is no longer part of Docker distribution, and is in conflict with it if installed from rootlesskit Debian package
+RUN ln -s /usr/bin/docker-proxy /usr/local/bin/rootlesskit-docker-proxy
+

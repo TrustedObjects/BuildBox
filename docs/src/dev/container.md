@@ -21,15 +21,20 @@ Required build files are located in the `docker` directory:
 
 ## Dockerfile
 
-The `Dockerfile` is used to build the container starting from an
-[ArchLinux](https://hub.docker.com/_/archlinux) base.
+The `Dockerfile` builds the base image starting from a
+[Debian 12 slim](https://hub.docker.com/_/debian) base.
 
-In this file, all required packages are declared. The prefered installation
-method is `pacman`, but `pip` is possible for Python packages.
+It installs the common build toolchain (gcc, autotools, cmake, python3, git, …)
+and the BuildBox runtime (user, sudo rules, udev, entrypoint).
+
+A `Dockerfile.docker` variant extends the base image to add a full Docker
+installation inside the container (see [Docker variant image](#docker-variant-image)).
 
 ## Build new image
 
-Every time [Dockerfile](#dockerfile) is updated, a new image has to be built.
+### Base image
+
+Every time `Dockerfile` is updated, a new base image has to be built.
 
 From BuildBox sources `docker/` directory, run:
 ```
@@ -37,18 +42,46 @@ docker build --network="host" --no-cache --pull -t buildbox .
 ```
 
 It creates a `buildbox:latest` image.
-You can tag it with:
+Tag it with the BuildBox version:
 ```
 docker tag buildbox:latest buildbox:M.m.r
 ```
 
-The tag, `M.m.r`, should follow BuildBox last version tag.
+The tag `M.m.r` should follow the BuildBox release tag.
 
 To start testing your changes with the newly created local image, stop any running project container using `bbx stop`, then run `bbx` from the project directory, it will pick up the new image.
 
 Once everything is right, the local image can be pushed remotely to be used by
-BuildBox users. By conviention, used BuildBox sources are tagged with
-`docker_M.m.r`.
+BuildBox users. By convention, the BuildBox sources commit used to build the
+image is tagged `docker_M.m.r`.
+
+### Docker variant image
+
+The Docker variant image (`Dockerfile.docker`) extends the base image with a
+full Docker installation (Docker Engine, Buildx, Compose, rootless extras).
+Its purpose is to allow building Docker images from within a BuildBox container,
+which is required by projects that orchestrate Docker builds as part of their
+build process.
+
+The base image must be built and tagged before building this variant.
+
+From BuildBox sources `docker/` directory, run:
+```
+docker build --network="host" --no-cache -t buildbox-docker -f Dockerfile.docker .
+```
+
+Tag it with the same version as the base image:
+```
+docker tag buildbox-docker:latest buildbox-docker:M.m.r
+```
+
+To push to a registry:
+```
+docker push buildbox-docker:M.m.r
+```
+
+Projects that need Docker-in-Docker declare this image in their `.bbx/image`
+file, or use a derived image that starts `FROM buildbox-docker:M.m.r`.
 
 ## Custom images
 

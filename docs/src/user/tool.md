@@ -69,3 +69,19 @@ The tools appearance order in tools list is used to execute `load.sh` scripts, a
 |---|---|
 | [Docker tools](https://github.com/TrustedObjects/BuildBox-docker-tools) | Manages a Docker daemon in a BuildBox target environment |
 | [Python tools](https://github.com/TrustedObjects/BuildBox-python-tools) | Manage BuildBox targets Python virtual environments |
+
+### BuildBox Docker tools
+
+BuildBox Docker tools manages a Docker daemon inside the BuildBox container,
+allowing projects to build Docker images as part of their build process.
+
+This tool requires a Docker-capable BuildBox image. The project must declare
+the `buildbox-docker` image (or a custom image derived from it) in its
+`.bbx/image` file:
+
+```
+buildbox-docker:M.m.r
+```
+
+See [Docker variant image](/dev/container.md#docker-variant-image) for how to
+build and tag that image.
