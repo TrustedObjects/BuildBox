@@ -17,7 +17,7 @@
 function test_bb_get_packages_with_options {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	packages=$(bb_get_packages_with_options bar)
 	asserteq $? 0

@@ -17,7 +17,7 @@
 function test_bb_build_package_fast_prebuilt {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	# normal build
 	bb_build_package "foo_package@1.0"
@@ -35,7 +35,7 @@ bb_declare_test test_bb_build_package_fast_prebuilt
 function test_bb_build_package_fast_autotools {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	# normal build
 	bb_build_package "bar_package"
@@ -54,7 +54,7 @@ bb_declare_test test_bb_build_package_fast_autotools
 function test_bb_build_package_fast_make {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	assertnf "${BB_TARGET_BUILD_DIR}/bin/baz_package"
 	# normal build
@@ -73,7 +73,7 @@ bb_declare_test test_bb_build_package_fast_make
 function test_bb_build_package_fast_custom {
 	bb_use_test_project bar_project
 	asserteq $? 0
-	bb_set_project_current_target foo ## 2.x
+	bb_set_project_current_target foo
 	asserteq $? 0
 	assertnf "${BB_TARGET_BUILD_DIR}/bin/qux_package"
 	# normal build
@@ -92,7 +92,7 @@ bb_declare_test test_bb_build_package_fast_custom
 function test_bb_build_package_fast_subdir {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	# normal build
 	bb_build_package "subdir/quux_package"
@@ -110,7 +110,7 @@ bb_declare_test test_bb_build_package_fast_subdir
 function test_bb_build_package_fast_unknown {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_build_package_fast "unknown"
 	assertne $? 0
@@ -120,7 +120,7 @@ bb_declare_test test_bb_build_package_fast_unknown
 function test_bb_build_package_fast_first {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_build_package_fast "bar_package"
 	assertne $? 0

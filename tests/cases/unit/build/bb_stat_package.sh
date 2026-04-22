@@ -17,7 +17,7 @@
 function test_bb_stat_package_warning_prebuilt {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_build_package "foo_package@1.0"
 	asserteq $? 0
@@ -30,7 +30,7 @@ bb_declare_test test_bb_stat_package_warning_prebuilt
 function test_bb_stat_package_warning_autotools {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	export WARNINGS="none" # workaround to disable unwanted autoconf warnings
 	bb_build_package "bar_package"
@@ -44,7 +44,7 @@ bb_declare_test test_bb_stat_package_warning_autotools
 function test_bb_stat_package_0_warning_autotools {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	export WARNINGS="none" # workaround to disable unwanted autoconf warnings
 	bb_build_package "bar_package" "-warnings"
@@ -58,7 +58,7 @@ bb_declare_test test_bb_stat_package_0_warning_autotools
 function test_bb_stat_package_installed_autotools {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_build_package "bar_package"
 	asserteq $? 0
@@ -72,7 +72,7 @@ bb_declare_test test_bb_stat_package_installed_autotools
 function test_bb_stat_package_warning_make {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_build_package "baz_package"
 	asserteq $? 0
@@ -85,7 +85,7 @@ bb_declare_test test_bb_stat_package_warning_make
 function test_bb_stat_package_warning_custom {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_build_package "qux_package"
 	asserteq $? 0
@@ -105,7 +105,7 @@ bb_declare_test test_bb_stat_package_warning_custom
 function test_bb_stat_package_unknown_stat {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_build_package "bar_package"
 	asserteq $? 0
@@ -117,7 +117,7 @@ bb_declare_test test_bb_stat_package_unknown_stat
 function test_bb_stat_package_unknown_package {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	data=$(bb_stat_package "unknown" warning)
 	assertne $? 0

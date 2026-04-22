@@ -17,7 +17,7 @@
 function test_bb_set_target_local_env_vars {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	asserteq "${BB_TARGET_VAR_FOO}" "foo"
 	asserteq "${BB_TARGET_VAR_BAR}" "bar"

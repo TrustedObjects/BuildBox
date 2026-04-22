@@ -17,7 +17,7 @@
 function test_bb_set_target_build_local_env {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target foo ## 2.x
+	bb_set_project_current_target foo
 	asserteq $? 0
 	export BB_TARGET="bar"
 	export BB_TARGET_BUILD_DIR="${BB_PROJECT_DIR}/bar/build"

@@ -24,7 +24,7 @@ bb_declare_test test_bb_is_local_env_outdated
 function test_bb_is_local_env_outdated_target {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target foo ## 2.x
+	bb_set_project_current_target foo
 	asserteq $? 0
 	bb_is_local_env_outdated
 	asserteq $? 0
@@ -37,7 +37,7 @@ bb_declare_test test_bb_is_local_env_outdated_target
 function test_bb_is_local_env_outdated_tools {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_is_local_env_outdated
 	asserteq $? 0
@@ -51,7 +51,7 @@ bb_declare_test test_bb_is_local_env_outdated_tools
 function test_bb_is_local_env_outdated_target_vars {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_is_local_env_outdated
 	asserteq $? 0
@@ -66,7 +66,7 @@ bb_declare_test test_bb_is_local_env_outdated_target_vars
 function test_bb_is_local_env_outdated_target_cpu {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_is_local_env_outdated
 	asserteq $? 0

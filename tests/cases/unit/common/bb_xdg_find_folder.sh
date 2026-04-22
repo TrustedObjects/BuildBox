@@ -17,7 +17,7 @@
 function test_bb_xdg_find_folder {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_clone_tool "foo_tool@1.0.2"
 	asserteq $? 0

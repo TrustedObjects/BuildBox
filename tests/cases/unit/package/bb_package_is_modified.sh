@@ -17,7 +17,7 @@
 function test_bb_package_is_modified {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_clone_package "foo_package@1.0"
 	asserteq $? 0
@@ -36,7 +36,7 @@ function test_bb_package_is_modified_unknown {
 	asserteq $? 2
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_package_is_modified "unknown"
 	asserteq $? 2

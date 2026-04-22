@@ -23,7 +23,7 @@ function check_clone {
 
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_clone_package ${package_name}
 	asserteq $? 0
@@ -79,7 +79,7 @@ bb_declare_test test_bb_clone_package_in_subdir
 function test_bb_clone_package_does_not_exist {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_clone_package "unknown"
 	assertne $? 0
@@ -89,7 +89,7 @@ bb_declare_test test_bb_clone_package_does_not_exist
 function test_bb_clone_package_unsupported_protocol {
 	bb_use_test_project bar_project
 	asserteq $? 0
-	bb_set_project_current_target baz ## 2.x
+	bb_set_project_current_target baz
 	asserteq $? 0
 	bb_clone_package "garply_package"
 	assertne $? 0

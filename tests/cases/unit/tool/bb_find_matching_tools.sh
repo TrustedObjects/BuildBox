@@ -17,7 +17,7 @@
 function test_bb_find_matching_tools {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	# search test_tool
 	tools=$(bb_find_matching_tools foo)
@@ -42,7 +42,7 @@ bb_declare_test test_bb_find_matching_tools
 function test_bb_find_matching_tools_no_target_tools {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target foo ## 2.x
+	bb_set_project_current_target foo
 	asserteq $? 0
 	tools=$(bb_find_matching_tools test)
 	asserteq $? 0
@@ -53,7 +53,7 @@ bb_declare_test test_bb_find_matching_tools_no_target_tools
 function test_bb_find_matching_tools_empty_filter {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	tools=$(bb_find_matching_tools)
 	asserteq $? 1

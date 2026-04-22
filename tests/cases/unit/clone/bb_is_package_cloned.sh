@@ -17,7 +17,7 @@
 function test_bb_is_package_cloned {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	# clone some packages
 	bb_clone_package "foo_package@1.0"
@@ -54,7 +54,7 @@ bb_declare_test test_bb_is_package_cloned
 function test_bb_is_package_cloned_unknown_package {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_is_package_cloned "bar" "unknown"
 	asserteq $? 0
@@ -64,7 +64,7 @@ bb_declare_test test_bb_is_package_cloned_unknown_package
 function test_bb_is_package_cloned_unknown_target {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_is_package_cloned "unknown" "foo_package"
 	asserteq $? 0

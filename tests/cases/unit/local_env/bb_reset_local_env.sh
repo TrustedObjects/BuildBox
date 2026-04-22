@@ -19,7 +19,7 @@ function test_bb_reset_local_env {
 	xdg_data_dirs_orig="${XDG_DATA_DIRS}"
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_reset_local_env
 	asserteq $? 0

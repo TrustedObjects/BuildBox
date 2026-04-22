@@ -17,7 +17,7 @@
 function test_bb_load_package {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	# Custom revision
 	bb_load_package "foo_package@1.0"
@@ -54,7 +54,7 @@ function test_bb_load_package_unknown {
 	assertne $? 0
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	bb_load_package "unknown"
 	assertne $? 0

@@ -17,7 +17,7 @@
 function test_bb_get_package_path {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	pkg_path=$(bb_get_package_path "foo_package")
 	asserteq $? 0

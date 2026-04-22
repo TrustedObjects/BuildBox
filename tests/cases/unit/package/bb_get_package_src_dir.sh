@@ -17,7 +17,7 @@
 function test_bb_get_package_src_dir {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	# Cloned package
 	bb_clone_package "foo_package@1.0"

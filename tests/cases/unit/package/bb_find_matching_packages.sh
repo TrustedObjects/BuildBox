@@ -17,7 +17,7 @@
 function test_bb_find_matching_packages {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	packages=$(bb_find_matching_packages 0 "package")
 	asserteq $? 0
@@ -39,7 +39,7 @@ bb_declare_test test_bb_find_matching_packages
 function test_bb_find_matching_packages_no_match {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	packages=$(bb_find_matching_packages 0 "nomatch")
 	asserteq $? 0
@@ -56,7 +56,7 @@ bb_declare_test test_bb_find_matching_packages_target_not_set
 function test_bb_find_matching_packages_order {
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	# Without options
 	packages=$(bb_find_matching_packages 0 "package")

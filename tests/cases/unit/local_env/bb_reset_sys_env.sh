@@ -19,7 +19,7 @@ function test_bb_reset_sys_env {
 	xdg_data_dirs_orig="${XDG_DATA_DIRS}"
 	bb_use_test_project foo_project
 	asserteq $? 0
-	bb_set_project_current_target bar ## 2.x
+	bb_set_project_current_target bar
 	asserteq $? 0
 	assertne "${PATH}" "${path_orig}"
 	assertne "${XDG_DATA_DIRS}" "${xdg_data_dirs_orig}"
