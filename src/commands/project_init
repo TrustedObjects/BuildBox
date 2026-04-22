@@ -64,21 +64,12 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-if [ -d "${init_dir}/.bbx" ]; then
+if [ -d "${init_dir}/.bbx" ] && git -C "${init_dir}/.bbx" rev-parse --git-dir > /dev/null 2>&1; then
 	>&2 echo "Already a BuildBox project: ${init_dir}"
 	exit 1
 fi
 
-mkdir -p "${init_dir}"
-
-# Initialize git repository if needed
-if ! git -C "${init_dir}" rev-parse --git-dir > /dev/null 2>&1; then
-	git -C "${init_dir}" init
-	if [ $? -ne 0 ]; then
-		>&2 echo "Unable to initialize git repository"
-		exit 1
-	fi
-fi
+mkdir -p "${init_dir}/.bbx"
 
 # Create .bbx/ structure
 mkdir -p "${init_dir}/.bbx/packages"
@@ -101,13 +92,21 @@ if [ -n "${image_name}" ]; then
 	echo "${image_name}" > "${init_dir}/.bbx/image"
 fi
 
-# Add gitignore entries to the project root
-gitignore="${init_dir}/.gitignore"
-for entry in "src/" "${target_name}/" ".bbx/.state" ".bbx/.cache/" ".bbx/.tools/" ".bbx/.trash/" ".bbx/tmp/"; do
-	if ! grep -qxF "${entry}" "${gitignore}" 2>/dev/null; then
-		echo "${entry}" >> "${gitignore}"
-	fi
-done
+# Initialize git repository inside .bbx/
+git -C "${init_dir}/.bbx" init
+if [ $? -ne 0 ]; then
+	>&2 echo "Unable to initialize git repository"
+	exit 1
+fi
+
+# Write .bbx/.gitignore covering volatile profile state only
+cat > "${init_dir}/.bbx/.gitignore" <<EOF
+.state
+.cache/
+.tools/
+.trash/
+tmp/
+EOF
 
 echo "Initialized BuildBox project in ${init_dir}"
 echo "  Profile:  ${init_dir}/.bbx/"

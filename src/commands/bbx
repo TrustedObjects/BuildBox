@@ -50,7 +50,6 @@ function help {
 	echo "Project commands:"
 	echo "  init               Initialize a new BuildBox project"
 	echo "  clone <url> [dir]  Clone an existing project"
-	echo "  migrate            Migrate a legacy 1.x project branch to 2.x"
 	echo "  project info       Show project information"
 	echo "  project clean      Clean all targets built files"
 	echo "  project mrproper   Wipe all sources and built files"
@@ -94,10 +93,6 @@ case "${cmd}" in
 		;;
 	init)
 		project_init "$@"
-		exit $?
-		;;
-	migrate)
-		project_migrate "$@"
 		exit $?
 		;;
 	clone)

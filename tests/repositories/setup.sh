@@ -34,11 +34,17 @@ restore_bare() {
 	git -C "${dest}" config remote.origin.fetch '+refs/heads/*:refs/heads/*'
 }
 
-restore_working() {
-	local name="${1}"
-	local dest="${REPOS_DIR}/${2:-${name}}"
-	[ -d "${dest}/.git" ] && return 0
-	git clone --local "${BUNDLES_DIR}/${name}.bundle" "${dest}" --no-single-branch 2>/dev/null
+# Restore a project fixture: creates a project directory with the profile
+# bundle cloned into .bbx/.
+restore_project_fixture() {
+	local bundle_name="${1}"
+	local dir_name="${2:-${bundle_name}}"
+	local dest="${REPOS_DIR}/${dir_name}"
+	[ -d "${dest}/.bbx/.git" ] && return 0
+	mkdir -p "${dest}"
+	git clone --local "${BUNDLES_DIR}/${bundle_name}.bundle" "${dest}/.bbx" --no-single-branch 2>/dev/null
+	# Remove origin so fixtures have no remote (mirrors a project after migrate/init)
+	git -C "${dest}/.bbx" remote remove origin 2>/dev/null || true
 }
 
 # Remote bare repos — clone sources for package/tool tests
@@ -53,17 +59,8 @@ restore_bare remote_foo_tool    foo_tool
 restore_bare remote_bar_tool    bar_tool
 restore_bare remote_baz_tool    baz_tool
 restore_bare remote_qux_tool    qux_tool
-restore_bare remote_projects    projects
+restore_bare foo_profile        foo_profile
 
-# Project fixtures — working copies used by tests
-restore_working foo_project
-restore_working bar_project
-restore_working projects
-
-# Initialize the 'packages' submodule in the projects fixture using the local bare repo
-if [ ! -d "${REPOS_DIR}/projects/packages/.git" ]; then
-	git -C "${REPOS_DIR}/projects" config submodule.packages.url \
-		"file://${REPOS_DIR}/remote/packages.git"
-	git -C "${REPOS_DIR}/projects" \
-		-c protocol.file.allow=always submodule update --init
-fi
+# Project fixtures — project directories with profile cloned into .bbx/
+restore_project_fixture foo_profile foo_project
+restore_project_fixture bar_profile bar_project

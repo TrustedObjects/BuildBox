@@ -5,9 +5,9 @@ It encompasses all the software and hardware targets for a particular delivery.
 
 ## Project profile
 
-A project is a Git repository containing a `.bbx/` profile directory.
+A project has a `.bbx/` directory which is a standalone Git repository containing the project profile.
 
-The project profile is available at `.bbx/` in the project root directory.
+The project directory itself is not a Git repository. Only `.bbx/` is tracked by Git.
 
 A project then defines one or several targets in its profile directory, in files prefixed with `target.`. More information about targets is available on [targets documentation](target.md).
 
@@ -22,7 +22,8 @@ To create a new BuildBox project in the current directory (or a given `DIR`), us
 bbx init [--target TARGET] [--image IMAGE] [DIR]
 ```
 
-This creates a Git repository with a default `.bbx/` profile structure and an initial target profile.
+This creates a `.bbx/` profile directory with its own Git repository, and an initial target profile.
+The project directory itself is not a Git repository.
 If `--target` is omitted, the target name defaults to `default`.
 
 ### Example
@@ -63,34 +64,19 @@ The declared image is shown in `bbx project info`.
 
 ## Clone an existing project
 
-To clone an existing BuildBox 2.x project, use:
+To clone an existing BuildBox project, use:
 ```
 bbx clone <url> [dir]
 ```
 
-This clones the project Git repository with all its submodules.
+The URL points to the profile repository (the content that lives in `.bbx/`).
+`bbx clone` creates the project directory and clones the profile repository into `<dir>/.bbx/`.
 If `dir` is omitted, the directory is named after the repository.
 
 ### Example
 
 ```
-bbx clone ssh://git@server/my_project.git
-```
-
-## Migrate a legacy project
-
-To migrate a BuildBox 1.x project branch to a new standalone 2.x project, use:
-```
-bbx migrate --url <legacy_url> --branch <branch> [--output <dir>]
-```
-
-This clones the legacy project branch, renames the branch to `master`, moves all profile files into `.bbx/`, and creates a `.gitignore` covering BuildBox generated directories.
-The packages submodule, if any, is moved from `packages` to `.bbx/packages`.
-
-### Example
-
-```
-bbx migrate --url ssh://git@server/projects.git --branch my_project
+bbx clone ssh://git@server/my_project_profile.git
 ```
 
 ## Get project information
@@ -124,7 +110,14 @@ This only updates the project profile, and does not update the packages themselv
 
 ## Commit project profile
 
-The project directory is a Git repository, so you can use Git directly to commit and push profile changes.
+The project profile lives in `.bbx/`, which is a standalone Git repository. To commit and push profile changes, navigate to profile first:
+
+```bash
+bbx project goto -p
+git add .
+git commit -m "Update profile"
+git push
+```
 
 Don't forget the project profile may have a `packages` submodule, which may need to be committed if you made changes to it.
 

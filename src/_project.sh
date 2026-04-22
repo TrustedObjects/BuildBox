@@ -150,11 +150,12 @@ bb_exportfn bb_is_project_profile_clean
 ## @return 0 on success, else error
 function bb_project_get_branch_name () {
 	local project_root=${1:-${BB_PROJECT_DIR}}
-	if [ ! -d "${project_root}/.git" ] && ! git -C "${project_root}" rev-parse --git-dir > /dev/null 2>&1; then
+	local profile_dir="${project_root}/.bbx"
+	if ! git -C "${profile_dir}" rev-parse --git-dir > /dev/null 2>&1; then
 		return 1
 	fi
 	local branch
-	branch=$(git -C "${project_root}" branch --contains "$(git -C "${project_root}" rev-parse HEAD)" 2>/dev/null | grep -v HEAD | awk 'END {print $NF}')
+	branch=$(git -C "${profile_dir}" branch --contains "$(git -C "${profile_dir}" rev-parse HEAD)" 2>/dev/null | grep -v HEAD | awk 'END {print $NF}')
 	if [ $? -eq 0 ]; then
 		echo "${branch}"
 	fi
@@ -167,11 +168,11 @@ bb_exportfn bb_project_get_branch_name
 ## @print Tag name
 ## @return 0 on success, else error
 function bb_project_get_tag () {
-	if ! git -C "${BB_PROJECT_DIR}" rev-parse --git-dir > /dev/null 2>&1; then
+	if ! git -C "${BB_PROJECT_PROFILE_DIR}" rev-parse --git-dir > /dev/null 2>&1; then
 		return 1
 	fi
 	local tag
-	tag="$(git -C "${BB_PROJECT_DIR}" describe --tags 2>/dev/null)"
+	tag="$(git -C "${BB_PROJECT_PROFILE_DIR}" describe --tags 2>/dev/null)"
 	if [ $? -eq 0 ]; then
 		echo "${tag}"
 	fi
@@ -200,7 +201,7 @@ function bb_archive_prebuilt_target {
 		return 1
 	fi
 	if [ -n "${BB_PREBUILT_ONLY_TAGGED}" ] && [ "${BB_PREBUILT_ONLY_TAGGED}" -eq 1 ]; then
-		if ! git -C "${BB_PROJECT_DIR}" describe --exact-match --tags > /dev/null 2>&1; then
+		if ! git -C "${BB_PROJECT_PROFILE_DIR}" describe --exact-match --tags > /dev/null 2>&1; then
 			>&2 echo "The project have to be tagged to make a prebuilt"
 			return 1
 		fi

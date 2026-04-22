@@ -51,7 +51,6 @@ function help {
 	echo "Host-only commands:"
 	echo "  init [DIR]                         Initialize a new BuildBox project"
 	echo "  clone <url> [dir]                  Clone a project"
-	echo "  migrate --url U --branch B         Migrate a legacy 1.x project branch"
 	echo "  image list [--all]                 List local images (--all includes Docker Hub)"
 	echo "  image fetch [IMAGE]                Pull image (default: buildbox)"
 	echo "  instance list                      List all running BuildBox instances"
@@ -585,16 +584,11 @@ case "${cmd}" in
 		;;
 	clone)
 		shift
-		git clone --recurse-submodules "$@"
+		url="${1}"
+		dir="${2:-$(basename "${url}" .git)}"
+		mkdir -p "${dir}"
+		git clone --quiet --recurse-submodules "${url}" "${dir}/.bbx"
 		exit $?
-		;;
-	migrate)
-		shift
-		# Migration does not require a running container, the output dir
-		# does not exist yet, so there is no project root to find.
-		export PRE_CMD="bbx migrate $*"
-		export PATH="${BBX_LIB}:${BBX_COMMANDS}:${PATH}"
-		exec "${BBX_COMMANDS}/project_migrate" "$@"
 		;;
 	stop)
 		# Stop the container for the current project

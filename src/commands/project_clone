@@ -31,24 +31,24 @@ if [ $# -eq 0 ] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
 fi
 
 url="$1"
-dir="$2"
+dir="${2:-$(basename "${url}" .git)}"
 
-git clone --quiet --recurse-submodules "${url}" ${dir:+"${dir}"}
+created_dir=0
+if [ ! -d "${dir}" ]; then
+	mkdir -p "${dir}"
+	created_dir=1
+fi
+
+git clone --quiet --recurse-submodules "${url}" "${dir}/.bbx"
 if [ $? -ne 0 ]; then
+	[ ${created_dir} -eq 1 ] && rmdir "${dir}" 2>/dev/null || true
 	>&2 echo "Unable to clone project"
 	exit 1
 fi
 
-if [ -n "${dir}" ]; then
-	clone_dir="${dir}"
-else
-	clone_dir="$(basename "${url}" .git)"
+if ! find "${dir}/.bbx" -maxdepth 1 -name "target.*" 2>/dev/null | grep -q .; then
+	>&2 echo "Warning: cloned repository does not appear to be a BuildBox profile (no target.* file found)."
 fi
 
-if [ ! -d "${clone_dir}/.bbx" ]; then
-	>&2 echo "Warning: cloned repository does not contain a .bbx/ profile directory."
-	>&2 echo "This may not be a BuildBox 2.x project."
-fi
-
-echo "Project cloned into ${clone_dir}"
-echo "Run 'cd ${clone_dir}' then 'bbx target set <TARGET>' to get started."
+echo "Project cloned into ${dir}"
+echo "Run 'cd ${dir}' then 'bbx target set <TARGET>' to get started."

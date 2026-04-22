@@ -15,17 +15,19 @@
 # <https://www.gnu.org/licenses/>.
 
 ## Tests for 'bbx clone' (project_clone sbin command).
-## In 2.x a project is a standalone git repo with .bbx/. Cloning means
-## git-cloning such a repo. The local fixture repos are used as remotes.
+## A profile is a standalone git repo. Cloning means creating a project
+## directory and git-cloning the profile repo into <dir>/.bbx/.
 
 function test_project_clone {
 	local clone_dir="${BB_TEST_WORKSPACE}/cloned_foo_$$"
-	bbx clone "file://${BB_DIR}/tests/repositories/foo_project" "${clone_dir}"
+	bbx clone "file://${BB_DIR}/tests/repositories/remote/foo_profile.git" "${clone_dir}"
 	asserteq $? 0
 	assertd "${clone_dir}"
 	assertd "${clone_dir}/.bbx"
+	assertd "${clone_dir}/.bbx/.git"
 	assertf "${clone_dir}/.bbx/target.foo"
 	assertf "${clone_dir}/.bbx/target.bar"
+	assertnd "${clone_dir}/.git"
 	assertnd "${clone_dir}/src"
 	assertnd "${clone_dir}/foo"
 	assertnd "${clone_dir}/bar"
@@ -34,7 +36,7 @@ bb_declare_test test_project_clone
 
 function test_project_clone_no_err_log {
 	local clone_dir="${BB_TEST_WORKSPACE}/cloned_noerr_$$"
-	out=$(bbx clone "file://${BB_DIR}/tests/repositories/foo_project" "${clone_dir}" 2>&1 >/dev/null)
+	out=$(bbx clone "file://${BB_DIR}/tests/repositories/remote/foo_profile.git" "${clone_dir}" 2>&1 >/dev/null)
 	asserteq $? 0
 	assertz "${out}"
 }

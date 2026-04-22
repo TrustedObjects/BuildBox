@@ -30,9 +30,9 @@ tag=$(bb_project_get_tag)
 if [ -z "${tag}" ]; then
 	tag="(no tag)"
 fi
-if git -C "${BB_PROJECT_DIR}" rev-parse HEAD > /dev/null 2>&1; then
-	changeset=$(git -C "${BB_PROJECT_DIR}" rev-parse HEAD)
-	changeset_age=$(git -C "${BB_PROJECT_DIR}" show -s --format=%cr HEAD)
+if git -C "${BB_PROJECT_PROFILE_DIR}" rev-parse HEAD > /dev/null 2>&1; then
+	changeset=$(git -C "${BB_PROJECT_PROFILE_DIR}" rev-parse HEAD)
+	changeset_age=$(git -C "${BB_PROJECT_PROFILE_DIR}" show -s --format=%cr HEAD)
 else
 	changeset="(not a git repository)"
 	changeset_age=""
