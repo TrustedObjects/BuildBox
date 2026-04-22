@@ -48,3 +48,32 @@ function test_project_clone_bad_url {
 	assertn "${out}"
 }
 bb_declare_test test_project_clone_bad_url
+
+function test_project_clone_with_branch {
+	local remote_dir="${BB_TEST_WORKSPACE}/remote_clone_branch_$$"
+	git clone --bare --local "file://${BB_DIR}/tests/repositories/remote/foo_profile.git" "${remote_dir}" 2>/dev/null
+	git -C "${remote_dir}" branch dev
+	local clone_dir="${BB_TEST_WORKSPACE}/cloned_branch_$$"
+	bbx clone -b dev "file://${remote_dir}" "${clone_dir}"
+	asserteq $? 0
+	assertd "${clone_dir}/.bbx/.git"
+	local branch
+	branch=$(git -C "${clone_dir}/.bbx" rev-parse --abbrev-ref HEAD)
+	asserteq "${branch}" "dev"
+	rm -rf "${remote_dir}"
+}
+bb_declare_test test_project_clone_with_branch
+
+function test_project_clone_bad_branch {
+	local clone_dir="${BB_TEST_WORKSPACE}/cloned_bad_branch_$$"
+	out=$(bbx clone -b nonexistent_branch_$$ "file://${BB_DIR}/tests/repositories/remote/foo_profile.git" "${clone_dir}" 2>&1 >/dev/null)
+	assertne $? 0
+	assertn "${out}"
+}
+bb_declare_test test_project_clone_bad_branch
+
+function test_project_clone_branch_missing_arg {
+	out=$(bbx clone --branch 2>&1)
+	assertne $? 0
+}
+bb_declare_test test_project_clone_branch_missing_arg

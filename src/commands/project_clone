@@ -19,19 +19,58 @@
 source _pre_cmd
 
 function help {
-	>&2 echo "Usage: project_clone <url> [<dir>]"
+	>&2 echo "Usage: project_clone [-b BRANCH] <url> [<dir>]"
 	>&2 echo ""
-	>&2 echo "  url   Git URL of the project to clone"
-	>&2 echo "  dir   Local directory name (default: inferred from url)"
+	>&2 echo "  url        Git URL of the project to clone"
+	>&2 echo "  dir        Local directory name (default: inferred from url)"
+	>&2 echo "  -b BRANCH  Branch to clone (default: repository default branch)"
 }
 
-if [ $# -eq 0 ] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+branch=""
+url=""
+dir=""
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+	-b|--branch)
+		shift
+		if [ -z "$1" ]; then
+			help
+			exit 1
+		fi
+		branch="$1"
+		;;
+	--help|-h)
+		help
+		exit 0
+		;;
+	-*)
+		help
+		exit 1
+		;;
+	*)
+		if [ -z "${url}" ]; then
+			url="$1"
+		elif [ -z "${dir}" ]; then
+			dir="$1"
+		else
+			help
+			exit 1
+		fi
+		;;
+	esac
+	shift
+done
+
+if [ -z "${url}" ]; then
 	help
 	exit 0
 fi
 
-url="$1"
-dir="${2:-$(basename "${url}" .git)}"
+dir="${dir:-$(basename "${url}" .git)}"
+
+branch_arg=""
+[ -n "${branch}" ] && branch_arg="--branch ${branch}"
 
 created_dir=0
 if [ ! -d "${dir}" ]; then
@@ -39,7 +78,7 @@ if [ ! -d "${dir}" ]; then
 	created_dir=1
 fi
 
-git clone --quiet --recurse-submodules "${url}" "${dir}/.bbx"
+git clone --quiet --recurse-submodules ${branch_arg} "${url}" "${dir}/.bbx"
 if [ $? -ne 0 ]; then
 	[ ${created_dir} -eq 1 ] && rmdir "${dir}" 2>/dev/null || true
 	>&2 echo "Unable to clone project"

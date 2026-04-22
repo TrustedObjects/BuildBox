@@ -66,17 +66,19 @@ The declared image is shown in `bbx project info`.
 
 To clone an existing BuildBox project, use:
 ```
-bbx clone <url> [dir]
+bbx clone [-b BRANCH] <url> [dir]
 ```
 
 The URL points to the profile repository (the content that lives in `.bbx/`).
 `bbx clone` creates the project directory and clones the profile repository into `<dir>/.bbx/`.
 If `dir` is omitted, the directory is named after the repository.
+Use `-b` to check out a specific branch (default: the repository's default branch).
 
-### Example
+### Examples
 
 ```
 bbx clone ssh://git@server/my_project_profile.git
+bbx clone -b dev ssh://git@server/my_project_profile.git my_project
 ```
 
 ## Get project information

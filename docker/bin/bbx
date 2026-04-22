@@ -50,7 +50,7 @@ function help {
 	echo ""
 	echo "Host-only commands:"
 	echo "  init [DIR]                         Initialize a new BuildBox project"
-	echo "  clone <url> [dir]                  Clone a project"
+	echo "  clone [-b BRANCH] <url> [dir]      Clone a project"
 	echo "  image list [--all]                 List local images (--all includes Docker Hub)"
 	echo "  image fetch [IMAGE]                Pull image (default: buildbox)"
 	echo "  instance list                      List all running BuildBox instances"
@@ -584,10 +584,21 @@ case "${cmd}" in
 		;;
 	clone)
 		shift
-		url="${1}"
-		dir="${2:-$(basename "${url}" .git)}"
+		branch=""
+		url=""
+		dir=""
+		while [ $# -gt 0 ]; do
+			case "$1" in
+			-b|--branch) shift; branch="$1" ;;
+			*) [ -z "${url}" ] && url="$1" || dir="$1" ;;
+			esac
+			shift
+		done
+		dir="${dir:-$(basename "${url}" .git)}"
+		branch_arg=""
+		[ -n "${branch}" ] && branch_arg="--branch ${branch}"
 		mkdir -p "${dir}"
-		git clone --quiet --recurse-submodules "${url}" "${dir}/.bbx"
+		git clone --quiet --recurse-submodules ${branch_arg} "${url}" "${dir}/.bbx"
 		exit $?
 		;;
 	stop)

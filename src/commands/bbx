@@ -49,7 +49,7 @@ function help {
 	echo ""
 	echo "Project commands:"
 	echo "  init               Initialize a new BuildBox project"
-	echo "  clone <url> [dir]  Clone an existing project"
+	echo "  clone [-b BRANCH] <url> [dir]  Clone an existing project"
 	echo "  project info       Show project information"
 	echo "  project clean      Clean all targets built files"
 	echo "  project mrproper   Wipe all sources and built files"
