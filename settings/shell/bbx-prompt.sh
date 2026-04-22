@@ -99,6 +99,19 @@ __BBX_DEFINED_SUBCMDS=()
 __BBX_DEFINED_FUNCS=()
 __BBX_DEFINED_VARS=()
 
+# Read the current target name: state file first, then default_target symlink.
+function __bbx_read_target {
+	local root="${1}"
+	local target=""
+	[ -f "${root}/state" ] && target="$(cat "${root}/state")"
+	if [ -z "${target}" ] && [ -L "${root}/.bbx/default_target" ]; then
+		local link
+		link="$(readlink "${root}/.bbx/default_target" 2>/dev/null)"
+		target="${link#target.}"
+	fi
+	echo "${target}"
+}
+
 # Walk up from $PWD to find the nearest .bbx/ directory.
 # Prints the project root and returns 0 if found, returns 1 otherwise.
 function __bbx_find_project_root {
@@ -116,7 +129,7 @@ function __bbx_target_goto {
 	local root
 	root="$(__bbx_find_project_root)" || { >&2 echo "Not in a BuildBox project directory"; return 1; }
 	local target
-	target="$(cat "${root}/state" 2>/dev/null)"
+	target="$(__bbx_read_target "${root}")"
 	if [ -z "${target}" ]; then
 		>&2 echo "No current target defined"
 		return 1
@@ -260,8 +273,8 @@ function __bbx_undefine_subcmds {
 # __bbx_env_undefine can later unset exactly what was set.
 function __bbx_env_define {
 	local root="${1}"
-	local target=""
-	[ -f "${root}/state" ] && target="$(cat "${root}/state")"
+	local target
+	target="$(__bbx_read_target "${root}")"
 
 	export BB_PROJECT_DIR="${root}"
 	export BB_PROJECT="${root##*/}"
@@ -343,8 +356,8 @@ function __bbx_prompt {
 	elif [ -n "${root}" ] && [ "${BBX_ENV_EXPORT_ENABLED}" != "0" ]; then
 		# Same project: refresh target vars if state changed
 		# (e.g. user ran 'bbx target set' since last prompt).
-		local _bbx_target=""
-		[ -f "${root}/state" ] && _bbx_target="$(cat "${root}/state")"
+		local _bbx_target
+		_bbx_target="$(__bbx_read_target "${root}")"
 		if [ "${_bbx_target}" != "${BB_TARGET:-}" ]; then
 			__bbx_env_undefine
 			__bbx_env_define "${root}"
@@ -356,8 +369,8 @@ function __bbx_prompt {
 		return 0
 	fi
 
-	local target=""
-	[ -f "${root}/state" ] && target="$(cat "${root}/state")"
+	local target
+	target="$(__bbx_read_target "${root}")"
 	local running=0
 	local cid
 	cid="$(docker ps --filter "label=bbx.project_root=${root}" --format "{{.ID}}" 2>/dev/null)"

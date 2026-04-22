@@ -89,5 +89,13 @@ if ! find "${dir}/.bbx" -maxdepth 1 -name "target.*" 2>/dev/null | grep -q .; th
 	>&2 echo "Warning: cloned repository does not appear to be a BuildBox profile (no target.* file found)."
 fi
 
+# Write initial state from the default_target symlink so the shell plugin
+# shows the target name without needing to start the container first.
+if [ -L "${dir}/.bbx/default_target" ]; then
+	link="$(readlink "${dir}/.bbx/default_target")"
+	default_target="${link#target.}"
+	[ -n "${default_target}" ] && echo "${default_target}" > "${dir}/state"
+fi
+
 echo "Project cloned into ${dir}"
 echo "Run 'cd ${dir}' then 'bbx target set <TARGET>' to get started."

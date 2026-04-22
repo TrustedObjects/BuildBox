@@ -92,6 +92,10 @@ if [ -n "${image_name}" ]; then
 	echo "${image_name}" > "${init_dir}/.bbx/image"
 fi
 
+# Record initial target selection so the shell plugin shows the target
+# name without needing to start the container first.
+echo "${target_name}" > "${init_dir}/state"
+
 # Initialize git repository inside .bbx/
 git -C "${init_dir}/.bbx" init
 if [ $? -ne 0 ]; then

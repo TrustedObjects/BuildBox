@@ -31,6 +31,11 @@ function test_project_clone {
 	assertnd "${clone_dir}/src"
 	assertnd "${clone_dir}/foo"
 	assertnd "${clone_dir}/bar"
+	# state written immediately so shell plugin shows target without container start
+	assertf "${clone_dir}/state"
+	local stored_target
+	stored_target=$(cat "${clone_dir}/state")
+	assertn "${stored_target}"
 }
 bb_declare_test test_project_clone
 

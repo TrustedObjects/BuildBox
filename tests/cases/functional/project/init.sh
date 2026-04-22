@@ -29,6 +29,11 @@ function test_project_init {
 	# .bbx/ is the git root; project dir itself is not a git repo
 	assertd "${init_dir}/.bbx/.git"
 	assertnd "${init_dir}/.git"
+	# state written immediately so shell plugin shows target without container start
+	assertf "${init_dir}/state"
+	local stored_target
+	stored_target=$(cat "${init_dir}/state")
+	asserteq "${stored_target}" "default"
 }
 bb_declare_test test_project_init
 

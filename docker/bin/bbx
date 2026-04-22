@@ -599,7 +599,13 @@ case "${cmd}" in
 		[ -n "${branch}" ] && branch_arg="--branch ${branch}"
 		mkdir -p "${dir}"
 		git clone --quiet --recurse-submodules ${branch_arg} "${url}" "${dir}/.bbx"
-		exit $?
+		if [ $? -ne 0 ]; then exit 1; fi
+		if [ -L "${dir}/.bbx/default_target" ]; then
+			link="$(readlink "${dir}/.bbx/default_target")"
+			default_target="${link#target.}"
+			[ -n "${default_target}" ] && echo "${default_target}" > "${dir}/state"
+		fi
+		exit 0
 		;;
 	stop)
 		# Stop the container for the current project
