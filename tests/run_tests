@@ -20,11 +20,7 @@ export BB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null 2>&1 && pwd)
 export BB_BINDIR=${BB_DIR}/src/commands:${BB_DIR}/src
 export PATH=${BB_BINDIR}:${PATH}
 export DEFAULT_PATH=${PATH}
-if [[ "${XDG_DATA_DIRS}" == "" ]]; then
-	export DEFAULT_XDG_DATA_DIRS="/usr/local/share/:/usr/share/"
-else
-	export DEFAULT_XDG_DATA_DIRS=${XDG_DATA_DIRS}
-fi
+export DEFAULT_XDG_DATA_DIRS="${XDG_DATA_DIRS}"
 
 export BB_TEST_REPOSITORY_URI="file://${BB_DIR}/tests/repositories/remote"
 
