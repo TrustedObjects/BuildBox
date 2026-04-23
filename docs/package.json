@@ -9,7 +9,7 @@
   "repository": "/buildbox_doc",
   "scripts": {
     "dev": "vitepress dev src",
-    "build": "vitepress build src"
+    "build": "src/dev/generate_apidoc.sh ../src/ && vitepress build src"
   },
   "devDependencies": {
     "vitepress": "^1.6.3",
