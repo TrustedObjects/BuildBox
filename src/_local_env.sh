@@ -25,7 +25,7 @@
 if [ -z "${DEFAULT_PATH}" ]; then
 	export DEFAULT_PATH="${PATH}"
 fi
-if [ -z "${DEFAULT_XDG_DATA_DIRS}" ]; then
+if [ -z "${DEFAULT_XDG_DATA_DIRS+x}" ]; then
 	if [ -z "${XDG_DATA_DIRS}" ]; then
 		export DEFAULT_XDG_DATA_DIRS="/usr/local/share/:/usr/share/"
 	else
