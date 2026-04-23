@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/src/.vuepress/public/buildbox.png" alt="BuildBox" width="200"/>
+  <img src="docs/src/public/buildbox.png" alt="BuildBox" width="200"/>
 </p>
 
 # BuildBox
