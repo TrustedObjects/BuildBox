@@ -24,6 +24,11 @@ groupmod -g $GROUP_ID buildbox
 # files group in home directory are NOT automatically changed by groupmod
 chgrp -R buildbox $(echo ~buildbox)
 
+# Create XDG runtime directory.
+mkdir -p "/run/user/${USER_ID}"
+chmod 700 "/run/user/${USER_ID}"
+chown buildbox:buildbox "/run/user/${USER_ID}"
+
 # Align docker group GID with the host docker socket GID so buildbox can
 # access /var/run/docker.sock (bind-mounted from the host).
 # The container's docker group GID may differ from the host's GID.

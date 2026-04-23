@@ -1,5 +1,5 @@
 FROM debian:12-slim
-ARG VERSION=2.0.0-rc2
+ARG VERSION=2.0.0
 
 # Update packages list and upgrade packages
 RUN apt update
