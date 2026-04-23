@@ -8,13 +8,11 @@
   },
   "repository": "/buildbox_doc",
   "scripts": {
-    "dev": "vuepress dev src",
-    "build": "vuepress build src"
+    "dev": "vitepress dev src",
+    "build": "vitepress build src"
   },
   "devDependencies": {
-    "vuepress": "^1.5.3"
-  },
-  "dependencies": {
-    "git-describe": "^4.1.1"
+    "vitepress": "^1.6.3",
+    "medium-zoom": "^1.1.0"
   }
 }

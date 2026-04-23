@@ -1,0 +1,11 @@
+:root {
+  --vp-c-brand-1: #ee7214;
+  --vp-c-brand-2: #cc5f10;
+  --vp-c-brand-3: #f58a3b;
+  --vp-c-brand-soft: rgba(238, 114, 20, 0.14);
+
+  --vp-custom-block-tip-border: transparent;
+  --vp-custom-block-tip-text: var(--vp-c-text-1);
+  --vp-custom-block-tip-bg: var(--vp-c-green-soft);
+  --vp-custom-block-tip-code-bg: var(--vp-c-green-soft);
+}

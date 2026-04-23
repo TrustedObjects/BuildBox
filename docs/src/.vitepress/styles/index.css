@@ -1,0 +1,5 @@
+@import './vars.css';
+
+.VPHero .image-container img {
+  max-width: 200px;
+}
