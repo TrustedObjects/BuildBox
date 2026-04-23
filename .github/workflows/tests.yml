@@ -1,0 +1,37 @@
+name: Tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y \
+            zsh \
+            make autoconf automake libtool pkg-config \
+            gawk xz-utils
+
+      - name: Set up x86_64-pc-linux-gnu toolchain
+        run: |
+          # Tests cross-compile for CHOST=x86_64-pc-linux-gnu (CPU=x86 target).
+          # The runner is already x86_64, so native tools produce compatible output.
+          for tool in gcc g++ ar ranlib strip ld nm objcopy objdump; do
+            cmd=$(which "$tool" 2>/dev/null) || continue
+            sudo ln -sf "$cmd" /usr/local/bin/x86_64-pc-linux-gnu-$tool
+          done
+
+      - name: Run tests (bash)
+        run: ./tests/run_tests
+
+      - name: Run tests (zsh)
+        run: MODE=zsh ./tests/run_tests
