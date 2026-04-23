@@ -28,8 +28,9 @@ The BuildBox container image is published on Docker Hub at
 bbx image list [--all]
 ```
 
-Lists all locally available BuildBox images. With `--all`, also lists the tags
-available on Docker Hub.
+Lists all locally available BuildBox images (`buildbox` and `buildbox-*`
+derived images). With `--all`, also queries Docker Hub and shows, for each
+matching image, its short description and all available tags.
 
 ### Fetch an image
 

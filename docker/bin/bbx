@@ -294,35 +294,58 @@ function bbx_image_list {
 
 	echo "Local images:"
 	local local_images
-	local_images=$(docker images buildbox --format "{{.Tag}}\t{{.ID}}\t{{.Size}}\t{{.CreatedAt}}" 2>/dev/null)
+	local_images=$(docker images 'buildbox*' --format "{{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}\t{{.CreatedAt}}" 2>/dev/null)
 	if [ -z "${local_images}" ]; then
 		echo "  (none)"
 	else
-		printf "  %-20s %-15s %-10s %s\n" "TAG" "IMAGE ID" "SIZE" "CREATED"
-		while IFS=$'\t' read -r tag id size created; do
-			printf "  %-20s %-15s %-10s %s\n" "${tag}" "${id}" "${size}" "${created}"
+		printf "  %-20s %-20s %-15s %-10s %s\n" "IMAGE" "TAG" "IMAGE ID" "SIZE" "CREATED"
+		while IFS=$'\t' read -r image tag id size created; do
+			printf "  %-20s %-20s %-15s %-10s %s\n" "${image}" "${tag}" "${id}" "${size}" "${created}"
 		done <<< "${local_images}"
 	fi
 
 	if [ ${all} -eq 1 ]; then
 		echo ""
-		echo "Available on Docker Hub (${BBX_HUB_REPOSITORY}):"
-		local tags
-		tags=$(curl -sf \
-			"https://hub.docker.com/v2/repositories/${BBX_HUB_REPOSITORY}/tags/?page_size=100&ordering=last_updated" \
+		echo "Available on Docker Hub (${BBX_HUB_ORGANIZATION}):"
+		local repos
+		repos=$(curl -sf \
+			"https://hub.docker.com/v2/repositories/${BBX_HUB_ORGANIZATION}/?page_size=100" \
 			| python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+repos = [r for r in data.get('results', []) if r['name'].startswith('buildbox')]
+repos.sort(key=lambda r: (0 if r['name'] == 'buildbox' else 1, r['name']))
+for r in repos:
+    print('{}\t{}'.format(r['name'], r.get('description', '')))
+" 2>/dev/null)
+		if [ -z "${repos}" ]; then
+			>&2 echo "  (unable to fetch images from Docker Hub)"
+		else
+			while IFS=$'\t' read -r repo_name description; do
+				echo ""
+				if [ -n "${description}" ]; then
+					echo "  ${repo_name} - ${description}"
+				else
+					echo "  ${repo_name}"
+				fi
+				local tags
+				tags=$(curl -sf \
+					"https://hub.docker.com/v2/repositories/${BBX_HUB_ORGANIZATION}/${repo_name}/tags/?page_size=100&ordering=last_updated" \
+					| python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 for t in data.get('results', []):
     print('{}\t{}'.format(t['name'], t.get('last_updated', '')[:10]))
 " 2>/dev/null)
-		if [ -z "${tags}" ]; then
-			>&2 echo "  (unable to fetch tags from Docker Hub)"
-		else
-			printf "  %-20s %s\n" "TAG" "LAST UPDATED"
-			while IFS=$'\t' read -r tag updated; do
-				printf "  %-20s %s\n" "${tag}" "${updated}"
-			done <<< "${tags}"
+				if [ -z "${tags}" ]; then
+					echo "    (unable to fetch tags)"
+				else
+					printf "    %-20s %s\n" "TAG" "LAST UPDATED"
+					while IFS=$'\t' read -r tag updated; do
+						printf "    %-20s %s\n" "${tag}" "${updated}"
+					done <<< "${tags}"
+				fi
+			done <<< "${repos}"
 		fi
 	fi
 }
