@@ -128,7 +128,7 @@ function bb_clone_tool () (
 		# Clone in a temporary folder, to be sure to have the complete
 		# clone in case of interruption, which is created from
 		# temporary folder after successful clone
-		bb_${SRC_PROTO}_clone ${SRC_URI} ${BB_TOOLS_DIR}/.tmp ${SRC_REVISION}
+		bb_${SRC_PROTO}_clone ${SRC_URI} ${BB_TOOLS_DIR}/.tmp ${SRC_REVISION} "${SRC_PROTO_OPTIONS}"
 		[ $? -ne 0 ] && return 1
 		# Post-clone action, if specified
 		if typeset -f SRC_POST_CLONE_HOOK > /dev/null; then
@@ -137,6 +137,21 @@ function bb_clone_tool () (
 			SRC_POST_CLONE_HOOK
 			[ $? -ne 0 ] && return 1
 		fi
+
+		# If build mode is 'executable', we need to move the file to bin/
+		if [ "${SRC_BUILD}" = "executable" ]; then
+			local pkg_dir="${BB_TOOLS_DIR}/.tmp"
+			local bin_dir="${BB_TOOLS_DIR}/.tmp/bin"
+			mkdir -p "${bin_dir}"
+			# Find the file and move it to bin/
+			local file=$(find -L "${pkg_dir}" -maxdepth 1 -type f | head -n 1)
+			if [ -n "${file}" ]; then
+				local filename=$(basename "${file}")
+				mv "${file}" "${bin_dir}/"
+				chmod +x "${bin_dir}/${filename}"
+			fi
+		fi
+
 		mv ${BB_TOOLS_DIR}/.tmp ${BB_TOOLS_DIR}/${tool_dir}
 		[ $? -ne 0 ] && return 1
 	fi
