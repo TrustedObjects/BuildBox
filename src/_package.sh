@@ -274,6 +274,10 @@ bb_exportfn bb_get_package_revision
 function bb_load_package {
 	local pkg_name=${1}
 	local pkg_path=${BB_PROJECT_PROFILE_DIR}/packages/${pkg_name}
+
+	# Reset package variables
+	unset SRC_PROTO SRC_URI SRC_REVISION SRC_BUILD SRC_CONFIG SRC_POST_CLONE_HOOK SRC_PROTO_OPTIONS SRC_SUPPORTS_SHARING
+
 	if [ -f ${pkg_path} ]; then
 		# A package exists with the full name given in parameter
 		source ${pkg_path}

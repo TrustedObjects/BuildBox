@@ -24,12 +24,24 @@
 ## @param Repository URI
 ## @param Destination directory (where to put the extracted archive)
 ## @param Archive SHA256 sum
+## @param Options (separated by spaces)
 ## @return 0 on success
 function bb_http_clone () (
 	local uri=${1}
 	local dest=${2}
 	local sha256_ref=${3}
+	local options=${4}
 	local filename=$(basename ${uri})
+
+	# Parse options
+	local extract=1
+	for opt in ${options}; do
+		case "${opt}" in
+			"+extract") extract=1 ;;
+			"-extract") extract=0 ;;
+		esac
+	done
+
 	bb_trap_errors_silent
 	mkdir -p ${dest}
 	# Put the archive next to the destination directory
@@ -59,9 +71,16 @@ function bb_http_clone () (
 	else
 		echo "Skipping SHA256 check"
 	fi
-	echo "Extracting archive..."
-	cd ${dest}
-	bb_extract ../${filename}
-	return $?
+
+	if [ ${extract} -eq 1 ]; then
+		echo "Extracting archive..."
+		cd ${dest}
+		bb_extract ../${filename}
+		return $?
+	else
+		echo "Skipping extraction..."
+		mv ${filename} ${dest}/
+		return $?
+	fi
 )
 bb_exportfn bb_http_clone

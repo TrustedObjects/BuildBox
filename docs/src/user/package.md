@@ -61,11 +61,14 @@ Fields to be used in packages files are:
 - `SRC_REVISION`: package revision identifier
 - `SRC_BUILD`: sources build mode
 - `SRC_CONFIG`: default build parameters
+- `SRC_PROTO_OPTIONS` (optional): protocol options (separated by spaces)
 - `SRC_SUPPORTS_SHARING` (optional): set to 1 if packages supports sources sharing, 0 otherwise (see [package sources](#package-sources))
 
 Supported `SRC_PROTO` are:
 - `git`, then `SRC_REVISION` is a branch, a tag, or a changeset
-- `http`, then `SRC_REVISION` is SHA256 digest of the archive
+- `http`, then `SRC_REVISION` is SHA256 digest of the archive. Supported options are:
+  - `+extract` (default): downloaded resource is extracted (standard behavior)
+  - `-extract`: downloaded resource is not extracted, but directly used as-is
 
 Supported `SRC_BUILD` modes are detailed in [build modes](#packages-build-modes) section.
 
@@ -90,6 +93,7 @@ Accepted values for `SRC_BUILD` field in packages files are:
 - `make`
 - `custom`
 - `prebuilt`
+- `executable`
 
 ### Autotools
 
@@ -136,6 +140,13 @@ The package files tree is expected to be structured as follows (all entries are 
   - pkgconfig
   - aclocal
 - include
+
+This mode supports sources sharing.
+
+### Executable
+
+This mode is used for single downloaded files (scripts, binaries, AppImages...) that should be directly installed as executables.
+All files from the package sources are copied to the target `bin` directory and made executable (`chmod +x`).
 
 This mode supports sources sharing.
 

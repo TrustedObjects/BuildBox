@@ -64,7 +64,8 @@ function bb_clone_package () (
 			# complete clone in case of interruption, which is
 			# created from temporary folder after successful clone
 			bb_${SRC_PROTO}_clone ${SRC_URI} \
-				${BB_PROJECT_SRC_DIR}/.tmp ${SRC_REVISION}
+				${BB_PROJECT_SRC_DIR}/.tmp ${SRC_REVISION} \
+				"${SRC_PROTO_OPTIONS}"
 			[ $? -ne 0 ] && return 1
 			# Post-clone action, if specified
 			if typeset -f SRC_POST_CLONE_HOOK > /dev/null; then
