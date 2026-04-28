@@ -1,5 +1,7 @@
 import { defineConfig } from 'vitepress'
 import { execSync } from 'child_process'
+import { writeFileSync } from 'fs'
+import { join } from 'path'
 
 let version = 'dev'
 try {
@@ -7,6 +9,7 @@ try {
 } catch (_) {}
 
 const BASE_URL = process.env.BASE_URL
+const SITE_URL = process.env.SITE_URL
 
 export default defineConfig({
   title: 'BuildBox',
@@ -14,12 +17,40 @@ export default defineConfig({
 
   base: BASE_URL && BASE_URL !== 'undefined' ? BASE_URL : '/',
 
+  sitemap: SITE_URL ? { hostname: SITE_URL } : undefined,
+
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico' }],
     ['meta', { name: 'theme-color', content: '#ee7214' }],
     ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
     ['meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black' }],
   ],
+
+  buildEnd(siteConfig) {
+    const lines = [
+      'User-agent: *',
+      'Allow: /',
+      '',
+      'User-agent: GPTBot',
+      'Allow: /',
+      '',
+      'User-agent: OAI-SearchBot',
+      'Allow: /',
+      '',
+      'User-agent: Claude-Web',
+      'Allow: /',
+      '',
+      'User-agent: Google-Extended',
+      'Allow: /',
+      '',
+      'Content-Signal: search=yes, ai-train=yes, ai-input=yes',
+    ]
+    if (SITE_URL) {
+      lines.push('')
+      lines.push(`Sitemap: ${SITE_URL}/sitemap.xml`)
+    }
+    writeFileSync(join(siteConfig.outDir, 'robots.txt'), lines.join('\n') + '\n')
+  },
 
   themeConfig: {
     logo: '/buildbox.png',

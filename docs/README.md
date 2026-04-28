@@ -18,11 +18,8 @@ npm run dev
 
 To create the documentation release:
 ```
-BASE_URL="/" npm run build
+SITE_URL=https://buildbox.trusted-objects.com BASE_URL="/" npm run build
 ```
-
-Replace `BASE_URL` with the relevant value for the server.
-Below we assume it is `/`.
 
 The documentation is available at `src/.vitepress/dist/` and you can test it
 by running:
