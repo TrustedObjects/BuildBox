@@ -628,6 +628,8 @@ case "${cmd}" in
 			default_target="${link#target.}"
 			[ -n "${default_target}" ] && echo "${default_target}" > "${dir}/state"
 		fi
+		project_root=$(cd "${dir}" && pwd)
+		bbx_ensure_container "${project_root}" > /dev/null
 		exit 0
 		;;
 	stop)
