@@ -13,15 +13,13 @@ The plugin is opt-in. When not sourced, your shell is unchanged.
 
 ## Installation
 
-Source `bbx-prompt.sh` from your shell rc file. The plugin lives alongside the
-host-side `bbx` launcher in the BuildBox tree:
+Add the following line to your `~/.bashrc` or `~/.zshrc`:
 
 ```bash
-# In ~/.bashrc or ~/.zshrc
-source /path/to/BuildBox/settings/shell/bbx-prompt.sh
+source /usr/local/share/buildbox/shell/bbx-prompt.sh
 ```
 
-If BuildBox is installed via `make install`, source the installed path instead
+If BuildBox was installed with a custom prefix, adjust the path accordingly
 (`<PREFIX>/share/buildbox/shell/bbx-prompt.sh`).
 
 The plugin can be sourced multiple times safely.
