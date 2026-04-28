@@ -261,7 +261,7 @@ function precmd {
 }
 
 # completion for BuildBox
-ZCOMPDUMP=${BB_WORKDIR}/etc/zsh/zcompdump
+ZCOMPDUMP=${BB_PROJECT_DIR}/etc/zsh/zcompdump
 mkdir -p $(dirname ${ZCOMPDUMP})
 if [ -f ${ZCOMPDUMP} ]; then
 	rm ${ZCOMPDUMP}
