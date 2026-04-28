@@ -700,4 +700,12 @@ if [ "${cmd}" = "shell" ] && [ "$#" -gt 1 ]; then
 else
 	bbx_exec "${container}" "${project_root}" "$@"
 fi
-exit $?
+ret=$?
+
+# After project update, re-check the image: .bbx/image may have changed.
+# bbx_ensure_container handles pull + container restart automatically.
+if [ $ret -eq 0 ] && [ "${cmd}" = "project" ] && [ "${2}" = "update" ]; then
+	bbx_ensure_container "${project_root}" > /dev/null
+fi
+
+exit $ret
