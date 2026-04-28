@@ -117,11 +117,11 @@ function bbx_pull_image {
 		[ "${tag}" = "${image}" ] && tag="latest"
 		local pull_ref="${BBX_HUB_ORGANIZATION}/${name}:${tag}"
 		>&2 echo "Fetching ${pull_ref} from Docker Hub..."
-		docker pull "${pull_ref}" || return 1
+		docker pull "${pull_ref}" >&2 || return 1
 		docker tag "${pull_ref}" "${image}"
 	else
 		>&2 echo "Fetching ${image}..."
-		docker pull "${image}" || return 1
+		docker pull "${image}" >&2 || return 1
 	fi
 }
 
