@@ -195,10 +195,11 @@ function bbx_ensure_container {
 			fi
 			sleep 1
 		done
-		# Wait until the container is ready to accept exec calls
+		# Wait until systemd-udevd is running, which means the entrypoint has
+		# fully completed (usermod, groupmod, chgrp, sysctl... udevd is last).
 		local ready=0
 		for i in $(seq 1 20); do
-			if docker exec "${container}" true > /dev/null 2>&1; then
+			if docker exec "${container}" pgrep -x systemd-udevd > /dev/null 2>&1; then
 				ready=1
 				break
 			fi
