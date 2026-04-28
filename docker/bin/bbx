@@ -551,6 +551,37 @@ function bbx_instance_upgrade {
 	return 0
 }
 
+# Send a desktop notification when the terminal does not have focus.
+# Args: label (e.g. "target build"), exit_code
+function bbx_notify {
+	local label="${1}"
+	local ret="${2}"
+
+	local has_focus=0
+	if command -v xdotool > /dev/null 2>&1 && [ -n "${WINDOWID}" ]; then
+		local active_win
+		active_win=$(xdotool getactivewindow 2>/dev/null)
+		[ "${active_win}" = "${WINDOWID}" ] && has_focus=1
+	fi
+	[ "${has_focus}" -eq 1 ] && return 0
+
+	local project
+	project=$(basename "${project_root}")
+	local title="BuildBox"
+	local msg icon
+	if [ "${ret}" -eq 0 ]; then
+		msg="${project}: ${label} completed"
+		icon="dialog-information"
+	else
+		msg="${project}: ${label} failed"
+		icon="dialog-error"
+	fi
+
+	if command -v notify-send > /dev/null 2>&1; then
+		notify-send --icon "${icon}" "${title}" "${msg}"
+	fi
+}
+
 # --- command dispatch ---
 
 cmd="${1}"
@@ -702,6 +733,15 @@ else
 	bbx_exec "${container}" "${project_root}" "$@"
 fi
 ret=$?
+
+if [ "${BBX_NOTIFICATIONS_ENABLED:-0}" = "1" ]; then
+	case "${cmd}:${2}" in
+		target:clone|target:build|target:fastbuild|\
+		target:test|target:dist|target:dist-prebuilt)
+			bbx_notify "${cmd} ${2}" "${ret}"
+			;;
+	esac
+fi
 
 # After project update, re-check the image: .bbx/image may have changed.
 # bbx_ensure_container handles pull + container restart automatically.

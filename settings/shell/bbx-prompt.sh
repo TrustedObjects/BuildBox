@@ -84,11 +84,15 @@ fi
 # Defaults (overridable via user config)
 BBX_PROMPT_ENABLED=1
 BBX_ENV_EXPORT_ENABLED=1
+BBX_NOTIFICATIONS_ENABLED=1
 
 # Load user config if present
 _bbx_config="${XDG_CONFIG_HOME:-${HOME}/.config}/buildbox/config"
 [ -f "${_bbx_config}" ] && source "${_bbx_config}"
 unset _bbx_config
+
+# Export so bbx subprocesses inherit the value
+export BBX_NOTIFICATIONS_ENABLED
 
 # BBX subcommands exposed as simple bbx-delegation aliases inside a project.
 # 'target' and 'project' are excluded here: they are defined as functions

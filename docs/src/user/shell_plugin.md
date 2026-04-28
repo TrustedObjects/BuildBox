@@ -7,7 +7,9 @@ project-aware behavior:
 - short command aliases (`target`, `build`, `fetch`...) available only inside
   a project,
 - `goto` commands to jump to the target, project, or package directory,
-- automatic export of BuildBox environment variables.
+- automatic export of BuildBox environment variables,
+- desktop notifications when long-running operations complete and the terminal
+  does not have focus (requires `notify-send`).
 
 The plugin is opt-in. When not sourced, your shell is unchanged.
 
@@ -127,6 +129,18 @@ BBX_PROMPT_ENABLED=0
 
 # Keep the prompt and aliases, but disable environment variable auto-export
 BBX_ENV_EXPORT_ENABLED=0
+
+# Disable desktop notifications when long-running operations complete
+# (requires notify-send)
+BBX_NOTIFICATIONS_ENABLED=0
 ```
 
-Both default to `1`.
+`BBX_PROMPT_ENABLED` and `BBX_ENV_EXPORT_ENABLED` default to `1`.
+`BBX_NOTIFICATIONS_ENABLED` defaults to `1` (opt-out to disable).
+
+Notifications are sent for: `target clone`, `target build`, `target fastbuild`,
+`target test`, `target dist`, `target dist-prebuilt`.
+
+A notification is skipped when the terminal running the operation already has
+focus (detected via `$WINDOWID` and `xdotool` on X11). On Wayland or when
+`xdotool` is unavailable, notifications are always sent.
