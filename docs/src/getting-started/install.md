@@ -50,14 +50,10 @@ On Ubuntu, it seems you have to reboot to refresh groups. So, if after reconnect
 
 ## Install BuildBox
 
-Clone BuildBox somewhere on your system, or get it from your organization's repository:
-```
-git clone https://github.com/TrustedObjects/BuildBox.git
-```
+Get [BuildBox latest stable release](https://github.com/TrustedObjects/BuildBox/releases/latest).
 
-Then install it system-wide using `make`:
+Extract it, go to its directory, then install it system-wide:
 ```
-cd BuildBox
 sudo make install
 ```
 
