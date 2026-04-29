@@ -48,6 +48,8 @@ function help {
 	echo ""
 	echo "Run 'bbx --help' inside a project for the full command list."
 	echo ""
+	echo "  -v, --version                      Show installed version"
+	echo ""
 	echo "Host-only commands:"
 	echo "  init [DIR]                         Initialize a new BuildBox project"
 	echo "  clone [-b BRANCH] <url> [dir]      Clone a project"
@@ -583,6 +585,16 @@ function bbx_notify {
 }
 
 # --- command dispatch ---
+
+if [ "${1}" = "-v" ] || [ "${1}" = "--version" ]; then
+	version_file="${BBX_DIR}/VERSION"
+	if [ -f "${version_file}" ]; then
+		cat "${version_file}"
+	else
+		echo "unknown"
+	fi
+	exit 0
+fi
 
 cmd="${1}"
 

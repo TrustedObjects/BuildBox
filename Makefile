@@ -3,15 +3,45 @@ SHAREDIR := $(PREFIX)/share/buildbox
 BINDIR   := $(PREFIX)/bin
 DOCDIR   := $(PREFIX)/share/doc/buildbox
 
-.PHONY: all install install-core install-docker install-doc uninstall doc
+VERSION_FILE := VERSION
+
+.PHONY: all install install-core install-docker install-doc uninstall doc version dist
 
 all: doc
+
+version:
+	@if git rev-parse --git-dir > /dev/null 2>&1; then \
+	    last_tag=$$(git describe --tags --match '[0-9]*' --abbrev=0 2>/dev/null); \
+	    if [ -z "$${last_tag}" ]; then \
+	        new_version="unknown"; \
+	    elif git describe --tags --match '[0-9]*' --exact-match HEAD > /dev/null 2>&1; then \
+	        new_version="$${last_tag}"; \
+	    else \
+	        short_hash=$$(git rev-parse --short HEAD); \
+	        new_version="$${last_tag}-$${short_hash}"; \
+	    fi; \
+	    old_version=$$(cat $(VERSION_FILE) 2>/dev/null); \
+	    if [ "$${new_version}" != "$${old_version}" ]; then \
+	        echo "$${new_version}" > $(VERSION_FILE); \
+	        echo "Version updated: $${new_version}"; \
+	    fi; \
+	fi
+
+dist: version
+	$(eval BBX_VERSION := $(shell cat $(VERSION_FILE)))
+	$(eval DIST_NAME   := buildbox-$(BBX_VERSION))
+	git archive --prefix=$(DIST_NAME)/ HEAD | gzip > $(DIST_NAME).tar.gz
+	gunzip $(DIST_NAME).tar.gz
+	tar --append --file=$(DIST_NAME).tar \
+	    --transform='s|^|$(DIST_NAME)/|' $(VERSION_FILE)
+	gzip $(DIST_NAME).tar
+	@echo "Created $(DIST_NAME).tar.gz"
 
 # --- Core install: library, commands, settings, host launcher ---
 
 install: install-core install-docker
 
-install-core:
+install-core: version
 	# API library
 	install -d $(SHAREDIR)/lib
 	install -m 644 src/_*.sh src/buildbox_utils.sh src/_pre_cmd $(SHAREDIR)/lib/
@@ -46,6 +76,9 @@ install-core:
 	install -d $(BINDIR)
 	install -m 755 docker/bin/bbx $(BINDIR)/bbx
 	sed -i 's|^_BBX_SHARE=.*|_BBX_SHARE="$(SHAREDIR)"|' $(BINDIR)/bbx
+
+	# Version file
+	install -m 644 $(VERSION_FILE) $(SHAREDIR)/
 
 # --- Docker build files ---
 

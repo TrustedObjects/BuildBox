@@ -91,6 +91,15 @@ case "${cmd}" in
 		help
 		exit 0
 		;;
+	-v|--version)
+		version_file="${BB_DIR}/VERSION"
+		if [ -f "${version_file}" ]; then
+			cat "${version_file}"
+		else
+			echo "unknown"
+		fi
+		exit 0
+		;;
 	init)
 		project_init "$@"
 		exit $?
