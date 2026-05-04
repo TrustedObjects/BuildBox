@@ -11,33 +11,6 @@ Accepted options are:
 
 There are also prebuilt target options which are detailed in [prebuilt target](target.md#pre-built-targets) section.
 
-## Interactive shell
-
-BuildBox provides an interactive ZSH shell for convenience, which can be opened with:
-```
-bbx shell
-```
-
-From this shell, all BuildBox commands are available without the `bbx` prefix:
-```
-target set myplatform
-build my_package
-```
-
-The environment is refreshed before every command.
-
-An optional command can be passed to run it directly in the container and return immediately:
-```
-bbx shell <command> [args...]
-```
-
-Examples:
-```bash
-bbx shell bash -c "find /usr/lib -name '*.so' | wc -l"
-```
-
-The container's BuildBox environment (`BB_PROJECT_DIR`, `BB_TARGET`, etc.) is available to the command. For shell constructs (pipes, redirects), pass them to an explicit shell as shown above.
-
 ## Administration mode
 
 Although it is possible to use `sudo` inside BuildBox, you also have an administration shell available.

@@ -80,7 +80,8 @@ function help {
 	echo "Other:"
 	echo "  pkg [PKG...]       Show package information"
 	echo "  env                Show BuildBox environment variables"
-	echo "  shell [CMD...]     Start an interactive shell, or run CMD in the container"
+	echo "  shell              Start an interactive ZSH shell inside the container"
+	echo "  shell CMD [ARGS...]  Run CMD inside the container (no TTY, suitable for scripts)"
 }
 
 cmd=${1}

@@ -108,6 +108,43 @@ So a file at `~/workspace/my_project/src/my_package` on the host is accessible a
 You can open your project sources in your favorite editor directly from the host,
 since the project directory is a regular directory in your home.
 
+## Shell access
+
+```
+bbx shell [CMD [ARGS...]]
+```
+
+Without arguments, opens an interactive ZSH shell inside the container with a
+full TTY. All BuildBox commands are available without the `bbx` prefix:
+
+```bash
+bbx shell
+# inside the container:
+target set myplatform
+build my_package
+```
+
+The environment (target, cross-compilation variables, tools) is refreshed
+before every command.
+
+With arguments, runs the command directly inside the container without
+allocating a TTY, making it suitable for scripting and CI pipelines:
+
+```bash
+bbx shell make -C src/my_package check
+bbx shell bash -c "find /usr/lib -name '*.so' | wc -l"
+```
+
+The container's BuildBox environment (`BB_PROJECT_DIR`, `BB_TARGET`, etc.) is
+available to the command. For shell constructs such as pipes or redirects, pass
+them to an explicit shell:
+
+```bash
+bbx shell bash -c "bb_get_package_revision \$(bb_find_matching_packages 0 my-pkg)"
+```
+
+The exit code of `CMD` is forwarded to the caller.
+
 ## Host applications
 
 BuildBox can run few host applications, allowing to invoke them from its interactive shell (`bbx shell`).

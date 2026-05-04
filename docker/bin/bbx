@@ -228,12 +228,14 @@ function bbx_exec {
 	local project_root="${2}"
 	shift 2
 
-	# --no-tty: skip PTY allocation (non-interactive command execution).
-	# Without it docker adds CRLF to every output line, breaking piped use.
-	local tty_flag="-t"
+	# Allocate a TTY only when stdin is a terminal. Without a TTY docker adds
+	# CRLF to every output line (breaks piped use); with a TTY on a
+	# non-interactive stdin (e.g. Jenkins) docker rejects the exec entirely.
+	local tty_flag=""
 	if [ "${1}" = "--no-tty" ]; then
-		tty_flag=""
 		shift
+	elif [ -t 0 ]; then
+		tty_flag="-t"
 	fi
 
 	# Set up named pipes for the host agent (bb_host_send mechanism).
