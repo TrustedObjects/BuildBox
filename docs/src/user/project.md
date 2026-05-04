@@ -72,7 +72,7 @@ bbx clone [-b BRANCH] <url> [dir]
 The URL points to the profile repository (the content that lives in `.bbx/`).
 `bbx clone` creates the project directory and clones the profile repository into `<dir>/.bbx/`.
 If `dir` is omitted, the directory is named after the repository.
-Use `-b` to check out a specific branch (default: the repository's default branch).
+Use `-b` to check out a specific branch or tag (default: the repository's default branch).
 
 ### Examples
 
