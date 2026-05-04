@@ -113,8 +113,8 @@ function bbx_container_name {
 # name after pulling so subsequent lookups find them without the org prefix.
 function bbx_pull_image {
 	local image="${1}"
-	local name="${image%%:*}"
-	if [[ "${name}" != *"/"* ]]; then
+	if [[ "${image}" != *"/"* ]]; then
+		local name="${image%%:*}"
 		local tag="${image#*:}"
 		[ "${tag}" = "${image}" ] && tag="latest"
 		local pull_ref="${BBX_HUB_ORGANIZATION}/${name}:${tag}"
