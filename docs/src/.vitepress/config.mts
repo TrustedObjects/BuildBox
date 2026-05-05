@@ -108,6 +108,8 @@ export default defineConfig({
       ],
     },
 
+    currentVersion: version,
+
     socialLinks: [
       { icon: 'github', link: 'https://github.com/TrustedObjects/BuildBox' },
     ],
