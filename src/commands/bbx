@@ -173,8 +173,8 @@ case "${cmd}" in
 	shell)
 		if [ "$#" -gt 0 ]; then
 			source buildbox_utils.sh 2>/dev/null || true
-			# Export bb_* functions so nested bash -c invocations inherit them
-			for _f in $(compgen -A function bb_); do
+			# Export bb_* and _inner_* functions so nested bash -c invocations inherit them
+			for _f in $(compgen -A function bb_) $(compgen -A function _inner_); do
 				export -f "${_f}" 2>/dev/null || true
 			done
 			unset _f
