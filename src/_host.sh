@@ -65,7 +65,7 @@ function bb_host_send {
 		>&2 echo "BuildBox is not running in a container"
 		return 1
 	fi
-	local pipe=${BB_WORKDIR}/tmp/launcher-${BB_LAUNCHER_ID}_send.pipe
+	local pipe=${BB_PROJECT_DIR}/tmp/launcher-${BB_LAUNCHER_ID}_send.pipe
 	if [ ! -p ${pipe} ]; then
 		>&2 echo "Unable to send command to host: no pipe"
 		return 1
@@ -75,7 +75,7 @@ function bb_host_send {
 		>&2 echo "Unable to send command to host: pipe write error"
 		return 1
 	fi
-	local ret_pipe=${BB_WORKDIR}/tmp/launcher-${BB_LAUNCHER_ID}_ret.pipe
+	local ret_pipe=${BB_PROJECT_DIR}/tmp/launcher-${BB_LAUNCHER_ID}_ret.pipe
 	read -r ret < ${ret_pipe}
 	return $ret
 }
@@ -92,7 +92,7 @@ function bb_host_send_print_out {
 	if [ ! -z "${1}" ]; then
 		print_cmd="${1}"
 	fi
-	local out_file=${BB_WORKDIR}/tmp/launcher-${BB_LAUNCHER_ID}_send.out
+	local out_file=${BB_PROJECT_DIR}/tmp/launcher-${BB_LAUNCHER_ID}_send.out
 	${print_cmd} ${out_file}
 	rm ${out_file}
 }
