@@ -1,0 +1,5 @@
+2.0.1 - 5/6/2026
+- Fix host commands pipes and output file paths
+- Handle direct calls and nested 'bash -c' calls for BuildBox API
+- Allocate a TTY only when stdin is a terminal for container shell
+- Fix custom registry image pull

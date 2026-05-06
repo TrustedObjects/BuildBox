@@ -1,6 +1,5 @@
 {
   "name": "buildbox_doc",
-  "version": "1.0.0",
   "description": "BuildBox documentation",
   "main": "index.js",
   "authors": {
