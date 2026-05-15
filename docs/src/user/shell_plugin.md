@@ -3,7 +3,7 @@
 BuildBox ships an optional plugin for the host shell (bash and zsh) that adds
 project-aware behavior:
 
-- a prompt segment showing the current project target and container state,
+- a prompt segment showing the current project name, target, and container state,
 - short command aliases (`target`, `build`, `fetch`...) available only inside
   a project,
 - `goto` commands to jump to the target, project, or package directory,
@@ -32,12 +32,13 @@ When the current directory is inside a BuildBox project, a segment is prepended
 to the prompt:
 
 ```
-● BuildBox:target  user@host [~/src/my_project] %
+● BuildBox my_project:target  user@host [~/src/my_project] %
 ```
 
 - a green dot means the project container is running,
 - a red dot means it is stopped,
-- the target name after the colon comes from `state` at the project root.
+- the project name (directory basename) and the target name are both shown in
+  blue; the target comes from `state` at the project root.
 
 Outside a project, the segment disappears.
 

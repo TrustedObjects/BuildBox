@@ -20,7 +20,7 @@
 ##
 ## The prompt segment appears at the leftmost position when you are inside a
 ## BuildBox project directory and disappears when you leave.
-##   ● BuildBox:target   (● green = container running, red = stopped)
+##   ● BuildBox project-name:target   (● green = container running, red = stopped)
 ##
 ## The following commands become available without the 'bbx' prefix when
 ## entering a BuildBox project directory, and are removed on exit:
@@ -373,20 +373,21 @@ function __bbx_prompt {
 		return 0
 	fi
 
+	local project_name="${root##*/}"
 	local target
 	target="$(__bbx_read_target "${root}")"
 	local running=0
 	local cid
 	cid="$(docker ps --filter "label=bbx.project_root=${root}" --format "{{.ID}}" 2>/dev/null)"
 	[ -n "${cid}" ] && running=1
-	__bbx_set_info "${target}" "${running}"
+	__bbx_set_info "${project_name}" "${target}" "${running}"
 }
 
 if [ -n "${BASH_VERSION}" ]; then
 	# Bash: use \001/\002 (RL_PROMPT_START/END_IGNORE) so readline correctly
 	# measures the visible width of the prompt.
 	function __bbx_set_info {
-		local target="${1}" running="${2}"
+		local project="${1}" target="${2}" running="${3}"
 		local dot
 		if [ "${running}" = "1" ]; then
 			dot=$'\001\e[32m\002''●'$'\001\e[0m\002'
@@ -394,6 +395,7 @@ if [ -n "${BASH_VERSION}" ]; then
 			dot=$'\001\e[31m\002''●'$'\001\e[0m\002'
 		fi
 		local label=$'\001\e[33m\002''Build'$'\001\e[1m\002''Box'$'\001\e[0m\002'
+		label="${label} "$'\001\e[34m\002'"${project}"$'\001\e[0m\002'
 		if [ -n "${target}" ]; then
 			label="${label}:"$'\001\e[34m\002'"${target}"$'\001\e[0m\002'
 		fi
@@ -410,7 +412,7 @@ if [ -n "${BASH_VERSION}" ]; then
 elif [ -n "${ZSH_VERSION}" ]; then
 	# ZSH: use native %F/%f colour sequences; requires PROMPT_SUBST.
 	function __bbx_set_info {
-		local target="${1}" running="${2}"
+		local project="${1}" target="${2}" running="${3}"
 		local dot
 		if [ "${running}" = "1" ]; then
 			dot="%F{green}●%f"
@@ -418,6 +420,7 @@ elif [ -n "${ZSH_VERSION}" ]; then
 			dot="%F{red}●%f"
 		fi
 		local label="%F{yellow}Build%BBox%b%f"
+		label="${label} %F{blue}${project}%f"
 		if [ -n "${target}" ]; then
 			label="${label}:%F{blue}${target}%f"
 		fi
