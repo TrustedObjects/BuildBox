@@ -149,39 +149,35 @@ function bb_get_project_targets_formatted {
 		return 1
 	fi
 	local current_target=$(bb_get_project_current_target)
-	local detailed
-	if [ ${1} -eq 0 ]; then
-		detailed=0
-		separator=" "
-	else
-		detailed=1
-		separator="\n"
-	fi
 	local targets
 	targets=$(bb_get_project_targets)
 	[ $? -ne 0 ] && return 1
-	local first_occurence=1
-	local targets_txt=""
-	while read -r target; do
-		if [ $first_occurence -ne 1 ]; then
-			targets_txt+="${separator}"
-		fi
-		if [[ "${target}" == "${current_target}" ]]; then
-			targets_txt+="\e[34m${target}\e[0m"
-		else
-			targets_txt+="${target}"
-		fi
-		if [ $detailed -eq 1 ]; then
-			description=$(bb_get_target_description ${target})
-			if [ -n "${description}" ]; then
-				targets_txt+=" - ${description}"
+	if [ ${1} -eq 0 ]; then
+		local targets_txt=""
+		local first_occurence=1
+		while read -r target; do
+			if [ $first_occurence -ne 1 ]; then
+				targets_txt+=" "
 			fi
-			cpu=$(bb_get_target_cpu ${target})
-			targets_txt+=" (${cpu})"
-		fi
-		first_occurence=0
-	done < <(echo "${targets}")
-	echo -e ${targets_txt}
+			targets_txt+="${target}"
+			first_occurence=0
+		done < <(echo "${targets}")
+		echo "${targets_txt}"
+	else
+		{
+			printf 'TARGET\tDESCRIPTION\tCPU\n'
+			while read -r target; do
+				local display_target="${target}"
+				if [[ "${target}" == "${current_target}" ]]; then
+					display_target="$(printf '\033[34m%s\033[0m' "${target}")"
+				fi
+				local description cpu
+				description=$(bb_get_target_description "${target}")
+				cpu=$(bb_get_target_cpu "${target}")
+				printf '%s\t%s\t%s\n' "${display_target}" "${description:-}" "${cpu:-}"
+			done < <(echo "${targets}")
+		} | bb_print_columns
+	fi
 	return 0
 }
 bb_exportfn bb_get_project_targets_formatted

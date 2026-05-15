@@ -20,7 +20,7 @@ function test_target_list {
 	list="$(target list)"
 	asserteq $? 0
 	count=$(echo "${list}" | wc -l)
-	asserteq ${count} 2
+	asserteq ${count} 3
 	list="$(unformat_string "${list}")"
 	list="$(minspace_string "${list}")"
 	echo "${list}" | grep "^foo"

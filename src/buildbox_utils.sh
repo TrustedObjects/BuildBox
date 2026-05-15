@@ -56,6 +56,7 @@ function bb_include {
 bb_include _common.sh
 bb_include _log.sh
 bb_include _error.sh
+bb_include _display.sh
 bb_include _trash.sh
 bb_include _local_env.sh
 bb_include _clone.sh

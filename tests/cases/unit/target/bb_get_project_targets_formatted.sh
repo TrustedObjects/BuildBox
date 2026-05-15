@@ -24,7 +24,7 @@ function test_bb_get_project_targets_formatted {
 	targets=$(bb_get_project_targets_formatted 1)
 	asserteq $? 0
 	assertn "${targets}"
-	asserteq $(echo -e "${targets}"|wc -l) 2
+	asserteq $(echo "${targets}"|wc -l) 3
 }
 bb_declare_test test_bb_get_project_targets_formatted
 

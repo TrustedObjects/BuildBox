@@ -43,6 +43,8 @@ else
 	BBX_LIB="${BBX_DIR}/src"
 fi
 
+source "${BBX_LIB}/_display.sh"
+
 function help {
 	echo "Usage: bbx <command> [options]"
 	echo ""
@@ -303,10 +305,12 @@ function bbx_image_list {
 	if [ -z "${local_images}" ]; then
 		echo "  (none)"
 	else
-		printf "  %-20s %-20s %-15s %-10s %s\n" "IMAGE" "TAG" "IMAGE ID" "SIZE" "CREATED"
-		while IFS=$'\t' read -r image tag id size created; do
-			printf "  %-20s %-20s %-15s %-10s %s\n" "${image}" "${tag}" "${id}" "${size}" "${created}"
-		done <<< "${local_images}"
+		{
+			printf 'IMAGE\tTAG\tIMAGE ID\tSIZE\tCREATED\n'
+			while IFS=$'\t' read -r image tag id size created; do
+				printf '%s\t%s\t%s\t%s\t%s\n' "${image}" "${tag}" "${id}" "${size}" "${created}"
+			done <<< "${local_images}"
+		} | bb_print_columns --indent 2
 	fi
 
 	if [ ${all} -eq 1 ]; then
@@ -345,10 +349,12 @@ for t in data.get('results', []):
 				if [ -z "${tags}" ]; then
 					echo "    (unable to fetch tags)"
 				else
-					printf "    %-20s %s\n" "TAG" "LAST UPDATED"
-					while IFS=$'\t' read -r tag updated; do
-						printf "    %-20s %s\n" "${tag}" "${updated}"
-					done <<< "${tags}"
+					{
+						printf 'TAG\tLAST UPDATED\n'
+						while IFS=$'\t' read -r tag updated; do
+							printf '%s\t%s\n' "${tag}" "${updated}"
+						done <<< "${tags}"
+					} | bb_print_columns --indent 4
 				fi
 			done <<< "${repos}"
 		fi
@@ -370,21 +376,24 @@ function bbx_instance_list {
 		echo "No running BuildBox instances."
 		return 0
 	fi
-	printf "%-35s %-40s %-30s %s\n" "CONTAINER" "PROJECT" "IMAGE" "STATUS"
-	while IFS= read -r container; do
-		local project_root image status
-		project_root=$(docker inspect \
-			--format '{{index .Config.Labels "bbx.project_root"}}' \
-			"${container}" 2>/dev/null)
-		image=$(docker inspect \
-			--format '{{.Config.Image}}' \
-			"${container}" 2>/dev/null)
-		status="idle"
-		if [ -n "${project_root}" ] && bbx_project_is_busy "${project_root}"; then
-			status="busy"
-		fi
-		printf "%-35s %-40s %-30s %s\n" "${container}" "${project_root:-unknown}" "${image:-unknown}" "${status}"
-	done <<< "${containers}"
+	{
+		printf 'CONTAINER\tPROJECT\tIMAGE\tSTATUS\n'
+		while IFS= read -r container; do
+			local project_root image status
+			project_root=$(docker inspect \
+				--format '{{index .Config.Labels "bbx.project_root"}}' \
+				"${container}" 2>/dev/null)
+			image=$(docker inspect \
+				--format '{{.Config.Image}}' \
+				"${container}" 2>/dev/null)
+			status="idle"
+			if [ -n "${project_root}" ] && bbx_project_is_busy "${project_root}"; then
+				status="busy"
+			fi
+			printf '%s\t%s\t%s\t%s\n' \
+				"${container}" "${project_root:-unknown}" "${image:-unknown}" "${status}"
+		done <<< "${containers}"
+	} | bb_print_columns
 }
 
 function bbx_stop_container {
@@ -524,30 +533,43 @@ function bbx_instance_upgrade {
 		return 1
 	fi
 
-	printf "%-35s %-45s %s\n" "CONTAINER" "PROJECT" "STATUS"
-	local upgraded=0
-	local skipped=0
+	# Collect rows and determine status before printing so column widths are known
+	local -a _iu_ct _iu_pr _iu_st
 	while IFS= read -r container; do
 		[ -z "${container}" ] && continue
-		local project_root
+		local project_root container_image_id
 		project_root=$(docker inspect \
 			--format '{{index .Config.Labels "bbx.project_root"}}' \
 			"${container}" 2>/dev/null)
-		local container_image_id
 		container_image_id=$(docker inspect --format '{{.Image}}' "${container}" 2>/dev/null)
-
+		local status
 		if [ "${container_image_id}" = "${target_image_id}" ]; then
-			printf "%-35s %-45s %s\n" "${container}" "${project_root:-unknown}" "up-to-date"
-			skipped=$((skipped + 1))
+			status="up-to-date"
 		else
-			printf "%-35s %-45s %s\n" "${container}" "${project_root:-unknown}" "upgrading..."
-			bbx_stop_container "${container}" "${project_root:-/}"
-			if [ -n "${project_root}" ]; then
-				bbx_ensure_container "${project_root}" > /dev/null 2>&1
+			status="upgrading..."
+		fi
+		_iu_ct+=("${container}") _iu_pr+=("${project_root:-unknown}") _iu_st+=("${status}")
+	done <<< "${containers}"
+	{
+		printf 'CONTAINER\tPROJECT\tSTATUS\n'
+		for i in "${!_iu_ct[@]}"; do
+			printf '%s\t%s\t%s\n' "${_iu_ct[$i]}" "${_iu_pr[$i]}" "${_iu_st[$i]}"
+		done
+	} | bb_print_columns
+	local upgraded=0
+	local skipped=0
+	for i in "${!_iu_ct[@]}"; do
+		if [ "${_iu_st[$i]}" = "upgrading..." ]; then
+			local pr="${_iu_pr[$i]}"
+			bbx_stop_container "${_iu_ct[$i]}" "${pr:-/}"
+			if [ "${pr}" != "unknown" ]; then
+				bbx_ensure_container "${pr}" > /dev/null 2>&1
 			fi
 			upgraded=$((upgraded + 1))
+		else
+			skipped=$((skipped + 1))
 		fi
-	done <<< "${containers}"
+	done
 
 	echo ""
 	[ ${upgraded} -gt 0 ] && echo "${upgraded} instance(s) upgraded and restarted with the new image."
