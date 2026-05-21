@@ -155,6 +155,12 @@ function bb_project_get_branch_name () {
 		return 1
 	fi
 	local branch
+	if ! git -C "${profile_dir}" rev-parse --verify HEAD > /dev/null 2>&1; then
+		# Empty repo: no commits yet, read branch from symbolic ref
+		branch=$(git -C "${profile_dir}" symbolic-ref --short HEAD 2>/dev/null)
+		echo "${branch}"
+		return 0
+	fi
 	branch=$(git -C "${profile_dir}" branch --contains "$(git -C "${profile_dir}" rev-parse HEAD)" 2>/dev/null | grep -v HEAD | awk 'END {print $NF}')
 	if [ $? -eq 0 ]; then
 		echo "${branch}"

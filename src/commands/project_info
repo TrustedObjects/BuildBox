@@ -30,12 +30,15 @@ tag=$(bb_project_get_tag)
 if [ -z "${tag}" ]; then
 	tag="(no tag)"
 fi
-if git -C "${BB_PROJECT_PROFILE_DIR}" rev-parse HEAD > /dev/null 2>&1; then
-	changeset=$(git -C "${BB_PROJECT_PROFILE_DIR}" rev-parse HEAD)
-	changeset_age=$(git -C "${BB_PROJECT_PROFILE_DIR}" show -s --format=%cr HEAD)
-else
+if ! git -C "${BB_PROJECT_PROFILE_DIR}" rev-parse --git-dir > /dev/null 2>&1; then
 	changeset="(not a git repository)"
 	changeset_age=""
+elif ! git -C "${BB_PROJECT_PROFILE_DIR}" rev-parse --verify HEAD > /dev/null 2>&1; then
+	changeset="(no commits yet)"
+	changeset_age=""
+else
+	changeset=$(git -C "${BB_PROJECT_PROFILE_DIR}" rev-parse HEAD)
+	changeset_age=$(git -C "${BB_PROJECT_PROFILE_DIR}" show -s --format=%cr HEAD)
 fi
 
 # profile status
