@@ -161,8 +161,10 @@ function __bbx_project_goto {
 # Delegates path resolution to the container-side 'goto' command.
 function __bbx_pkg_goto {
 	local dir
-	dir="$(command bbx goto "$@")" || return 1
-	dir="${dir%$'\r'}"   # strip \r from docker exec TTY output
+	# </dev/null: prevents docker from reading the terminal buffer, so typeahead
+	# typed while goto runs is preserved for the shell to execute afterwards.
+	dir="$(command bbx goto "$@" </dev/null)" || return 1
+	dir="${dir%$'\r'}"
 	[ -n "${dir}" ] && cd "${dir}"
 }
 

@@ -762,8 +762,9 @@ fi
 if ! container=$(bbx_ensure_container "${project_root}"); then
 	exit 1
 fi
-# shell with arguments: non-interactive, no TTY allocation
-if [ "${cmd}" = "shell" ] && [ "$#" -gt 1 ]; then
+# goto: output is a path captured by the host shell function; no TTY needed.
+# shell with arguments: non-interactive, no TTY allocation.
+if [ "${cmd}" = "goto" ] || ([ "${cmd}" = "shell" ] && [ "$#" -gt 1 ]); then
 	bbx_exec "${container}" "${project_root}" --no-tty "$@"
 else
 	bbx_exec "${container}" "${project_root}" "$@"
