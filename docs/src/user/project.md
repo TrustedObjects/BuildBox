@@ -149,3 +149,7 @@ It is asked to user to confirm before wiping.
 ::: tip
 Sources are sent to BuildBox trash, and are definitively removed after a while.
 :::
+
+::: note
+The `tools/` and `cache/` directories are kept intact: installed tools and cached downloads are not removed.
+:::
