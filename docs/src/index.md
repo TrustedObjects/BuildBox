@@ -10,7 +10,7 @@ hero:
       text: Getting started →
       link: /getting-started/
 features:
-  - title: Project versioning
+  - title: Reproductible build
     details: All your projects components and all involved tools required to build the deliverable are version constrained to ensure future reproductibility
   - title: Unified process
     details: Whatever the project, the setup and build process is the same
