@@ -1,3 +1,9 @@
+2.0.2 - 6/2/2026
+- Shell plugin: add project name in prompt
+- Improved tables columns display
+- Resolve 'goto <pkg>' stdout conflicts
+- If project profile is an empty Git repo (no commits yet), read branch from symbolic ref
+
 2.0.1 - 5/6/2026
 - Fix host commands pipes and output file paths
 - Handle direct calls and nested 'bash -c' calls for BuildBox API
