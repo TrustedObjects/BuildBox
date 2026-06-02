@@ -171,7 +171,7 @@ function bb_get_project_targets_formatted {
 				if [[ "${target}" == "${current_target}" ]]; then
 					display_target="$(printf '\033[34m%s\033[0m' "${target}")"
 				fi
-				local description cpu
+				local description="" cpu=""
 				description=$(bb_get_target_description "${target}")
 				cpu=$(bb_get_target_cpu "${target}")
 				printf '%s\t%s\t%s\n' "${display_target}" "${description:-}" "${cpu:-}"
