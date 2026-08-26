@@ -121,8 +121,9 @@ leave. To keep your own value, disable the auto-export (see below).
 
 ## Configuration
 
-User configuration is read from `~/.config/buildbox/config` (or
-`$XDG_CONFIG_HOME/buildbox/config`). Two flags are available:
+Configuration is read from `/etc/buildbox/config`, then from
+`~/.config/buildbox/config` (or `$XDG_CONFIG_HOME/buildbox/config`) which
+overrides it. Two flags are available:
 
 ```bash
 # Disable the whole plugin: no prompt segment, no aliases, no env export
@@ -135,6 +136,11 @@ BBX_ENV_EXPORT_ENABLED=0
 # (requires notify-send)
 BBX_NOTIFICATIONS_ENABLED=0
 ```
+
+These are the same files as the system and user [settings](advanced.md#settings)
+files: the `BBX_*` options above configure the host shell plugin, while the
+`BB_*` options configure BuildBox itself. The `BBX_*` ones have no effect in a
+project `.bbx/config`.
 
 `BBX_PROMPT_ENABLED` and `BBX_ENV_EXPORT_ENABLED` default to `1`.
 `BBX_NOTIFICATIONS_ENABLED` defaults to `1` (opt-out to disable).

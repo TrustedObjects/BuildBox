@@ -27,16 +27,16 @@ export BB_TEST_REPOSITORY_URI="file://${BB_DIR}/tests/repositories/remote"
 # Ensure test fixture repos exist (idempotent)
 "${BB_DIR}/tests/repositories/setup.sh"
 
-export BB_TRASH_KEEP_DAYS=15
-export BB_BUILD_JOBS=9
+# BB_TRASH_KEEP_DAYS and BB_BUILD_JOBS defaults come from bb_load_config()
 
 export LANG="en_US.UTF-8"
 
 
-export BB_CUSTOM_CONFIG="${BB_DIR}/tests/workspace/etc/custom_config"
-if [ -f "${BB_CUSTOM_CONFIG}" ]; then
-	source "${BB_CUSTOM_CONFIG}"
-fi
+# Isolate tests from the machine configuration: a 'config' file placed in these
+# directories is loaded by bb_load_config() as the system or the user one
+export BB_SYSTEM_CONFIG_DIR="${BB_DIR}/tests/workspace/etc-system"
+export BB_USER_CONFIG_DIR="${BB_DIR}/tests/workspace/etc"
+mkdir -p "${BB_SYSTEM_CONFIG_DIR}" "${BB_USER_CONFIG_DIR}"
 
 # Test workspace: each test gets a fresh project directory created here
 export BB_TEST_WORKSPACE="${BB_DIR}/tests/workspace"

@@ -35,12 +35,23 @@ bb_declare_internal_api() {
 }
 
 BB_SETOPT_BACKUP_LIST="errexit\|errtrace\|xtrace"
-BB_SETOPT_LIST="+eE"
-if [ ! -z ${BB_DEBUG} ]; then
-	BB_SETOPT_LIST+=" -xv"
-else
-	BB_SETOPT_LIST+=" +xv"
-fi
+
+## @fn bb_update_shell_options
+## Refresh the BuildBox shell options list from `BB_DEBUG`.
+## It is called when the API is loaded, and again once the custom
+## configuration files are read, as they may define `BB_DEBUG`.
+## @setenv `BB_SETOPT_LIST`
+## @return 0 on success
+function bb_update_shell_options {
+	BB_SETOPT_LIST="+eE"
+	if [ ! -z "${BB_DEBUG}" ]; then
+		BB_SETOPT_LIST+=" -xv"
+	else
+		BB_SETOPT_LIST+=" +xv"
+	fi
+	return 0
+}
+bb_update_shell_options
 
 ## @fn bb_exportfn
 ## BuildBox API declaration function:
@@ -104,6 +115,7 @@ else
 		}'
 	}
 fi
+bb_exportfn bb_update_shell_options
 
 ## @fn bb_is_subpath_of
 ## Check if a path is parent of another path.

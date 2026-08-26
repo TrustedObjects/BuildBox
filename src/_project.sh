@@ -56,6 +56,8 @@ function bb_autodetect_project {
 	local project_root
 	project_root=$(bb_detect_project_root)
 	if [ $? -ne 0 ]; then
+		# No project: user configuration still applies
+		bb_load_config
 		return 0
 	fi
 	bb_set_current_project "${project_root}"
@@ -72,7 +74,9 @@ bb_exportfn bb_autodetect_project
 ## @setenv `BB_CACHE_DIR`: per-project cache directory
 ## @setenv `BB_TOOLS_DIR`: per-project tools directory
 ## @setenv `BB_TRASH_DIR`: per-project trash directory
-## @setenv and env set by bb_set_project_current_target() via state
+## @setenv `BB_CONFIG`: project configuration file path
+## @setenv and env set by bb_load_config() and by
+## bb_set_project_current_target() via state
 ## @return 0 on success
 function bb_set_current_project {
 	local project_root=${1}
@@ -88,6 +92,9 @@ function bb_set_current_project {
 	export BB_TOOLS_DIR="${BB_PROJECT_DIR}/tools"
 	export BB_TRASH_DIR="${BB_PROJECT_DIR}/trash"
 	mkdir -p "${BB_CACHE_DIR}" "${BB_TOOLS_DIR}" "${BB_TRASH_DIR}"
+	# Load settings: user configuration first, then the project one which
+	# takes precedence
+	bb_load_config
 	# Restore target from state file
 	if [ -f "${BB_PROJECT_DIR}/state" ]; then
 		local target
@@ -107,7 +114,7 @@ bb_exportfn bb_set_current_project
 ## @fn bb_reset_current_project
 ## Reset current project environment.
 ## @resetenv `BB_PROJECT_DIR`, `BB_PROJECT`, `BB_PROJECT_PROFILE_DIR`, `BB_PROJECT_SRC_DIR`
-## @resetenv `BB_CACHE_DIR`, `BB_TOOLS_DIR`, `BB_TRASH_DIR`
+## @resetenv `BB_CACHE_DIR`, `BB_TOOLS_DIR`, `BB_TRASH_DIR`, `BB_CONFIG`
 function bb_reset_current_project {
 	unset BB_PROJECT_DIR
 	unset BB_PROJECT
@@ -116,6 +123,7 @@ function bb_reset_current_project {
 	unset BB_CACHE_DIR
 	unset BB_TOOLS_DIR
 	unset BB_TRASH_DIR
+	unset BB_CONFIG
 	bb_reset_project_current_target
 	bb_reset_local_env
 }

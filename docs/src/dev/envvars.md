@@ -43,6 +43,11 @@ Here is a partial list of these variables and their meaning:
 - `BB_PREBUILT_SERVER`: [pre-built target](/user/target.md#pre-built-targets) server address
 - `BB_PREBUILT_PATH`: [pre-built target](/user/target.md#pre-built-targets) remote path
 - `BB_PREBUILT_ONLY_TAGGED`: [pre-built target](/user/target.md#pre-built-targets) 1 to restrict pre-built target generation only to tagged projects, else 0
+- `BB_CONFIG`: active project [configuration](/user/advanced.md#settings) file path (`.bbx/config`)
+- `BB_USER_CONFIG`: user [configuration](/user/advanced.md#settings) file path (`~/.config/buildbox/config`)
+- `BB_SYSTEM_CONFIG`: system [configuration](/user/advanced.md#settings) file path (`/etc/buildbox/config`)
+- `BB_USER_CONFIG_DIR`: user configuration directory, bind-mounted in the container at its host path; when unset, `$XDG_CONFIG_HOME/buildbox` is used
+- `BB_SYSTEM_CONFIG_DIR`: system configuration directory; when unset, `/etc/buildbox` is used
 - `BB_LOCAL_ENV_LAST_*`: used for [local environment](api.md#local-environment) cache computation
 
 There are also the following variables, not listed by `bbx env`:

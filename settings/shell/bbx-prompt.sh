@@ -52,7 +52,8 @@
 ## These are unset when leaving the project tree.
 ##
 ## To disable the whole plugin, set BBX_PROMPT_ENABLED=0 in
-## ~/.config/buildbox/config (or $XDG_CONFIG_HOME/buildbox/config).
+## ~/.config/buildbox/config (or $XDG_CONFIG_HOME/buildbox/config), or in
+## /etc/buildbox/config for all the users of the machine.
 ## To keep the prompt and aliases but disable just the environment
 ## auto-export, set BBX_ENV_EXPORT_ENABLED=0 in the same file.
 
@@ -86,9 +87,13 @@ BBX_PROMPT_ENABLED=1
 BBX_ENV_EXPORT_ENABLED=1
 BBX_NOTIFICATIONS_ENABLED=1
 
-# Load user config if present
-_bbx_config="${XDG_CONFIG_HOME:-${HOME}/.config}/buildbox/config"
-[ -f "${_bbx_config}" ] && source "${_bbx_config}"
+# Load system then user config if present, the user one taking precedence.
+# These files are shared with BuildBox itself, which reads its BB_* settings
+# from them (see src/_config.sh); only the BBX_* options above are handled here.
+for _bbx_config in "/etc/buildbox/config" \
+                   "${XDG_CONFIG_HOME:-${HOME}/.config}/buildbox/config"; do
+	[ -f "${_bbx_config}" ] && source "${_bbx_config}"
+done
 unset _bbx_config
 
 # Export so bbx subprocesses inherit the value

@@ -29,6 +29,13 @@ BBX_CONTAINER_PREFIX="${BBX_CONTAINER_PREFIX:-bbx}"
 BBX_HUB_ORGANIZATION="trustedobjects"
 BBX_HUB_REPOSITORY="${BBX_HUB_ORGANIZATION}/buildbox"
 
+# Configuration directories, holding the 'config' file: BuildBox settings and
+# shell plugin settings. Bind-mounted read-only at the same path in the
+# container. The system one is only mounted when it exists on the host, so that
+# an image shipping its own /etc/buildbox/config keeps it otherwise.
+BBX_SYSTEM_CONFIG_DIR="/etc/buildbox"
+BBX_USER_CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}/buildbox"
+
 # Installed share directory, replaced at install time by 'make install'.
 # When empty, falls back to source-tree auto-detection.
 _BBX_SHARE=""
@@ -166,6 +173,13 @@ function bbx_ensure_container {
 		>&2 echo "Starting BuildBox container for ${project_root}..."
 		local retries=0
 		local extra_args=()
+		# Configuration directories, mounted at their host path so that the
+		# paths reported by BuildBox are the same inside and outside the
+		# container.
+		[ -d "${BBX_SYSTEM_CONFIG_DIR}" ] && \
+			extra_args+=(-v "${BBX_SYSTEM_CONFIG_DIR}:${BBX_SYSTEM_CONFIG_DIR}:ro")
+		mkdir -p "${BBX_USER_CONFIG_DIR}"
+		extra_args+=(-v "${BBX_USER_CONFIG_DIR}:${BBX_USER_CONFIG_DIR}:ro")
 		# buildbox user has the same UID/GID as the host user (aligned by entrypoint.sh),
 		# so host dotfiles can be bind-mounted directly without ownership issues.
 		[ -d "${HOME}/.ssh" ]       && extra_args+=(-v "${HOME}/.ssh:/home/buildbox/.ssh:ro")
@@ -256,20 +270,27 @@ function bbx_exec {
 	bbx_host_agent "${send_pipe}" "${ret_pipe}" "${out_file}" &
 	local agent_pid=$!
 
+	# Forward BuildBox settings defined in the host environment. Only the ones
+	# actually set are forwarded, so that unset ones are left to the
+	# 'config' files and to BuildBox defaults (see src/_config.sh).
+	local settings_args=()
+	local setting
+	for setting in BB_BUILD_JOBS BB_TRASH_KEEP_DAYS BB_DEBUG \
+	               BB_PREBUILT_SERVER BB_PREBUILT_USERNAME BB_PREBUILT_PATH \
+	               BB_PREBUILT_ONLY_TAGGED; do
+		[ -n "${!setting}" ] && settings_args+=(-e "${setting}=${!setting}")
+	done
+
 	docker exec -i ${tty_flag} \
 		--user buildbox \
 		-w "${project_root}" \
 		-e BB_DIR="${BBX_DIR}" \
 		-e BB_LAUNCHER_ID="${launcher_id}" \
 		-e BB_WORKDIR="${project_root}/.bbx" \
+		-e BB_USER_CONFIG_DIR="${BBX_USER_CONFIG_DIR}" \
 		$( [ -n "${SSH_AUTH_SOCK}" ] && echo "-e SSH_AUTH_SOCK=${SSH_AUTH_SOCK}" ) \
 		-e BUILDBOX_ENV=1 \
-		-e BB_BUILD_JOBS="${BB_BUILD_JOBS:-9}" \
-		-e BB_PREBUILT_SERVER="${BB_PREBUILT_SERVER:-}" \
-		-e BB_PREBUILT_USERNAME="${BB_PREBUILT_USERNAME:-}" \
-		-e BB_PREBUILT_PATH="${BB_PREBUILT_PATH:-}" \
-		-e BB_PREBUILT_ONLY_TAGGED="${BB_PREBUILT_ONLY_TAGGED:-1}" \
-		-e BB_DEBUG="${BB_DEBUG:-}" \
+		"${settings_args[@]}" \
 		"${container}" "${BBX_COMMANDS}/bbx" "$@"
 	local ret=$?
 
@@ -403,6 +424,7 @@ function bbx_stop_container {
 		--user buildbox \
 		-w "${project_root}" \
 		-e BB_DIR="${BBX_DIR}" \
+		-e BB_USER_CONFIG_DIR="${BBX_USER_CONFIG_DIR}" \
 		-e PATH="${BBX_COMMANDS}:${BBX_LIB}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
 		"${container}" \
 		bash -c "source buildbox_utils.sh && bb_unload_tools" 2>/dev/null || true

@@ -54,6 +54,7 @@ function bb_include {
 }
 # Include BuildBox internal scripts
 bb_include _common.sh
+bb_include _config.sh
 bb_include _log.sh
 bb_include _error.sh
 bb_include _display.sh

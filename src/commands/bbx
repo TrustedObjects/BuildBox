@@ -39,8 +39,8 @@ else
 fi
 export DEFAULT_PATH=${PATH}
 
-export BB_BUILD_JOBS=${BB_BUILD_JOBS:-9}
-export BB_TRASH_KEEP_DAYS=${BB_TRASH_KEEP_DAYS:-15}
+# Settings defaults are applied by bb_load_config(), once the 'config'
+# files are read (see src/_config.sh)
 export LANG="en_US.UTF-8"
 
 
@@ -167,6 +167,11 @@ case "${cmd}" in
 		exit $?
 		;;
 	env)
+		# Set up the whole BuildBox environment (project, target, settings read
+		# from the 'config' files) before listing it. 'bbenv' itself must
+		# not source the API: it is called by the local environment mechanism,
+		# which would recurse.
+		source buildbox_utils.sh
 		bbenv "$@"
 		exit $?
 		;;

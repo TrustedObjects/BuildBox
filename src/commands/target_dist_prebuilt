@@ -30,15 +30,18 @@ if [ -z "${BB_TARGET_BUILD_DIR}" ] || [ ! -d ${BB_TARGET_BUILD_DIR} ]; then
 	exit 1
 fi
 if [ -z "${BB_PREBUILT_SERVER}" ]; then
-	echo "Please define BB_PREBUILT_SERVER in ${BB_CUSTOM_CONFIG}, and reopen BuildBox shell"
+	echo "Please define BB_PREBUILT_SERVER in ${BB_CONFIG}"
+	echo "or in ${BB_USER_CONFIG} to share it between your projects"
 	exit 1
 fi
 if [ -z "${BB_PREBUILT_USERNAME}" ]; then
-	echo "Please define BB_PREBUILT_USERNAME in ${BB_CUSTOM_CONFIG}, and reopen BuildBox shell"
+	echo "Please define BB_PREBUILT_USERNAME in ${BB_CONFIG}"
+	echo "or in ${BB_USER_CONFIG} to share it between your projects"
 	exit 1
 fi
 if [ -z "${BB_PREBUILT_PATH}" ]; then
-	echo "Please define BB_PREBUILT_PATH in ${BB_CUSTOM_CONFIG}, and reopen BuildBox shell"
+	echo "Please define BB_PREBUILT_PATH in ${BB_CONFIG}"
+	echo "or in ${BB_USER_CONFIG} to share it between your projects"
 	exit 1
 fi
 

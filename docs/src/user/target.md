@@ -201,10 +201,17 @@ Current target required tools are listed with their details.
 
 Pre-built targets are built files of specific project revision targets, whose purpose is to avoid spending time building targets locally.
 
-Settings before using pre-built targets can be defined in `.bbx/custom_config`:
+Settings before using pre-built targets can be defined in a
+[`config` file](advanced.md#settings): `.bbx/config` for a single project,
+`~/.config/buildbox/config` for all your projects, or `/etc/buildbox/config`
+for all the users of the machine:
 - `BB_PREBUILT_SERVER`: pre-built targets SSH server
 - `BB_PREBUILT_USERNAME`: username to connect to pre-built targets server
 - `BB_PREBUILT_PATH`: pre-built targets directory on server
+
+Credentials such as `BB_PREBUILT_USERNAME` are usually set in the user file,
+while the server and path are shared by the whole team in the project file. On
+a build machine, the system file is a good place for the server settings.
 
 Pre-built targets can only be created for tagged projects revisions.
 
