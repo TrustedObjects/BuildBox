@@ -40,7 +40,7 @@ if [ -z "${PREFIX}" ] || [[ "${PREFIX}" == "/usr" ]] || [[ "${PREFIX}" == "/usr/
 	export BB_LOCAL_ENV_LAST_TARGET=""
 	export BB_LOCAL_ENV_LAST_TOOLS=""
 	export BB_LOCAL_ENV_LAST_TARGET_VARS=""
-	export BB_LOCAL_ENV_LAST_TARGET_CPU=""
+	export BB_LOCAL_ENV_LAST_TARGET_BUILD_SETTINGS=""
 fi
 
 unset BB_DISABLE_LOCAL_ENV_SET
@@ -93,6 +93,21 @@ function bb_set_target_local_env_vars {
 
 ## @fn bb_set_target_build_local_env
 ## Set build environment according to project current target settings.
+##
+## Hardware specific settings are not known by BuildBox: they are read from the
+## current target profile (see bb_get_target_build_settings()), which is the
+## only place where they can be described. Each setting the target profile does
+## not define falls back to a default matching a native x86 build:
+## - `CPU` defaults to `x86`,
+## - `CPUDEF` and `CPU_FAMILY` default to `CPU`, uppercased, with every
+## character which is neither a letter nor a digit replaced by an underscore
+## (for example `CPU=cortex-m33` gives `CORTEX_M33`),
+## - `CPU_DESCRIPTION` defaults to `CPU`,
+## - `CHOST` defaults to `x86_64-pc-linux-gnu`,
+## - `CFLAGS` and `LDFLAGS` default to no architecture specific flag.
+##
+## `CFLAGS` and `LDFLAGS` are then completed with the target build directory
+## include and library paths.
 ## @env `BB_TARGET`, the target name
 ## @env `BB_TARGET_BUILD_DIR`, the target build directory
 ## @setenv `CFLAGS`
@@ -113,81 +128,27 @@ function bb_set_target_local_env_vars {
 ## @setenv `XDG_DATA_DIRS`, to `${PREFIX}/share`
 ## @return 0 on success
 function bb_set_target_build_local_env {
-	cpu=$(bb_get_target_cpu ${BB_TARGET})
-	[ $? -ne 0 ] && return 1
-	export CPU=${cpu}
-	# ARM cores
-	if [[ $CPU =~ "cortex" ]]; then
-		export LDFLAGS="-specs=nosys.specs -specs=nano.specs"
-		export CHOST=arm-none-eabi
-		export CPU_FAMILY="ARM"
-		if [[ $CPU =~ "cortex-m23" ]]; then
-			export CPU_DESCRIPTION="Cortex-M23"
-			export CPUDEF="CORTEX_M23"
-			export CFLAGS="-mcpu=cortex-m23 -mthumb -mfloat-abi=soft -mcmse -mgeneral-regs-only"
-		elif [[ $CPU =~ "cortex-m33" ]]; then
-			export CPU_DESCRIPTION="Cortex-M33"
-			export CPUDEF="CORTEX_M33"
-			export CFLAGS="-mcpu=cortex-m33 -mthumb -mfloat-abi=soft -mcmse -mgeneral-regs-only"
-		elif [[ $CPU =~ "cortex-m35P" ]]; then
-			export CPU_DESCRIPTION="Cortex-M35P"
-			export CPUDEF="CORTEX_M35P"
-			export CFLAGS="-mcpu=cortex-m35p -mthumb -mfloat-abi=soft -mcmse -mgeneral-regs-only"
-		elif [[ $CPU =~ "cortex-m55" ]]; then
-			export CPU_DESCRIPTION="Cortex-M55"
-			export CPUDEF="CORTEX_M55"
-			export CFLAGS="-mcpu=cortex-m55 -mthumb -mfloat-abi=hardfp -mcmse -mgeneral-regs-only"
-		elif [[ $CPU =~ "cortex-m0" ]]; then
-			export CPU_DESCRIPTION="Cortex-M0"
-			export CPUDEF="CORTEX_M0"
-			export CFLAGS="-mcpu=cortex-m0plus -mthumb -mfloat-abi=soft -mgeneral-regs-only"
-		elif [[ $CPU =~ "cortex-m3" ]]; then
-			export CPU_DESCRIPTION="Cortex-M3"
-			export CPUDEF="CORTEX_M3"
-			export CFLAGS="-mcpu=cortex-m3 -mthumb -mfloat-abi=soft -mgeneral-regs-only"
-		elif [[ $CPU =~ "cortex-m4" ]]; then
-			export CPU_DESCRIPTION="Cortex-M4"
-			export CPUDEF="CORTEX_M4"
-			export CFLAGS="-mcpu=cortex-m4 -mthumb -mfloat-abi=soft -mgeneral-regs-only"
-		elif [[ $CPU =~ "cortex-m7" ]]; then
-			export CPU_DESCRIPTION="Cortex-M7"
-			export CPUDEF="CORTEX_M7"
-			export CFLAGS="-mcpu=cortex-m7 -mthumb -mfloat-abi=soft -mgeneral-regs-only"
-		elif [[ $CPU =~ "cortex-m" ]]; then
-			export CPU_DESCRIPTION="Generic Cortex-M (to be defined later)"
-			export CPUDEF=""
-			export CFLAGS="-mthumb"
-		fi
-	elif [[ $CPU =~ "arm-linux" ]]; then
-		export CPU_DESCRIPTION="ARM"
-		export CPUDEF="ARM"
-		export CFLAGS=
-		export CPU_FAMILY="ARM-LINUX"
-		unset LDFLAGS
-		export CHOST=arm-none-linux-gnueabihf
-	# Xtensa cores
-	elif [[ $CPU =~ "lx6" ]]; then
-		export CPU_DESCRIPTION="Tensilica Xtensa LX6 core"
-		export CPUDEF="LX6"
-		export CFLAGS="-mlongcalls -ffunction-sections -fdata-sections"
-		export CPU_FAMILY="XTENSA"
-		export LDFLAGS="-specs=nosys.specs -specs=nano.specs -Wl,--gc-sections -static"
-		export CHOST=xtensa-esp32-elf
-	elif [[ $CPU =~ "lx7" ]]; then
-		export CPU_DESCRIPTION="Tensilica Xtensa LX7 core"
-		export CPUDEF="LX7"
-		export CFLAGS="-mlongcalls -ffunction-sections -fdata-sections"
-		export CPU_FAMILY="XTENSA"
-		export LDFLAGS="-specs=nosys.specs -specs=nano.specs -Wl,--gc-sections -static"
-		export CHOST=xtensa-esp32-elf
-	else
-		export CPU_DESCRIPTION="X86"
-		export CPUDEF="X86"
-		export CFLAGS=
-		export CPU_FAMILY="X86"
-		unset LDFLAGS
-		export CHOST=x86_64-pc-linux-gnu
+	local settings=""
+	settings=$(bb_get_target_build_settings ${BB_TARGET})
+	if [ $? -ne 0 ]; then
+		return 1
 	fi
+	# Start from a clean state: settings of a previously active target must not
+	# survive
+	unset CPU CPU_FAMILY CPU_DESCRIPTION CPUDEF CHOST CFLAGS LDFLAGS
+	# Apply target profile settings as they are, they are not interpreted
+	while IFS= read -r setting; do
+		if [ -n "${setting}" ]; then
+			export "${setting%%=*}=${setting#*=}"
+		fi
+	done < <(echo "${settings}")
+	# Defaults for the settings the target profile does not define
+	export CPU="${CPU:-x86}"
+	local cpu_id=$(printf '%s' "${CPU}" | tr '[:lower:]' '[:upper:]' | tr -cs '[:alnum:]' '_')
+	export CPU_FAMILY="${CPU_FAMILY:-${cpu_id}}"
+	export CPUDEF="${CPUDEF:-${cpu_id}}"
+	export CPU_DESCRIPTION="${CPU_DESCRIPTION:-${CPU}}"
+	export CHOST="${CHOST:-x86_64-pc-linux-gnu}"
 	export PREFIX=${BB_TARGET_BUILD_DIR}
 	export CFLAGS="-I${PREFIX}/include ${CFLAGS}"
 	export LDFLAGS="-L${PREFIX}/lib ${LDFLAGS}"
@@ -235,7 +196,8 @@ function bb_set_tools_local_env {
 ## - current target name,
 ## - required tools,
 ## - target variables,
-## - and target CPU.
+## - and target build settings (CPU and toolchain settings, see
+## bb_get_target_build_settings()).
 ##
 ## If one of them have changed, refresh is needed.
 ## @return 0 if refresh not needed
@@ -251,8 +213,8 @@ function bb_is_local_env_outdated {
 	if [[ "${BB_LOCAL_ENV_LAST_TARGET_VARS}" != "${target_vars}" ]]; then
 		return 1
 	fi
-	local target_cpu=$(bb_get_target_cpu ${BB_TARGET})
-	if [[ "${BB_LOCAL_ENV_LAST_TARGET_CPU}" != "${target_cpu}" ]]; then
+	local target_build_settings=$(bb_get_target_build_settings ${BB_TARGET})
+	if [[ "${BB_LOCAL_ENV_LAST_TARGET_BUILD_SETTINGS}" != "${target_build_settings}" ]]; then
 		return 1
 	fi
 	return 0
@@ -266,7 +228,7 @@ function bb_local_env_updated {
 	export BB_LOCAL_ENV_LAST_TARGET=${BB_TARGET}
 	export BB_LOCAL_ENV_LAST_TOOLS=$(bb_get_tools 1)
 	export BB_LOCAL_ENV_LAST_TARGET_VARS=$(bb_get_target_vars ${BB_TARGET})
-	export BB_LOCAL_ENV_LAST_TARGET_CPU=$(bb_get_target_cpu ${BB_TARGET})
+	export BB_LOCAL_ENV_LAST_TARGET_BUILD_SETTINGS=$(bb_get_target_build_settings ${BB_TARGET})
 }
 
 ## @fn bb_set_local_env
@@ -335,6 +297,7 @@ bb_exportfn bb_set_local_env
 ## immediately
 ## @resetenv `CPU`
 ## @resetenv `CPUDEF`
+## @resetenv `CPU_DESCRIPTION`
 ## @resetenv `CFLAGS`
 ## @resetenv `LDFLAGS`
 ## @resetenv `CHOST`
@@ -354,6 +317,7 @@ function bb_reset_local_env {
 	unset CPU
 	unset CPUDEF
 	unset CPU_FAMILY
+	unset CPU_DESCRIPTION
 	unset CFLAGS
 	unset LDFLAGS
 	unset CHOST

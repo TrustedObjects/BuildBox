@@ -56,7 +56,7 @@ cd "${BB_PROJECT_DIR}"
 mkdir -p ${BB_TARGET_SRC_DIR}
 mkdir -p ${BB_TARGET_BUILD_DIR}
 source $(bb_get_target_profile_path ${BB_TARGET})
-bb_set_local_env ${BB_TARGET_BUILD_DIR} ${CPU}
+bb_set_local_env
 
 # Select packages matching given list, and make results unique
 selected_packages=$(bb_find_matching_packages 1 ${packages_list})

@@ -15,15 +15,16 @@ Targets profiles are defined in project profile directory `.bbx/`, in files pref
 Target profile file is available at `.bbx/target.<TARGET>`.
 
 Target file accepted fields are:
-- `CPU` defines the target CPU to build for.
-- `TOOLS` (optional) defines a file listing target required tools, and toolchains (must be stored in project profile directory).
 - `PACKAGES` defines a file listing target packages (must be stored in project profile directory).
+- `TOOLS` (optional) defines a file listing target required tools, and toolchains (must be stored in project profile directory).
 - `TESTS` (optional) defines a [target test script](#target-test-and-delivery-scripts).
 - `DIST` (optional) defines a [target delivery script](#target-test-and-delivery-scripts).
 - `DESCRIPTION` (optional) short target description.
 - `VAR_xxx` (optional) target variables (replace xxx with whatever you want)
+- [build settings](#target-build-settings) (optional): `CPU`, `CPU_FAMILY`, `CPU_DESCRIPTION`, `CPUDEF`, `CHOST`, `CFLAGS` and `LDFLAGS`.
 
-Accepted values for `CPU`: `x86`, `arm-linux`, `cortex-m0`, `cortex-m3`, `cortex-m4`, `cortex-m7`, `cortex-m23`, `cortex-m33`, `cortex-m35P`, `cortex-m55`, `lx6`
+Every field is optional: a target file may define nothing at all, in which case
+the target is built for the machine running BuildBox, with no specific flag.
 
 You can define specific target variables, with `VAR_xxx` entries (replace xxx with whatever you want).
 Target variables result in environment variables declaration when the target is active, named `BB_TARGET_VAR_xxx`.
@@ -47,6 +48,66 @@ DESCRIPTION="My target description"
 
 The target directory (if the target has been fetched) is `<TARGET>/` at the project root.
 Built packages are installed in the target build directory, `<TARGET>/build`.
+
+## Target build settings
+
+BuildBox does not know any CPU nor any toolchain: the target file is the only
+place where the target hardware specifics are described. BuildBox only takes
+care of the mechanics, and exports what the target file defines to the
+[build environment](/dev/envvars.md), so that packages build scripts, test and
+delivery scripts can use it.
+
+The following fields are accepted, all of them being optional:
+
+| Field | Meaning | Default value |
+|-------|---------|---------------|
+| `CPU` | Target CPU name, freely chosen (it is also the name displayed by `bbx target list`) | `x86` |
+| `CPU_FAMILY` | CPU family, to share code between several CPU of the same family | `CPU` value, uppercased |
+| `CPUDEF` | CPU identifier, meant to be used as a C pre-processor definition | `CPU` value, uppercased |
+| `CPU_DESCRIPTION` | Human readable CPU description | `CPU` value |
+| `CHOST` | Toolchain host triplet, passed to `configure` scripts as `--host` for [autotools packages](package.md#autotools) | `x86_64-pc-linux-gnu` |
+| `CFLAGS` | Compilation flags for the target | none |
+| `LDFLAGS` | Link flags for the target | none |
+
+When a field is left undefined (or defined empty), its default value applies.
+Defaults describe a native build for the machine running BuildBox, which is why
+a target file defining nothing at all builds for the host.
+
+For `CPU_FAMILY` and `CPUDEF` defaults, uppercasing the `CPU` value also
+replaces every character which is neither a letter nor a digit by an
+underscore, so that the result can be used as a C pre-processor definition: for
+example `CPU=cortex-m33` gives `CORTEX_M33`.
+
+::: tip
+Fields are plain shell assignments, evaluated in the order they appear in the
+file, so a field can reference a previously defined one, for example
+`CFLAGS="-mcpu=${CPU} -mthumb"`.
+:::
+
+`CFLAGS` and `LDFLAGS` given here are the target specific flags only: BuildBox
+completes them with the target build directory and the target tools include and
+library paths. Do not reference these paths in the target file.
+
+Example of a target file for an ARM Cortex-M33 firmware, built with a bare
+metal toolchain provided as a [tool](tool.md):
+```
+CPU=cortex-m33
+CPU_FAMILY=ARM
+CPU_DESCRIPTION="Cortex-M33 with security extensions"
+CPUDEF=CORTEX_M33
+CHOST=arm-none-eabi
+CFLAGS="-mcpu=cortex-m33 -mthumb -mfloat-abi=soft -mcmse -mgeneral-regs-only"
+LDFLAGS="-specs=nosys.specs -specs=nano.specs"
+TOOLS=tools.prod
+PACKAGES=packages.prod
+DESCRIPTION="Secure firmware"
+```
+
+::: warning
+BuildBox 2.0.2 and older had built-in flags for a fixed list of CPU. Projects
+relying on them must declare these flags in their target files: see
+[version migrations](migration.md#target-build-settings-are-no-longer-built-in).
+:::
 
 Dealing with targets is done through the `target` command, detailed below.
 

@@ -87,6 +87,7 @@ export default defineConfig({
             { text: 'Shell plugin', link: '/user/shell_plugin' },
             { text: 'Utilities', link: '/user/utils' },
             { text: 'Advanced features', link: '/user/advanced' },
+            { text: 'Version migrations', link: '/user/migration' },
           ],
         },
       ],

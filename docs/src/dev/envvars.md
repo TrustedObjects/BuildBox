@@ -50,12 +50,22 @@ Here is a partial list of these variables and their meaning:
 - `BB_SYSTEM_CONFIG_DIR`: system configuration directory; when unset, `/etc/buildbox` is used
 - `BB_LOCAL_ENV_LAST_*`: used for [local environment](api.md#local-environment) cache computation
 
-There are also the following variables, not listed by `bbx env`:
+## Target build settings variables
+
+The following variables describe the active target hardware and its toolchain.
+They are not listed by `bbx env`:
 - `CPU`
 - `CPU_FAMILY`
 - `CPU_DESCRIPTION` (do not rely on its value to condition code flow as it is a human-readable string subject to change)
 - `CPUDEF`
 - `CHOST`
+
+BuildBox does not know anything about CPU and toolchains: these variables, as
+well as `CFLAGS` and `LDFLAGS`, come from the
+[target build settings](/user/target.md#target-build-settings) of the active
+target, and default to a native build when the target file does not define
+them. Add a setting to the target file to change any of them, never write these
+variables directly.
 
 ## Standard variables managed by BuildBox
 
@@ -66,6 +76,8 @@ up-to-date the following environment variables:
 - `PKG_CONFIG_PATH`
 - `ACLOCAL_PATH`
 - `XDG_DATA_DIRS`
-- `CFLAGS`
-- `LDFLAGS`
+- `CFLAGS`, target build directory and tools include paths, completed with the
+active target [build settings](/user/target.md#target-build-settings) flags
+- `LDFLAGS`, target build directory and tools library paths, completed with the
+active target [build settings](/user/target.md#target-build-settings) flags
 - `TMPDIR`, a temporary directory under the project profile directory

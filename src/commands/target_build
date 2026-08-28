@@ -64,7 +64,7 @@ cd ${BB_PROJECT_DIR}
 mkdir -p ${BB_TARGET_SRC_DIR}
 mkdir -p ${BB_TARGET_BUILD_DIR}
 source $(bb_get_target_profile_path ${BB_TARGET})
-bb_set_local_env ${BB_TARGET_BUILD_DIR} ${CPU}
+bb_set_local_env
 
 # Packages lock (lock automatically released on process end)
 bb_lock_acquire ${BB_PROJECT_SRC_DIR}/lock "(waiting ongoing packages operations to end...)"

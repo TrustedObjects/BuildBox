@@ -199,6 +199,46 @@ function bb_get_target_cpu () (
 )
 bb_exportfn bb_get_target_cpu
 
+## @fn bb_get_target_build_settings
+## Get build settings defined by a target profile.
+##
+## These settings describe the target hardware and its toolchain. BuildBox does
+## not know anything about them, it only reports what the target profile
+## defines. Settings which are not defined (or defined empty) are not printed,
+## so that the [local environment](#local-environment) can apply its own
+## defaults.
+## @param Target name
+## @print One `NAME=VALUE` line per defined setting, among `CPU`, `CPU_FAMILY`,
+## `CPU_DESCRIPTION`, `CPUDEF`, `CHOST`, `CFLAGS` and `LDFLAGS`
+## @return 0 if target is found
+function bb_get_target_build_settings () (
+	target=$1
+	target_profile=$(bb_get_target_profile_path ${target})
+	if [ $? -ne 0 ]; then
+		return 1
+	fi
+	# Start from a clean state: the caller environment may hold settings coming
+	# from another target
+	unset CPU CPU_FAMILY CPU_DESCRIPTION CPUDEF CHOST CFLAGS LDFLAGS
+	# bb_source() is not used here on purpose: the profile may have been
+	# sourced already by the caller, while its values are needed
+	# unconditionally
+	source ${target_profile}
+	if [ $? -ne 0 ]; then
+		return 1
+	fi
+	for setting in "CPU=${CPU}" "CPU_FAMILY=${CPU_FAMILY}" \
+		"CPU_DESCRIPTION=${CPU_DESCRIPTION}" "CPUDEF=${CPUDEF}" \
+		"CHOST=${CHOST}" "CFLAGS=${CFLAGS}" "LDFLAGS=${LDFLAGS}"; do
+		# Print only the settings the target profile defines
+		if [ -n "${setting#*=}" ]; then
+			printf '%s\n' "${setting}"
+		fi
+	done
+	return 0
+)
+bb_exportfn bb_get_target_build_settings
+
 ## @fn bb_get_target_description
 ## Get specified current project target description
 ## @param Target name

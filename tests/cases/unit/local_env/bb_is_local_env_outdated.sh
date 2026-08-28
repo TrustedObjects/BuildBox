@@ -78,3 +78,19 @@ function test_bb_is_local_env_outdated_target_cpu {
 }
 bb_declare_test test_bb_is_local_env_outdated_target_cpu
 
+function test_bb_is_local_env_outdated_target_build_settings {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	bb_set_project_current_target bar
+	asserteq $? 0
+	bb_is_local_env_outdated
+	asserteq $? 0
+	target_profile="$(bb_get_target_profile_path ${BB_TARGET})"
+	asserteq $? 0
+	# Any build setting change, not only CPU, makes local env outdated
+	echo 'CFLAGS="-mcpu=cortex-m3 -mthumb"' >> "${target_profile}"
+	bb_is_local_env_outdated
+	assertne $? 0
+}
+bb_declare_test test_bb_is_local_env_outdated_target_build_settings
+
