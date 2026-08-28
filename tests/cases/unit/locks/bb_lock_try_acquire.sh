@@ -20,10 +20,12 @@ function test_bb_lock_try_acquire {
 	lock="${BB_PROJECT_DIR}/tmp/lock"
 	bb_lock_try_acquire "${lock}"
 	asserteq $? 0
-	assertd "${lock}"
+	bb_lock_is_held "${lock}"
+	asserteq $? 0
 	bb_lock_release "${lock}"
 	asserteq $? 0
-	assertnd "${lock}"
+	bb_lock_is_held "${lock}"
+	assertne $? 0
 }
 bb_declare_test test_bb_lock_try_acquire
 
@@ -33,14 +35,43 @@ function test_bb_lock_try_acquire_already_hold {
 	lock="${BB_PROJECT_DIR}/tmp/lock"
 	bb_lock_acquire "${lock}"
 	asserteq $? 0
-	assertd "${lock}"
+	bb_lock_is_held "${lock}"
+	asserteq $? 0
 	bb_lock_try_acquire "${lock}"
 	asserteq $? 1
 	bb_lock_release "${lock}"
 	asserteq $? 0
-	assertnd "${lock}"
+	bb_lock_is_held "${lock}"
+	assertne $? 0
 }
 bb_declare_test test_bb_lock_try_acquire_already_hold
+
+try_acquire_script="#!${SHELL_CMD}
+source buildbox_utils.sh
+bb_lock_try_acquire \${1}
+exit \$?
+"
+
+function test_bb_lock_try_acquire_held_by_another_process {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	lock="${BB_PROJECT_DIR}/tmp/lock"
+	echo "${try_acquire_script}" > "${TMPDIR}/test.sh"
+	chmod +x ${TMPDIR}/test.sh
+	# Nobody holds the lock yet
+	${TMPDIR}/test.sh ${lock}
+	asserteq $? 0
+	bb_lock_acquire "${lock}"
+	asserteq $? 0
+	# Lock held by the current process, the sub script can not acquire it
+	${TMPDIR}/test.sh ${lock}
+	asserteq $? 1
+	bb_lock_release "${lock}"
+	asserteq $? 0
+	${TMPDIR}/test.sh ${lock}
+	asserteq $? 0
+}
+bb_declare_test test_bb_lock_try_acquire_held_by_another_process
 
 function test_bb_lock_try_acquire_error {
 	bb_use_test_project foo_project
@@ -53,3 +84,17 @@ function test_bb_lock_try_acquire_error {
 }
 bb_declare_test test_bb_lock_try_acquire_error
 
+function test_bb_lock_try_acquire_legacy_directory_lock {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	lock="${BB_PROJECT_DIR}/tmp/lock"
+	# BuildBox up to 2.0.2 used a directory as lock: a leftover one must not
+	# prevent from locking
+	mkdir -p "${lock}"
+	assertd "${lock}"
+	bb_lock_try_acquire "${lock}"
+	asserteq $? 0
+	assertf "${lock}"
+	bb_lock_release "${lock}"
+}
+bb_declare_test test_bb_lock_try_acquire_legacy_directory_lock

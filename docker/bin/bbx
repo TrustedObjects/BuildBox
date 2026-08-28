@@ -304,10 +304,14 @@ function bbx_exec {
 }
 
 # Returns 0 if the project's source lock is held (a build/clone is running).
-# The lock is a directory at ${project_root}/src/lock (see _locks.sh).
+# The lock is a flock held on ${project_root}/src/lock (see _locks.sh): the file
+# always exists once used, so the lock itself has to be tested. Exit code 3
+# means flock could not acquire it, hence a process is holding it.
 function bbx_project_is_busy {
-	local project_root="${1}"
-	[ -d "${project_root}/src/lock" ]
+	local lock_file="${1}/src/lock"
+	[ -f "${lock_file}" ] || return 1
+	flock -n -E 3 "${lock_file}" true > /dev/null 2>&1
+	[ $? -eq 3 ]
 }
 
 function bbx_image_list {
@@ -480,14 +484,11 @@ function bbx_instance_stop {
 		project_root=$(docker inspect \
 			--format '{{index .Config.Labels "bbx.project_root"}}' \
 			"${container}" 2>/dev/null)
-		if [ -n "${project_root}" ] && bbx_project_is_busy "${project_root}"; then
-			if [ ${force} -eq 0 ]; then
-				>&2 echo "Warning: ${container} (${project_root}) is busy, skipping. Use --force to stop anyway."
-				skipped=$((skipped + 1))
-				continue
-			fi
-			# --force: release the lock so in-container processes do not stall
-			rm -rf "${project_root}/src/lock"
+		if [ ${force} -eq 0 ] && [ -n "${project_root}" ] \
+			&& bbx_project_is_busy "${project_root}"; then
+			>&2 echo "Warning: ${container} (${project_root}) is busy, skipping. Use --force to stop anyway."
+			skipped=$((skipped + 1))
+			continue
 		fi
 		echo -n "Stopping ${container}... "
 		bbx_stop_container "${container}" "${project_root:-/}"

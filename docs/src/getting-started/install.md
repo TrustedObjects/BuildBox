@@ -8,7 +8,7 @@ The following tools must be installed on the host system before using BuildBox.
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y bash make python3 curl git openssh-client
+sudo apt-get install -y bash make python3 curl git openssh-client util-linux
 ```
 
 Docker must be installed separately following the [official guide](https://docs.docker.com/engine/install/debian).
@@ -24,7 +24,7 @@ Do not install Docker from Snap, and do not use Docker Desktop.
 ### Fedora
 
 ```bash
-sudo dnf install -y bash make python3 curl git openssh
+sudo dnf install -y bash make python3 curl git openssh util-linux
 ```
 
 Docker must be installed separately following the [official guide](https://docs.docker.com/engine/install/fedora).
@@ -32,7 +32,7 @@ Docker must be installed separately following the [official guide](https://docs.
 ### ArchLinux
 
 ```bash
-sudo pacman -S --needed bash make python curl git openssh docker
+sudo pacman -S --needed bash make python curl git openssh util-linux docker
 ```
 
 ## Docker settings
