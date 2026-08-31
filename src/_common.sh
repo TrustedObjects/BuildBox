@@ -34,7 +34,10 @@ bb_declare_internal_api() {
 	BUILDBOX_INTERNAL_API="${BUILDBOX_INTERNAL_API} ${1}"
 }
 
-BB_SETOPT_BACKUP_LIST="errexit\|errtrace\|xtrace"
+# Exported: the API wrappers are exported too, and a child process calling an
+# API function needs these values. Without them, 'eval set ${BB_SETOPT_LIST}'
+# runs a bare 'set', which dumps every variable and function on stdout
+export BB_SETOPT_BACKUP_LIST="errexit\|errtrace\|xtrace"
 
 ## @fn bb_update_shell_options
 ## Refresh the BuildBox shell options list from `BB_DEBUG`.
@@ -43,7 +46,7 @@ BB_SETOPT_BACKUP_LIST="errexit\|errtrace\|xtrace"
 ## @setenv `BB_SETOPT_LIST`
 ## @return 0 on success
 function bb_update_shell_options {
-	BB_SETOPT_LIST="+eE"
+	export BB_SETOPT_LIST="+eE"
 	if [ ! -z "${BB_DEBUG}" ]; then
 		BB_SETOPT_LIST+=" -xv"
 	else
