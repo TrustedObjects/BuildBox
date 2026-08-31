@@ -17,6 +17,9 @@ export default defineConfig({
 
   base: BASE_URL && BASE_URL !== 'undefined' ? BASE_URL : '/',
 
+  // Generated partials, included by pages: not pages themselves
+  srcExclude: ['parts/*.md'],
+
   sitemap: SITE_URL ? { hostname: SITE_URL } : undefined,
 
   head: [

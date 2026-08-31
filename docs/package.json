@@ -7,8 +7,8 @@
   },
   "repository": "/buildbox_doc",
   "scripts": {
-    "dev": "vitepress dev src",
-    "build": "src/dev/generate_apidoc.sh ../src/ && vitepress build src"
+    "dev": "src/dev/generate_news.sh ../ChangeLog src/parts/news.md && vitepress dev src",
+    "build": "src/dev/generate_apidoc.sh ../src/ && src/dev/generate_news.sh ../ChangeLog src/parts/news.md && vitepress build src"
   },
   "devDependencies": {
     "vitepress": "^1.6.3",

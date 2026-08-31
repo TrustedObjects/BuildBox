@@ -17,3 +17,5 @@ features:
   - title: Isolated build environment
     details: BuildBox runs in a container to avoid changes in developer's host system
 ---
+
+<!--@include: ./parts/news.md-->

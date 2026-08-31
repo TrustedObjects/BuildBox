@@ -1,11 +1,24 @@
 # Documentation build
 
-First of all, generate (or update) the API documentation by running:
+Two parts of the site are generated, both by `npm run build`:
+
+| Generated file | Script | Source |
+|---|---|---|
+| `src/dev/api.md` | `src/dev/generate_apidoc.sh ../src/` | the `##` comments of the API files |
+| `src/parts/news.md` | `src/dev/generate_news.sh ../ChangeLog src/parts/news.md` | the `ChangeLog` |
+
+Neither is versioned. To regenerate the API documentation alone, without
+building the site:
 ```
 src/dev/generate_apidoc.sh ../src/
 ```
 
-Call this script every time the API documentation is updated.
+The releases news of the home page comes from the `ChangeLog`, so publishing a
+release only requires the `ChangeLog` entry. The last three releases are shown,
+with at most four entries each: pass a count as third argument, or set `ITEMS`,
+to change it. The version, and the `and N more` note when entries are truncated,
+link to the GitHub release page of that version (`releases/tag/<VERSION>`, tags
+being plain version numbers).
 
 ## Development documentation
 
