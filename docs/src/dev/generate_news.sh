@@ -12,6 +12,10 @@ RELEASES="${3:-3}"
 # is one click away
 ITEMS="${ITEMS:-4}"
 REPOSITORY="https://github.com/TrustedObjects/BuildBox"
+# Migrations page: a release having a migration section links to it. Path is
+# relative, so that a versioned build served from a sub directory still works
+MIGRATIONS_FILE="${MIGRATIONS_FILE:-$(dirname "${0}")/../user/migration.md}"
+MIGRATIONS_LINK="user/migration.html"
 
 if [ ! -f "${CHANGELOG}" ]; then
 	>&2 echo "ChangeLog not found: ${CHANGELOG}"
@@ -25,7 +29,32 @@ fi
 echo -n "Generating releases news from $(basename ${CHANGELOG})... "
 mkdir -p "$(dirname "${OUTPUT}")"
 
-awk -v releases="${RELEASES}" -v items="${ITEMS}" -v repository="${REPOSITORY}" '
+# Sections of the migrations page are titled "From <version> to <version>": the
+# second one is the release requiring the migration. Anchors are slugified the
+# way VitePress does, every run of other characters becoming a single dash.
+MIGRATIONS=""
+if [ -f "${MIGRATIONS_FILE}" ]; then
+	MIGRATIONS=$(awk '
+	function slugify(s) {
+		s = tolower(s)
+		gsub(/[^a-z0-9]+/, "-", s)
+		sub(/^-+/, "", s)
+		sub(/-+$/, "", s)
+		return s
+	}
+	/^## From [0-9]/ {
+		title = substr($0, 4)
+		sub(/[[:space:]]+$/, "", title)
+		if (match(title, /^From [0-9][^ ]* to [0-9][^ ]*$/)) {
+			version = title
+			sub(/^From [0-9][^ ]* to /, "", version)
+			printf "%s=%s;", version, slugify(title)
+		}
+	}' "${MIGRATIONS_FILE}")
+fi
+
+awk -v releases="${RELEASES}" -v items="${ITEMS}" -v repository="${REPOSITORY}" \
+	-v migrations="${MIGRATIONS}" -v migrations_link="${MIGRATIONS_LINK}" '
 function esc(s) {
 	gsub(/&/, "\\&amp;", s)
 	gsub(/</, "\\&lt;", s)
@@ -53,7 +82,21 @@ function pretty_date(date,   parts, month_names, month) {
 	}
 	return month_names[month] " " (parts[2] + 0) ", " parts[3]
 }
-function close_release() {  # uses release_url of the release being closed
+# Anchor of the migration section of a version, empty when it needs none
+function migration_anchor(version,   entries, pair, i, count) {
+	count = split(migrations, entries, ";")
+	for (i = 1; i <= count; i++) {
+		if (entries[i] == "") {
+			continue
+		}
+		split(entries[i], pair, "=")
+		if (pair[1] == version) {
+			return pair[2]
+		}
+	}
+	return ""
+}
+function close_release() {  # uses release_url and migration of the release
 	if (! in_release) {
 		return
 	}
@@ -62,6 +105,10 @@ function close_release() {  # uses release_url of the release being closed
 		news = news sprintf("  <p class=\"bbx-news-rest\"><a href=\"%s\"" \
 			" target=\"_blank\" rel=\"noreferrer\">and %d more</a></p>\n", \
 			release_url, dropped)
+	}
+	if (migration != "") {
+		news = news sprintf("  <a class=\"bbx-news-migration\" href=\"%s#%s\">" \
+			"Migration required</a>\n", migrations_link, migration)
 	}
 	news = news "</article>\n"
 	in_release = 0
@@ -88,6 +135,7 @@ BEGIN {
 	news = news "<article class=\"bbx-news-card\">\n"
 	news = news "  <div class=\"bbx-news-meta\">\n"
 	release_url = sprintf("%s/releases/tag/%s", repository, esc($1))
+	migration = migration_anchor($1)
 	news = news sprintf("    <a class=\"bbx-news-version\" href=\"%s\"" \
 		" target=\"_blank\" rel=\"noreferrer\">%s</a>\n", release_url, esc($1))
 	if (count == 1) {

@@ -20,6 +20,12 @@ to change it. The version, and the `and N more` note when entries are truncated,
 link to the GitHub release page of that version (`releases/tag/<VERSION>`, tags
 being plain version numbers).
 
+A release needing a migration also shows a discreet `Migration required` badge linking to it. It is
+detected from `src/user/migration.md` itself: a section titled
+`## From <VERSION> to <VERSION>` marks the second version as needing a
+migration, and the link targets that section. Documenting a migration is
+therefore enough, there is nothing to declare in the `ChangeLog`.
+
 ## Development documentation
 
 To test live documentation, which is automatically refreshed on changes:
