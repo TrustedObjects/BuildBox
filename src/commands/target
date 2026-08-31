@@ -41,7 +41,9 @@ function list {
 	target_list
 }
 
-function set {
+# Not named 'set': that would shadow the shell builtin for this whole process,
+# and every 'set' call would land here, including those of the API wrappers
+function set_current {
 	if [ $# -eq 0 ]; then
 		help
 		exit 1
@@ -114,7 +116,7 @@ case "$1" in
 		;;
 	set)
 		shift
-		set "$@"
+		set_current "$@"
 		;;
 	clone)
 		shift
