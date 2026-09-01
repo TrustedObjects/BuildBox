@@ -168,7 +168,9 @@ function test_bb_lock_release_not_held {
 	# Releasing a lock which is not held does nothing
 	bb_lock_release "${lock}"
 	asserteq $? 0
-	# A lock held by another process is not released
+	# A lock held by another process is not released. PID 1 is always alive, so
+	# this lock is not stale
+	mkdir -p "$(dirname ${lock})"
 	ln -s 1 "${lock}"
 	bb_lock_release "${lock}"
 	asserteq $? 0
