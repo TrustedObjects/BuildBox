@@ -49,7 +49,6 @@ Here is a partial list of these variables and their meaning:
 - `BB_USER_CONFIG_DIR`: user configuration directory, bind-mounted in the container at its host path; when unset, `$XDG_CONFIG_HOME/buildbox` is used
 - `BB_SYSTEM_CONFIG_DIR`: system configuration directory; when unset, `/etc/buildbox` is used
 - `BB_LOCAL_ENV_LAST_*`: used for [local environment](api.md#local-environment) cache computation
-- `BB_LOCK_HELD_FDS`: file descriptors of the [locks](api.md#locks) held by the current process, only set while a lock is held. It is exported so that child processes close these descriptors, an inherited one would keep the lock alive
 
 ## Target build settings variables
 

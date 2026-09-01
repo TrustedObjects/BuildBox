@@ -304,14 +304,14 @@ function bbx_exec {
 }
 
 # Returns 0 if the project's source lock is held (a build/clone is running).
-# The lock is a flock held on ${project_root}/src/lock (see _locks.sh): the file
-# always exists once used, so the lock itself has to be tested. Exit code 3
-# means flock could not acquire it, hence a process is holding it.
+# The lock is a symbolic link at ${project_root}/src/lock, whose target is the
+# PID of its owner in the container (see _locks.sh), so its presence is the
+# answer: the PID can not be checked from the host, which has its own PID
+# namespace.
 function bbx_project_is_busy {
 	local lock_file="${1}/src/lock"
-	[ -f "${lock_file}" ] || return 1
-	flock -n -E 3 "${lock_file}" true > /dev/null 2>&1
-	[ $? -eq 3 ]
+	# -L for the lock itself, -d for one left by BuildBox up to 2.0.2
+	[ -L "${lock_file}" ] || [ -d "${lock_file}" ]
 }
 
 function bbx_image_list {

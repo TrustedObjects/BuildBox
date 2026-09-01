@@ -159,16 +159,6 @@ function bb_clone_tool () (
 )
 bb_exportfn bb_clone_tool
 
-# Source a tool script (load, unload or cleanup hook) in the current shell.
-# Locks held by the current process are closed while the script runs, so that a
-# long living process started by the script (a daemon for example) can not keep
-# them alive, and restored once it is done (see bb_lock_close_redirections()).
-# @param Tool script path
-function _bb_tool_source_script {
-	local script="${1}"
-	eval "source \"${script}\" >&2 $(bb_lock_close_redirections)"
-}
-
 ## @fn bb_load_tools
 ## Load current target tools by running their (optional) `load.sh` script.
 ## Tools are loaded in order of appearance in target tools list file
@@ -185,7 +175,7 @@ function bb_load_tools {
 	while read -r tool; do
 		local tool_dir=${BB_TOOLS_DIR}/${tool}
 		if [ -f "${tool_dir}/load.sh" ]; then
-			_bb_tool_source_script "${tool_dir}/load.sh"
+			{ source "${tool_dir}/load.sh"; } >&2
 			bb_restore_error_handler
 		fi
 	done < <(bb_get_tools)
@@ -212,7 +202,7 @@ function bb_unload_tools {
 	while read -r tool; do
 		local tool_dir=${BB_TOOLS_DIR}/${tool}
 		if [ -f "${tool_dir}/unload.sh" ]; then
-			_bb_tool_source_script "${tool_dir}/unload.sh"
+			{ source "${tool_dir}/unload.sh"; } >&2
 			bb_restore_error_handler
 		fi
 	done < <(bb_get_tools | tac)
@@ -231,7 +221,7 @@ function bb_run_tools_cleanup_hook {
 	while read -r tool; do
 		local tool_dir=${BB_TOOLS_DIR}/${tool}
 		if [ -f "${tool_dir}/cleanup.sh" ]; then
-			_bb_tool_source_script "${tool_dir}/cleanup.sh"
+			{ source "${tool_dir}/cleanup.sh"; } >&2
 			bb_restore_error_handler
 		fi
 	done < <(bb_get_tools)

@@ -1,7 +1,7 @@
 2.1.0 - 8/31/2026
 - System, user, and project level config files
 - Compilation settings are now read from the target file only
-- Locks are now using flock
+- Locks are now released when the process holding them is gone
 - Avoid masking builtin 'set' with conflicting target function
 - Export API wrappers
 
