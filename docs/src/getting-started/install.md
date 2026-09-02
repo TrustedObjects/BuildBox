@@ -80,6 +80,11 @@ have BuildBox environment variables automatically exported when you `cd` into a
 project. It takes a single line in your `~/.bashrc` or `~/.zshrc`.
 :::
 
+::: tip
+Working with [Claude Code](../user/claude.md)? Run `bbx claude install` once to get the
+BuildBox skills, so it knows the environment of your projects.
+:::
+
 ## SSH settings
 
 If you access packages from private repositories, BuildBox is going to use your SSH client settings to clone them.

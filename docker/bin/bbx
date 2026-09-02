@@ -67,6 +67,8 @@ function help {
 	echo "  instance list                      List all running BuildBox instances"
 	echo "  instance stop [--force] [NAME...]  Stop idle instances"
 	echo "  instance upgrade [--image IMG] [NAME...]  Upgrade instances to a local image"
+	echo "  claude install                     Install the BuildBox skills for Claude Code"
+	echo "  claude uninstall                   Remove them"
 }
 
 # --- helpers ---
@@ -301,6 +303,107 @@ function bbx_exec {
 	rmdir "${tmp_dir}" 2>/dev/null || true
 
 	return $ret
+}
+
+# Claude Code integration. Nothing is done unless the user asked for it with
+# 'bbx claude install', which drops a marker in the user configuration
+# directory: a user not working with Claude gets no Claude file at all.
+BBX_CLAUDE_MARKER="${BBX_USER_CONFIG_DIR}/claude.enabled"
+BBX_CLAUDE_DIR="${BBX_DIR}/claude"
+if [ ! -d "${BBX_CLAUDE_DIR}" ]; then
+	# Source tree layout
+	BBX_CLAUDE_DIR="${BBX_DIR}/settings/claude"
+fi
+BBX_CLAUDE_SKILLS_DIR="${HOME}/.claude/skills"
+
+function bbx_claude_enabled {
+	[ -f "${BBX_CLAUDE_MARKER}" ]
+}
+
+# Create the CLAUDE.md files of a project, when the user works with Claude and
+# the files are not there yet. The profile one is versioned with the project,
+# the root one only imports it so that it is seen from the project directory.
+function bbx_claude_seed_project {
+	local project_root="${1}"
+	bbx_claude_enabled || return 0
+	local created=""
+	if [ ! -e "${project_root}/.bbx/CLAUDE.md" ] \
+		&& [ -f "${BBX_CLAUDE_DIR}/CLAUDE.md.template" ]; then
+		local project_name=$(basename "${project_root}")
+		local target_name=""
+		[ -f "${project_root}/state" ] && target_name=$(cat "${project_root}/state")
+		sed -e "s|@PROJECT@|${project_name}|" \
+			-e "s|@TARGET@|${target_name:-none}|" \
+			"${BBX_CLAUDE_DIR}/CLAUDE.md.template" > "${project_root}/.bbx/CLAUDE.md"
+		created="${created} .bbx/CLAUDE.md"
+	fi
+	if [ ! -e "${project_root}/CLAUDE.md" ] && [ -f "${project_root}/.bbx/CLAUDE.md" ] \
+		&& [ -f "${BBX_CLAUDE_DIR}/CLAUDE.md.root.template" ]; then
+		cp "${BBX_CLAUDE_DIR}/CLAUDE.md.root.template" "${project_root}/CLAUDE.md"
+		created="${created} CLAUDE.md"
+	fi
+	if [ -n "${created}" ]; then
+		echo "Created for Claude Code:${created}"
+		case "${created}" in
+			*.bbx/CLAUDE.md*)
+				echo "  Describe the project in .bbx/CLAUDE.md and commit it in the profile."
+				;;
+		esac
+	fi
+}
+
+function bbx_claude_install {
+	if [ ! -d "${BBX_CLAUDE_DIR}/skills" ]; then
+		>&2 echo "BuildBox skills not found in ${BBX_CLAUDE_DIR}/skills"
+		exit 1
+	fi
+	mkdir -p "${BBX_USER_CONFIG_DIR}"
+	mkdir -p "${BBX_CLAUDE_SKILLS_DIR}"
+	local installed=0
+	local skill=""
+	local name=""
+	for skill in "${BBX_CLAUDE_DIR}"/skills/*; do
+		[ -d "${skill}" ] || continue
+		name=$(basename "${skill}")
+		local destination="${BBX_CLAUDE_SKILLS_DIR}/${name}"
+		if [ -e "${destination}" ] && [ ! -L "${destination}" ]; then
+			>&2 echo "Warning: ${destination} exists and is not a BuildBox link, skipped"
+			continue
+		fi
+		ln -sfn "${skill}" "${destination}"
+		installed=$((installed + 1))
+	done
+	touch "${BBX_CLAUDE_MARKER}"
+	echo "Installed ${installed} skill(s) in ${BBX_CLAUDE_SKILLS_DIR}, linked to ${BBX_CLAUDE_DIR}/skills"
+	echo "They follow BuildBox updates, there is nothing to redo after an upgrade."
+	# Also equip the current project, if there is one
+	local project_root
+	project_root=$(bbx_find_project_root) && bbx_claude_seed_project "${project_root}"
+	return 0
+}
+
+function bbx_claude_uninstall {
+	local removed=0
+	local skill=""
+	local name=""
+	if [ -d "${BBX_CLAUDE_DIR}/skills" ]; then
+		for skill in "${BBX_CLAUDE_DIR}"/skills/*; do
+			[ -d "${skill}" ] || continue
+			name=$(basename "${skill}")
+			local destination="${BBX_CLAUDE_SKILLS_DIR}/${name}"
+			# Only remove our own links
+			if [ -L "${destination}" ] \
+				&& [ "$(readlink "${destination}")" = "${skill}" ]; then
+				rm -f "${destination}"
+				removed=$((removed + 1))
+			fi
+		done
+	fi
+	rm -f "${BBX_CLAUDE_MARKER}"
+	echo "Removed ${removed} skill(s) from ${BBX_CLAUDE_SKILLS_DIR}"
+	echo "CLAUDE.md files already created in projects are left untouched: the one in a"
+	echo "profile is versioned, remove it from the project if it is not wanted any more."
+	return 0
 }
 
 # Returns 0 if the project's source lock is held (a build/clone is running).
@@ -694,6 +797,9 @@ case "${cmd}" in
 		# lib and commands dirs so that 'source _pre_cmd' resolves correctly.
 		export PRE_CMD="bbx init $*"
 		export PATH="${BBX_LIB}:${BBX_COMMANDS}:${PATH}"
+		# Same variables as a command run in the container gets
+		export BB_DIR="${BBX_DIR}"
+		export BB_USER_CONFIG_DIR="${BBX_USER_CONFIG_DIR}"
 		exec "${BBX_COMMANDS}/project_init" "$@"
 		;;
 	clone)
@@ -720,6 +826,7 @@ case "${cmd}" in
 			[ -n "${default_target}" ] && echo "${default_target}" > "${dir}/state"
 		fi
 		project_root=$(cd "${dir}" && pwd)
+		bbx_claude_seed_project "${project_root}"
 		bbx_ensure_container "${project_root}" > /dev/null
 		exit 0
 		;;
@@ -745,6 +852,19 @@ case "${cmd}" in
 			*)
 				>&2 echo "Unknown subcommand: ${subcmd}"
 				>&2 echo "Usage: bbx image {list [--all]|fetch [TAG]}"
+				exit 1
+				;;
+		esac
+		exit 0
+		;;
+	claude)
+		shift
+		subcmd="${1:-}"
+		case "${subcmd}" in
+			install)   bbx_claude_install ;;
+			uninstall) bbx_claude_uninstall ;;
+			*)
+				>&2 echo "Usage: bbx claude {install|uninstall}"
 				exit 1
 				;;
 		esac

@@ -88,6 +88,7 @@ export default defineConfig({
             { text: 'Tools', link: '/user/tool' },
             { text: 'Container', link: '/user/container' },
             { text: 'Shell plugin', link: '/user/shell_plugin' },
+            { text: 'Claude Code', link: '/user/claude' },
             { text: 'Utilities', link: '/user/utils' },
             { text: 'Advanced features', link: '/user/advanced' },
             { text: 'Version migrations', link: '/user/migration' },

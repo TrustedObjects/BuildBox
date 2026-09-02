@@ -181,6 +181,7 @@ function _bbx {
 				'stop:Stop the container for the current project'
 				'image:Manage BuildBox images'
 				'instance:Manage running BuildBox containers'
+				'claude:Manage the BuildBox skills for Claude Code'
 				'target:Target management'
 				'project:Project management'
 				'build:Build all packages for the current target'
@@ -207,6 +208,8 @@ function _bbx {
 				goto)     _bbx_goto ;;
 				image)    _bbx_image ;;
 				instance) _bbx_instance ;;
+				claude) _describe 'bbx claude subcommand' \
+					"(install:'Install the skills for the current user' uninstall:'Remove them')" ;;
 			esac
 			;;
 	esac

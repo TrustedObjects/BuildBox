@@ -5,7 +5,7 @@ DOCDIR   := $(PREFIX)/share/doc/buildbox
 
 VERSION_FILE := VERSION
 
-.PHONY: all install install-core install-docker install-doc uninstall doc version dist
+.PHONY: all install install-core install-docker install-claude install-doc uninstall doc skills version dist
 
 all: doc
 
@@ -39,7 +39,7 @@ dist: version
 
 # --- Core install: library, commands, settings, host launcher ---
 
-install: install-core install-docker
+install: install-core install-docker install-claude
 
 install-core: version
 	# API library
@@ -79,6 +79,26 @@ install-core: version
 
 	# Version file
 	install -m 644 $(VERSION_FILE) $(SHAREDIR)/
+
+# --- Claude Code skills ---
+
+skills:
+	settings/claude/generate_reference.sh docs/src settings/claude/skills
+
+install-claude: skills
+	install -d $(SHAREDIR)/claude
+	install -m 644 settings/claude/CLAUDE.md.template $(SHAREDIR)/claude/
+	install -m 644 settings/claude/CLAUDE.md.root.template $(SHAREDIR)/claude/
+	for skill in settings/claude/skills/*; do \
+	    name=$$(basename $$skill); \
+	    install -d $(SHAREDIR)/claude/skills/$$name/reference; \
+	    install -m 644 $$skill/SKILL.md $(SHAREDIR)/claude/skills/$$name/; \
+	    install -m 644 $$skill/reference/*.md $(SHAREDIR)/claude/skills/$$name/reference/; \
+	done
+	@echo ""
+	@echo "To use the BuildBox skills with Claude Code, run once:"
+	@echo "  bbx claude install"
+	@echo ""
 
 # --- Docker build files ---
 

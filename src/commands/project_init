@@ -103,6 +103,27 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
+# Claude Code guidance, only for a user who asked for it with
+# 'bbx claude install': a user not working with Claude gets no Claude file
+claude_dir="${BB_DIR}/claude"
+if [ ! -d "${claude_dir}" ]; then
+	# Source tree layout
+	claude_dir="${BB_DIR}/settings/claude"
+fi
+user_config_dir="${BB_USER_CONFIG_DIR:-${XDG_CONFIG_HOME:-${HOME}/.config}/buildbox}"
+if [ -f "${user_config_dir}/claude.enabled" ]; then
+	if [ ! -e "${init_dir}/.bbx/CLAUDE.md" ] \
+		&& [ -f "${claude_dir}/CLAUDE.md.template" ]; then
+		sed -e "s|@PROJECT@|$(basename "${init_dir}")|" \
+			-e "s|@TARGET@|${target_name}|" \
+			"${claude_dir}/CLAUDE.md.template" > "${init_dir}/.bbx/CLAUDE.md"
+	fi
+	if [ ! -e "${init_dir}/CLAUDE.md" ] \
+		&& [ -f "${claude_dir}/CLAUDE.md.root.template" ]; then
+		cp "${claude_dir}/CLAUDE.md.root.template" "${init_dir}/CLAUDE.md"
+	fi
+fi
+
 echo "Initialized BuildBox project in ${init_dir}"
 echo "  Profile:  ${init_dir}/.bbx/"
 echo "  Target:   ${target_name}"

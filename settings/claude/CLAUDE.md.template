@@ -1,0 +1,22 @@
+# CLAUDE.md
+
+Guidance for Claude Code when working on this BuildBox project. This file lives in the
+project profile, so it is versioned and shared with everyone working on the project.
+
+## This project
+
+| | |
+|---|---|
+| Project | @PROJECT@ |
+| Default target | @TARGET@ |
+| Profile | `.bbx/`, the versioned part of the project |
+
+Describe here what is specific to this project, and what a newcomer would have to be told:
+what it delivers, what each target is for, which packages and tools it relies on, and the
+manual steps if any remain.
+
+## Environment
+
+This is a BuildBox project: commands run through `bbx` from the project directory, and the
+build environment lives in the project container. The `buildbox` skill installed with
+BuildBox describes that environment, `bbx --help` lists the commands.

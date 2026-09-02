@@ -121,7 +121,7 @@ function _bbx_complete {
 
 	if [ "${cword}" -eq 1 ]; then
 		COMPREPLY=($(compgen -W \
-			"init clone migrate stop image instance target project build fastbuild clean mrproper pkg goto fetch shell env tg pg pp help" \
+			"init clone migrate stop image instance claude target project build fastbuild clean mrproper pkg goto fetch shell env tg pg pp help" \
 			-- "${cur}"))
 		return
 	fi
@@ -145,6 +145,11 @@ import sys,json
 [print(t['name']) for t in json.load(sys.stdin).get('results',[])]
 " 2>/dev/null)
 				COMPREPLY=($(compgen -W "${tags}" -- "${cur}"))
+			fi
+			;;
+		claude)
+			if [ "${cword}" -eq 2 ]; then
+				COMPREPLY=($(compgen -W "install uninstall" -- "${cur}"))
 			fi
 			;;
 		instance)

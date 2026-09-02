@@ -94,3 +94,48 @@ function test_project_init_already_initialized {
 	asserteq $? 0
 }
 bb_declare_test test_project_init_already_initialized
+
+function test_project_init_claude_disabled {
+	# No marker: the user does not work with Claude, nothing Claude related is
+	# created
+	rm -f "${BB_USER_CONFIG_DIR}/claude.enabled"
+	local init_dir="${BB_TEST_WORKSPACE}/init_claude_off_$$"
+	bbx init "${init_dir}"
+	asserteq $? 0
+	assertnf "${init_dir}/CLAUDE.md"
+	assertnf "${init_dir}/.bbx/CLAUDE.md"
+}
+bb_declare_test test_project_init_claude_disabled
+
+function test_project_init_claude_enabled {
+	mkdir -p "${BB_USER_CONFIG_DIR}"
+	touch "${BB_USER_CONFIG_DIR}/claude.enabled"
+	local init_dir="${BB_TEST_WORKSPACE}/init_claude_on_$$"
+	bbx init --target prod "${init_dir}"
+	asserteq $? 0
+	# The project guidance is versioned in the profile, the root one imports it
+	assertf "${init_dir}/.bbx/CLAUDE.md"
+	assertf "${init_dir}/CLAUDE.md"
+	asserteq "$(grep -c '@.bbx/CLAUDE.md' ${init_dir}/CLAUDE.md)" "1"
+	asserteq "$(grep -c "$(basename ${init_dir})" ${init_dir}/.bbx/CLAUDE.md)" "1"
+	asserteq "$(grep -c 'prod' ${init_dir}/.bbx/CLAUDE.md)" "1"
+	rm -f "${BB_USER_CONFIG_DIR}/claude.enabled"
+	return 0
+}
+bb_declare_test test_project_init_claude_enabled
+
+function test_project_init_claude_keeps_existing {
+	mkdir -p "${BB_USER_CONFIG_DIR}"
+	touch "${BB_USER_CONFIG_DIR}/claude.enabled"
+	local init_dir="${BB_TEST_WORKSPACE}/init_claude_keep_$$"
+	mkdir -p "${init_dir}"
+	echo "my own guidance" > "${init_dir}/CLAUDE.md"
+	bbx init "${init_dir}"
+	asserteq $? 0
+	# An existing file is never modified
+	asserteq "$(cat ${init_dir}/CLAUDE.md)" "my own guidance"
+	assertf "${init_dir}/.bbx/CLAUDE.md"
+	rm -f "${BB_USER_CONFIG_DIR}/claude.enabled"
+	return 0
+}
+bb_declare_test test_project_init_claude_keeps_existing
