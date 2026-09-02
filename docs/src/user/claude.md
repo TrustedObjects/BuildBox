@@ -24,6 +24,20 @@ To remove them:
 bbx claude uninstall
 ```
 
+## Without BuildBox installed from sources
+
+The same skills are published as a Claude Code plugin, in the
+[BuildBox-claude](https://github.com/TrustedObjects/BuildBox-claude) marketplace:
+
+```
+/plugin marketplace add TrustedObjects/BuildBox-claude
+/plugin install buildbox@trusted-objects
+```
+
+That channel follows the latest BuildBox **release**, while `bbx claude install` follows the
+version installed on your machine. Prefer `bbx claude install` when you have BuildBox
+installed, and the plugin otherwise.
+
 ## What the skills cover
 
 | Skill | Purpose |
