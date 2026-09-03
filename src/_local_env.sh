@@ -177,7 +177,7 @@ function bb_set_target_build_local_env {
 ## @return 0 on success
 function bb_set_tools_local_env {
 	while read -r tool; do
-		local tool_dir=${BB_TOOLS_DIR}/$(basename ${tool})
+		local tool_dir=${BB_TOOLS_DIR}/$(bb_get_tool_dir ${tool})
 		export PATH=${tool_dir}/bin:${tool_dir}/sbin:${PATH}
 		export PKG_CONFIG_PATH=${tool_dir}/lib/pkgconfig:${tool_dir}/share/pkgconfig:${PKG_CONFIG_PATH}
 		export CFLAGS="-I${tool_dir}/include ${CFLAGS}"

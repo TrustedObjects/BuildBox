@@ -41,7 +41,7 @@ echo -e "\e[1m${tool_name}\e[0m"
 echo -e "\t\e[1mRevision:\e[0m ${SRC_REVISION}"
 echo -e "\t\e[1mPackage:\e[0m ${tool_path}"
 echo -e "\t\e[1mRemote:\e[0m [${SRC_PROTO}] ${SRC_URI}"
-echo -e "\t\e[1mLocal:\e[0m ${BB_TOOLS_DIR}/${tool_name}"
+echo -e "\t\e[1mLocal:\e[0m ${BB_TOOLS_DIR}/$(bb_get_tool_dir ${tool_name})"
 if [ $cached -eq 1 ]; then
 	echo -e "\t\t\e[1mCache:\e[0m ${cached_file}"
 fi

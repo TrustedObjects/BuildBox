@@ -16,6 +16,26 @@
 
 ## @brief Tools (packages)
 
+## @fn bb_get_tool_dir
+## Given a tool name, as written in a target tools list file, give the name of
+## its directory in `BB_TOOLS_DIR`.
+## A tool name may hold a path prefix, locating its package file in the project
+## profile, which is not part of the tool directory name. It may also hold a
+## revision (after `@` or `-`), which is part of it: as for packages, a
+## revision may contain `/`, escaped to `_` so that the tool stays in a single
+## directory.
+## @param Tool name
+## @print Tool directory name
+function bb_get_tool_dir {
+	local tool_name=${1}
+	local revision=$(bb_get_package_revision "${tool_name}")
+	if [ -n "${revision}" ]; then
+		tool_name="${tool_name%"${revision}"}$(bb_escape_package_name "${revision}")"
+	fi
+	basename "${tool_name}"
+}
+bb_exportfn bb_get_tool_dir
+
 ## @fn bb_find_matching_tools
 ## Given a filter list, find matching tools for current project target.
 ## @param Filter list, separated by spaces. Must not be empty.
@@ -87,7 +107,7 @@ function bb_get_tools () (
 					continue
 				fi
 				if [ -n "${only_cloned}" ] && [ "${only_cloned}" -eq 1 ]; then
-					local tool_dir=${BB_TOOLS_DIR}/$(basename ${tool_name})
+					local tool_dir=${BB_TOOLS_DIR}/$(bb_get_tool_dir ${tool_name})
 					if [ -d "${tool_dir}" ]; then
 						echo ${tool_name}
 					fi
@@ -113,7 +133,7 @@ function bb_clone_tool () (
 	local tool_name=${1}
 	bb_load_package ${tool_name}
 	[ $? -ne 0 ] && return 1
-	local tool_dir=$(basename ${tool_name})
+	local tool_dir=$(bb_get_tool_dir ${tool_name})
 	bb_source _clone_${SRC_PROTO}.sh
 	[ $? -ne 0 ] && return 1
 	if ! typeset -f bb_${SRC_PROTO}_clone > /dev/null; then
@@ -173,7 +193,7 @@ function bb_load_tools {
 		return 0
 	fi
 	while read -r tool; do
-		local tool_dir=${BB_TOOLS_DIR}/${tool}
+		local tool_dir=${BB_TOOLS_DIR}/$(bb_get_tool_dir ${tool})
 		if [ -f "${tool_dir}/load.sh" ]; then
 			{ source "${tool_dir}/load.sh"; } >&2
 			bb_restore_error_handler
@@ -200,7 +220,7 @@ function bb_unload_tools {
 		return 0
 	fi
 	while read -r tool; do
-		local tool_dir=${BB_TOOLS_DIR}/${tool}
+		local tool_dir=${BB_TOOLS_DIR}/$(bb_get_tool_dir ${tool})
 		if [ -f "${tool_dir}/unload.sh" ]; then
 			{ source "${tool_dir}/unload.sh"; } >&2
 			bb_restore_error_handler
@@ -219,7 +239,7 @@ bb_exportfn bb_unload_tools
 ## @return 0 on success
 function bb_run_tools_cleanup_hook {
 	while read -r tool; do
-		local tool_dir=${BB_TOOLS_DIR}/${tool}
+		local tool_dir=${BB_TOOLS_DIR}/$(bb_get_tool_dir ${tool})
 		if [ -f "${tool_dir}/cleanup.sh" ]; then
 			{ source "${tool_dir}/cleanup.sh"; } >&2
 			bb_restore_error_handler

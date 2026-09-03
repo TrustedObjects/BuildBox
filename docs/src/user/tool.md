@@ -23,14 +23,30 @@ follows (everything is optional):
 - unload.sh
 
 Tools are required by target through a tools listing file, formatted with a tool by line.
+
+Referenced tools are named like packages in project package sub-module, path prefix included.
+A revision is specified the same way as for [packages](package.md#target-packages-list): prefixed by an `@` sign for a tag, a branch or a changeset, or prefixed by a `-` sign for numeric values separated by dots `.`. As for packages, a revision may contain `/`, as branch names often do.
+Contrary to packages, tools do not accept options because tools are supposed to be prebuilt.
+
 Example:
 ```
+# Tool1 taken on its default revision, the one its package file specifies
 tool1
+
+# Tool2 on tag 1.2.3
 tool2-1.2.3
+
+# Tool3 on tag or branch 1.2.3
+tool3@1.2.3
+
+# Tool4 on branch release/1.2
+tool4@release/1.2
+
+# Tool5, whose package file is in the 'subdir' sub-directory
+subdir/tool5
 ```
 
-Referenced tools are nammed like packages in project package sub-module.
-Contrary to packages, tools do not accept options because tools are supposed to be prebuilt.
+Each tool is installed in the project `tools` directory, in a directory named after the tool, without its path prefix and with the `/` of its revision replaced by `_`. In the example above, `tool4@release/1.2` is installed in `tools/tool4@release_1.2`, and `subdir/tool5` in `tools/tool5`.
 
 Example of tools:
 

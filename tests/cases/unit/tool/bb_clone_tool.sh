@@ -26,6 +26,11 @@ function test_bb_clone_tool {
 	bb_clone_tool "foo_tool@1.0.2"
 	asserteq $? 0
 	assertd "${BB_TOOLS_DIR}/foo_tool@1.0.2"
+	# A revision holding '/' is escaped, as it is for packages
+	bb_clone_tool "foo_tool@branch/with/slashes"
+	asserteq $? 0
+	assertd "${BB_TOOLS_DIR}/foo_tool@branch_with_slashes"
+	assertf "${BB_TOOLS_DIR}/foo_tool@branch_with_slashes/SLASH_BRANCH"
 }
 bb_declare_test test_bb_clone_tool
 
