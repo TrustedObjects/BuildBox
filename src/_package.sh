@@ -344,3 +344,4 @@ function bb_escape_package_name {
 	local pkg_name=${1}
 	echo "${pkg_name}" | sed 's/[\/\\]/_/g'
 }
+bb_exportfn bb_escape_package_name
