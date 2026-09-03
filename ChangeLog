@@ -1,3 +1,10 @@
+2.1.1 - 9/3/2026
+- Improved target variables evaluation
+- Tools packages now support revision including '/'
+- Reviewed shell completions
+- Improve locks API mechanisms
+- Claude skills
+
 2.1.0 - 8/31/2026
 - System, user, and project level config files
 - Compilation settings are now read from the target file only
