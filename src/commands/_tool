@@ -30,7 +30,6 @@ bb_source $(bb_get_target_profile_path ${BB_TARGET})
 bb_load_package ${tool_name}
 [ $? -ne 0 ] && exit 1
 tool_path=$(bb_get_package_path ${tool_name})
-tool_name_short=$(basename ${tool_name})
 cached_file=$(bb_cache_known_file ${SRC_REVISION})
 if [ $? -eq 0 ]; then
 	cached=1
