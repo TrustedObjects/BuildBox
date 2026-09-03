@@ -43,3 +43,31 @@ function test_bb_get_target_vars_project_not_set {
 }
 bb_declare_test test_bb_get_target_vars_project_not_set
 
+function test_bb_get_target_vars_expansion {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	# A target variable value may use a variable: one the profile defines for
+	# its own needs, or a BuildBox one. Quotes around a value are shell
+	# quotes, they are not part of it.
+	{
+		printf '_CONFIG=my_config\n'
+		printf 'VAR_PLAIN=plain\n'
+		printf 'VAR_QUOTED="quoted"\n'
+		printf 'VAR_LOCAL="${_CONFIG}"\n'
+		printf 'VAR_BUILDBOX="${BB_PROJECT}"\n'
+		printf 'VAR_COMPOSED="${_CONFIG}/sub dir"\n'
+		printf 'VAR_EQUAL="a=b"\n'
+	} > "${BB_PROJECT_PROFILE_DIR}/target.expand"
+	vars=$(bb_get_target_vars expand)
+	asserteq $? 0
+	expected='VAR_PLAIN=plain
+VAR_QUOTED=quoted
+VAR_LOCAL=my_config
+VAR_BUILDBOX=foo_project
+VAR_COMPOSED=my_config/sub dir
+VAR_EQUAL=a=b'
+	asserteq "${vars}" "${expected}"
+	# The profile is sourced in a subshell, nothing leaks to the caller
+	assertz "${_CONFIG}"
+}
+bb_declare_test test_bb_get_target_vars_expansion

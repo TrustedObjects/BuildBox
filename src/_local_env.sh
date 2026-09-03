@@ -84,10 +84,15 @@ function bb_set_target_local_env_vars {
 		return 1
 	fi
 	while IFS= read -r declaration; do
-		var=$(echo ${declaration} | cut -d '=' -f1)
-		val=$(echo ${declaration} | cut -d '=' -f2)
-		export BB_TARGET_${var}=${val}
-	done < <(echo -e "${target_vars}\n")
+		if [ -z "${declaration}" ]; then
+			continue
+		fi
+		# The value is everything after the first '=', taken as is: it may
+		# hold spaces, and '=' signs of its own
+		var=${declaration%%=*}
+		val=${declaration#*=}
+		export BB_TARGET_${var}="${val}"
+	done < <(printf '%s\n' "${target_vars}")
 	return 0
 }
 

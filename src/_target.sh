@@ -257,21 +257,45 @@ function bb_get_target_description () (
 bb_exportfn bb_get_target_description
 
 ## @fn bb_get_target_vars
-## Get target variables
+## Get target variables.
+##
+## The target profile is sourced, so the value of a variable may use any
+## variable available at that point: a BuildBox environment variable, another
+## field of the profile, or a variable the profile defines for its own needs.
+## Values are printed expanded, and quotes around them are shell quotes, so
+## they are not part of the value.
 ## @param Target name
-## @print Target variables list, formatted like this for example:
-## - VAR_1="val1"
+## @print Target variables list, one `VAR_NAME=VALUE` per line, formatted like
+## this for example:
+## - VAR_1=val1
 ## - VAR_2=10
 ## @return 0 on success
-function bb_get_target_vars {
+function bb_get_target_vars () (
 	target=$1
 	target_profile=$(bb_get_target_profile_path ${target})
 	if [ $? -ne 0 ]; then
 		return 1
 	fi
-	cat ${target_profile} | grep "^VAR_.*="
+	# Names are read before sourcing the profile: the set of variables is not
+	# fixed, and listing the variables of a given prefix is not portable
+	# between bash and zsh
+	var_names=$(grep -o '^VAR_[A-Za-z0-9_]*' ${target_profile} || true)
+	# bb_source() is not used here on purpose: the profile may have been
+	# sourced already by the caller, while its values are needed
+	# unconditionally
+	source ${target_profile}
+	if [ $? -ne 0 ]; then
+		return 1
+	fi
+	while IFS= read -r var_name; do
+		if [ -z "${var_name}" ]; then
+			continue
+		fi
+		eval "var_value=\"\${${var_name}}\""
+		printf '%s=%s\n' "${var_name}" "${var_value}"
+	done < <(printf '%s\n' "${var_names}")
 	return 0
-}
+)
 bb_exportfn bb_get_target_vars
 
 ## @fn bb_save_last_target

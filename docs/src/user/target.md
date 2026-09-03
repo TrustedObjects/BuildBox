@@ -29,7 +29,23 @@ the target is built for the machine running BuildBox, with no specific flag.
 You can define specific target variables, with `VAR_xxx` entries (replace xxx with whatever you want).
 Target variables result in environment variables declaration when the target is active, named `BB_TARGET_VAR_xxx`.
 
-Strings in target file must be escaped like this: `\\\"my string\\\"`.
+The target file is read as a shell script, so a value is written like a shell
+assignment: quote it when it holds spaces, and the quotes are not part of the
+value. A value may also use variables, which are expanded when the target
+becomes active:
+- a BuildBox or target environment variable, such as `${BB_PROJECT_PROFILE_DIR}`,
+- another field of the same target file, declared before it,
+- a variable the target file defines for its own needs. Such a helper variable
+  is not exported: only the `VAR_xxx` fields become environment variables.
+
+```
+# A helper variable, private to this target file
+_CONFIG_DIR=${BB_PROJECT_PROFILE_DIR}/config
+
+# Becomes BB_TARGET_VAR_CONFIG, expanded when the target is active
+VAR_CONFIG="${_CONFIG_DIR}/prod.json"
+VAR_DESCRIPTION="Production build of ${BB_PROJECT}"
+```
 
 `TOOLS` and `PACKAGES` files defines listing with an entry by line.
 Listed entries references files in project profile `packages` sub-directory.
