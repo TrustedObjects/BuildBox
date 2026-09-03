@@ -67,8 +67,10 @@ function _bbx_target_complete {
 		case "${COMP_WORDS[${offset}]}" in
 			set|info)
 				COMPREPLY=($(compgen -W "$(__bbx_comp_targets)" -- "${cur}")) ;;
-			build|fastbuild|test)
-				COMPREPLY=($(compgen -W "--attach" -- "${cur}")) ;;
+			build|fastbuild)
+				COMPREPLY=($(compgen -W "-c --continue -v" -- "${cur}")) ;;
+			test)
+				COMPREPLY=($(compgen -W "-q" -- "${cur}")) ;;
 			pkg)
 				COMPREPLY=($(compgen -W "-m -v" -- "${cur}")) ;;
 		esac
@@ -85,7 +87,7 @@ function _bbx_project_complete {
 
 	if [ "${cword}" -eq "${offset}" ]; then
 		COMPREPLY=($(compgen -W \
-			"help init clone migrate update clean mrproper info goto" \
+			"help update clean mrproper info goto" \
 			-- "${cur}"))
 	elif [ "${cword}" -gt "${offset}" ] && [ "${COMP_WORDS[${offset}]}" = "goto" ]; then
 		COMPREPLY=($(compgen -W "-p" -- "${cur}"))
@@ -96,7 +98,7 @@ function _bbx_project_complete {
 # Also used as the completion function for the bare 'pkg' alias.
 function _bbx_pkg_complete {
 	local cur="${COMP_WORDS[COMP_CWORD]}"
-	COMPREPLY=($(compgen -W "$(__bbx_comp_packages)" -- "${cur}"))
+	COMPREPLY=($(compgen -W "-v $(__bbx_comp_packages)" -- "${cur}"))
 }
 
 # Completion for: bbx goto <package> [-b]
@@ -121,7 +123,7 @@ function _bbx_complete {
 
 	if [ "${cword}" -eq 1 ]; then
 		COMPREPLY=($(compgen -W \
-			"init clone migrate stop image instance claude target project build fastbuild clean mrproper pkg goto fetch shell env tg pg pp help" \
+			"init clone stop image instance claude target project build fastbuild clean mrproper pkg goto fetch shell env tg pg pp help" \
 			-- "${cur}"))
 		return
 	fi
@@ -131,6 +133,8 @@ function _bbx_complete {
 		project)   _bbx_project_complete ;;
 		pkg)       _bbx_pkg_complete ;;
 		goto)      _bbx_goto_complete ;;
+		build|fastbuild|clean|mrproper|fetch)
+			COMPREPLY=($(compgen -W "$(__bbx_comp_packages)" -- "${cur}")) ;;
 		image)
 			if [ "${cword}" -eq 2 ]; then
 				COMPREPLY=($(compgen -W "list fetch" -- "${cur}"))

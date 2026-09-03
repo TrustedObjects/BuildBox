@@ -1,3 +1,5 @@
+#compdef _target target
+
 # This file is part of BuildBox project
 # Copyright (C) 2020-2026 Trusted Objects
 
@@ -14,8 +16,6 @@
 # along with this program; if not, see
 # <https://www.gnu.org/licenses/>.
 
-#compdef _target target
-
 source buildbox_utils.sh
 
 function _target {
@@ -23,21 +23,21 @@ function _target {
 	local line
 
 	_arguments -C \
-		"1: :(help list set clone build test dist clean mrproper pkg tools info goto dist-prebuilt)" \
+		"1: :(help list set clone build fastbuild test dist dist-prebuilt clean mrproper pkg tools info goto)" \
 		"*::arg:->args"
 
 	case $line[1] in
 	set)
 		_target_set
 		;;
-	pkg)
-		_target_pkg
-		;;
-	build)
+	build|fastbuild)
 		_target_build
 		;;
 	test)
 		_target_test
+		;;
+	pkg)
+		_target_pkg
 		;;
 	info)
 		_target_info
@@ -48,7 +48,7 @@ function _target {
 }
 
 function _target_set {
-	local targets=$(bb_get_project_targets ${BB_PROJECT})
+	local targets=$(bb_get_project_targets)
 	_arguments -C \
 		"1: :(${targets})"
 }
@@ -60,16 +60,16 @@ function _target_pkg {
 
 function _target_build {
 	_arguments -C \
-		"1: :(--attach)"
+		"1: :(-c --continue -v)"
 }
 
 function _target_test {
 	_arguments -C \
-		"1: :(--attach)"
+		"1: :(-q)"
 }
 
 function _target_info {
-	local targets=$(bb_get_project_targets ${BB_PROJECT})
+	local targets=$(bb_get_project_targets)
 	_arguments -C \
 		"1: :(${targets})"
 }

@@ -68,8 +68,11 @@ function _bbx_target {
 					local -a targets=($(__bbx_comp_targets))
 					_arguments "1: :(${targets[*]})"
 					;;
-				build|fastbuild|test)
-					_arguments "1: :(--attach)"
+				build|fastbuild)
+					_arguments "1: :(-c --continue -v)"
+					;;
+				test)
+					_arguments "1: :(-q)"
 					;;
 				pkg)
 					_arguments "1: :(-m -v)"
@@ -83,7 +86,7 @@ function _bbx_target {
 function _bbx_project {
 	local state line
 	_arguments -C \
-		"1: :(help init clone migrate update clean mrproper info goto)" \
+		"1: :(help update clean mrproper info goto)" \
 		"*::arg:->args"
 	case $state in
 		args)
@@ -177,7 +180,6 @@ function _bbx {
 			local -a cmds=(
 				'init:Initialize a new BuildBox project'
 				'clone:Clone a project repository'
-				'migrate:Migrate a 1.x project to 2.x'
 				'stop:Stop the container for the current project'
 				'image:Manage BuildBox images'
 				'instance:Manage running BuildBox containers'
