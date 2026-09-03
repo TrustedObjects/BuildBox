@@ -20,9 +20,10 @@ function test_bb_lock {
 	lock="${BB_PROJECT_DIR}/tmp/lock"
 	bb_lock_acquire "${lock}"
 	asserteq $? 0
-	# The lock is a symbolic link to the PID of its owner
+	# The lock is a symbolic link to the PID of its owner, and to the scope
+	# this PID is unique in
 	assertl "${lock}"
-	asserteq "$(readlink ${lock})" "$$"
+	asserteq "$(readlink ${lock})" "$$:$(bb_lock_owner_scope)"
 	bb_lock_is_held "${lock}"
 	asserteq $? 0
 	bb_lock_release "${lock}"
@@ -134,7 +135,7 @@ function test_bb_lock_stale_after_kill {
 	# And it is taken over
 	bb_lock_try_acquire "${lock}"
 	asserteq $? 0
-	asserteq "$(readlink ${lock})" "$$"
+	asserteq "$(readlink ${lock})" "$$:$(bb_lock_owner_scope)"
 	bb_lock_release "${lock}"
 	return 0
 }
@@ -168,8 +169,7 @@ function test_bb_lock_release_not_held {
 	# Releasing a lock which is not held does nothing
 	bb_lock_release "${lock}"
 	asserteq $? 0
-	# A lock held by another process is not released. PID 1 is always alive, so
-	# this lock is not stale
+	# A lock whose owner is not the caller is not released, whatever its target
 	mkdir -p "$(dirname ${lock})"
 	ln -s 1 "${lock}"
 	bb_lock_release "${lock}"
@@ -188,3 +188,53 @@ function test_bb_lock_not_in_workspace {
 	assertnl "${lock}"
 }
 bb_declare_test test_bb_lock_not_in_workspace
+
+function test_bb_lock_stale_out_of_scope {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	lock="${BB_PROJECT_DIR}/tmp/lock"
+	mkdir -p "$(dirname ${lock})"
+	# A PID only designates its owner inside the scope it was taken in. PID 1
+	# is always alive, yet a lock recording it in another scope is stale: the
+	# project directory outlives its container, so a leftover lock may hold a
+	# PID which has been recycled since.
+	ln -s -T "1:another_scope" "${lock}"
+	bb_lock_is_stale "${lock}"
+	asserteq $? 0
+	bb_lock_is_held "${lock}"
+	assertne $? 0
+	# So it does not block the next process, which takes it over
+	bb_lock_try_acquire "${lock}"
+	asserteq $? 0
+	asserteq "$(readlink ${lock})" "$$:$(bb_lock_owner_scope)"
+	bb_lock_release "${lock}"
+	asserteq $? 0
+	# In the current scope, a lock recording a live PID is held
+	ln -s -T "1:$(bb_lock_owner_scope)" "${lock}"
+	bb_lock_is_stale "${lock}"
+	assertne $? 0
+	bb_lock_is_held "${lock}"
+	asserteq $? 0
+	bb_lock_try_acquire "${lock}"
+	asserteq $? 1
+	rm -f "${lock}"
+}
+bb_declare_test test_bb_lock_stale_out_of_scope
+
+function test_bb_lock_stale_bare_pid_format {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	lock="${BB_PROJECT_DIR}/tmp/lock"
+	mkdir -p "$(dirname ${lock})"
+	# A bare PID is the format of BuildBox 2.1.0: it carries no scope, so it
+	# comes from another process and is stale, as the older formats are
+	ln -s -T "1" "${lock}"
+	bb_lock_is_stale "${lock}"
+	asserteq $? 0
+	bb_lock_try_acquire "${lock}"
+	asserteq $? 0
+	bb_lock_release "${lock}"
+	asserteq $? 0
+	assertnl "${lock}"
+}
+bb_declare_test test_bb_lock_stale_bare_pid_format

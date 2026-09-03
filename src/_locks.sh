@@ -17,9 +17,10 @@
 ## @brief Locks
 ## Locks are used to control access to ressources or to synchronize processes.
 ##
-## A lock is a symbolic link whose target is the PID of the process holding it.
-## Creating a symbolic link is an unitary operation, and it carries the owner PID
-## without any further write, so taking a lock can not race.
+## A lock is a symbolic link whose target is `<PID>:<SCOPE>`, the process holding
+## it and the scope this PID belongs to. Creating a symbolic link is an unitary
+## operation, and it carries the owner without any further write, so taking a
+## lock can not race.
 ##
 ## No file descriptor is involved: a lock is never inherited by a child process,
 ## and nothing started during a build can keep it alive.
@@ -27,9 +28,28 @@
 ## A lock whose owner process is gone is stale: it is taken over by the next
 ## process asking for it, so a killed process leaves no lock behind.
 
+# Scope a PID is unique in: the PID namespace of the caller, and the boot of the
+# running kernel. A lock lives in the project directory, which outlives both, so
+# it may hold a PID belonging to another scope, where that number designates
+# nothing. Recording the scope is what tells a live owner from a PID which has
+# been recycled since, typically after the project container was restarted.
+# When neither value can be read, every process reads the same empty scope, so
+# locks keep working, with the PID alone as before.
+# @print Scope identifier of the calling process
+function bb_lock_owner_scope {
+	local ns=$(readlink /proc/self/ns/pid 2>/dev/null)
+	# 'pid:[4026531836]' gives '4026531836'
+	ns="${ns##*\[}"
+	ns="${ns%%]*}"
+	local boot=$(cat /proc/sys/kernel/random/boot_id 2>/dev/null)
+	printf '%s.%s' "${ns}" "${boot//-/}"
+}
+bb_exportfn bb_lock_owner_scope
+
 # Tell whether a lock is stale, which means present but not usable as it is: its
-# owner process is gone, or it was left by a BuildBox version using another lock
-# format (a directory up to 2.0.2, a file in 2.1.0).
+# owner process is gone, its owner belongs to another scope, or it was left by a
+# BuildBox version using another lock format (a directory up to 2.0.2, a file or
+# a bare PID in 2.1.0).
 # @param Lock file path
 # @return 0 if the lock is stale, 1 if it is held or absent
 function bb_lock_is_stale {
@@ -42,12 +62,23 @@ function bb_lock_is_stale {
 		return 1
 	fi
 	local owner=$(readlink "${lock_file}" 2>/dev/null)
-	case "${owner}" in
+	local owner_pid="${owner%%:*}"
+	local owner_scope="${owner#*:}"
+	# No scope in the target: left by a BuildBox version recording the PID alone
+	if [ "${owner_scope}" = "${owner}" ]; then
+		return 0
+	fi
+	case "${owner_pid}" in
 		''|*[!0-9]*)
 			return 0
 			;;
 	esac
-	if [ -d "/proc/${owner}" ]; then
+	# The PID only designates its owner inside the scope it was taken in: the
+	# same number in another scope is another process, so the owner is gone
+	if [ "${owner_scope}" != "$(bb_lock_owner_scope)" ]; then
+		return 0
+	fi
+	if [ -d "/proc/${owner_pid}" ]; then
 		return 1
 	fi
 	return 0
@@ -105,15 +136,16 @@ function bb_lock_try_acquire {
 	if [ $? -ne 0 ]; then
 		return 2
 	fi
+	local owner="$$:$(bb_lock_owner_scope)"
 	# Creating a symbolic link is an unitary operation. -T makes it fail rather
 	# than create the link inside a leftover lock directory
-	if ln -s -T "$$" "${lock_file}" > /dev/null 2>&1; then
+	if ln -s -T "${owner}" "${lock_file}" > /dev/null 2>&1; then
 		bb_add_exit_action "bb_lock_release ${lock_file}"
 		return 0
 	fi
 	if bb_lock_is_stale "${lock_file}"; then
 		rm -rf "${lock_file}" > /dev/null 2>&1
-		if ln -s -T "$$" "${lock_file}" > /dev/null 2>&1; then
+		if ln -s -T "${owner}" "${lock_file}" > /dev/null 2>&1; then
 			bb_add_exit_action "bb_lock_release ${lock_file}"
 			return 0
 		fi
@@ -132,7 +164,7 @@ bb_exportfn bb_lock_try_acquire
 function bb_lock_release {
 	local lock_file=${1}
 	local owner=$(readlink "${lock_file}" 2>/dev/null)
-	if [ -n "${owner}" ] && [[ "${owner}" != "$$" ]]; then
+	if [ -n "${owner}" ] && [[ "${owner}" != "$$:$(bb_lock_owner_scope)" ]]; then
 		return 0
 	fi
 	rm -rf "${lock_file}" > /dev/null 2>&1
