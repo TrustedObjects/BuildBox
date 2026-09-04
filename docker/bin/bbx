@@ -118,6 +118,28 @@ function bbx_container_name {
 	echo "${BBX_CONTAINER_PREFIX}-${basename}-${hash}"
 }
 
+# Hostname of the project container: 'bbx-' followed by the project directory
+# name. sethostname() refuses anything longer than HOST_NAME_MAX, 64 on Linux,
+# and the container then fails to start, so a name which does not fit is
+# truncated and completed with a hash of the project path. The hash keeps the
+# hostname unique between projects, and stable across container restarts.
+# @param Project root path
+# @print Container hostname, never longer than 64 characters
+function bbx_container_hostname {
+	local project_root="${1}"
+	local hostname="bbx-$(basename "${project_root}")"
+	if [ ${#hostname} -le 64 ]; then
+		echo "${hostname}"
+		return 0
+	fi
+	local hash
+	hash=$(echo -n "${project_root}" | md5sum | cut -c1-8)
+	# 64 = 4 for 'bbx-', 51 for the truncated name, 9 for '-' and the hash
+	local basename
+	basename=$(basename "${project_root}" | cut -c1-51 | sed 's/[^a-zA-Z0-9]*$//')
+	echo "bbx-${basename}-${hash}"
+}
+
 # Pull an image, resolving short names (no slash) to the Trusted Objects
 # Docker Hub organisation. Full references (org/image or registry/image)
 # are pulled as-is. Short names are also tagged locally under their short
@@ -191,7 +213,7 @@ function bbx_ensure_container {
 		if [ -n "${SSH_AUTH_SOCK}" ] && [ -S "${SSH_AUTH_SOCK}" ]; then
 			extra_args+=(-v "${SSH_AUTH_SOCK}:${SSH_AUTH_SOCK}")
 		fi
-		local hostname="bbx-$(basename "${project_root}")"
+		local hostname="$(bbx_container_hostname "${project_root}")"
 		until docker run -d \
 			--pull never \
 			--privileged \
