@@ -278,8 +278,10 @@ function bb_get_target_vars () (
 	fi
 	# Names are read before sourcing the profile: the set of variables is not
 	# fixed, and listing the variables of a given prefix is not portable
-	# between bash and zsh
-	var_names=$(grep -o '^VAR_[A-Za-z0-9_]*' ${target_profile} || true)
+	# between bash and zsh. A profile may assign the same variable on several
+	# lines, to build its value step by step: the name is kept once, at its
+	# first appearance, since sourcing already gives the final value.
+	var_names=$(grep -o '^VAR_[A-Za-z0-9_]*' ${target_profile} | awk '!seen[$0]++' || true)
 	# bb_source() is not used here on purpose: the profile may have been
 	# sourced already by the caller, while its values are needed
 	# unconditionally

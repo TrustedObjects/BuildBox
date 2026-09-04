@@ -71,3 +71,28 @@ VAR_EQUAL=a=b'
 	assertz "${_CONFIG}"
 }
 bb_declare_test test_bb_get_target_vars_expansion
+
+function test_bb_get_target_vars_accumulated {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	# A profile may build a variable value over several lines. The name is
+	# then reported once, holding the final value.
+	{
+		printf '_PART=two\n'
+		printf 'VAR_LIST="one"\n'
+		printf 'VAR_LIST="${VAR_LIST} ${_PART}"\n'
+		printf 'VAR_LIST="${VAR_LIST} three"\n'
+		printf 'VAR_OTHER=plain\n'
+	} > "${BB_PROJECT_PROFILE_DIR}/target.accumulated"
+	vars=$(bb_get_target_vars accumulated)
+	asserteq $? 0
+	expected='VAR_LIST=one two three
+VAR_OTHER=plain'
+	asserteq "${vars}" "${expected}"
+	# And it is exported once, with that value
+	bb_set_project_current_target accumulated
+	asserteq $? 0
+	asserteq "${BB_TARGET_VAR_LIST}" "one two three"
+	asserteq "${BB_TARGET_VAR_OTHER}" "plain"
+}
+bb_declare_test test_bb_get_target_vars_accumulated
