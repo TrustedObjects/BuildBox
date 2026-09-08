@@ -167,8 +167,34 @@ Displayed information:
 
 The following command is used to fetch all target required tools and packages sources:
 ```
-bbx target clone
+bbx target clone [-p] [-u|--update]
 ```
+
+With `-u`, a package or a tool which is already there is updated instead of
+being left as it is, and one which is not there yet is simply cloned. Updating
+only concerns sources which can move, and never discards anything:
+
+| Sources | Result |
+|---|---|
+| On a branch which got new commits | Fast forwarded to the last commit of the branch |
+| On a branch with no new commit | Left as they are |
+| On a tag or a changeset | Left as they are, such a revision designates a fixed commit |
+| Holding local changes, or local commits which are not upstream | Left as they are |
+| Fetched with a protocol other than Git | Left as they are |
+
+The command reports what happened for each package and each tool: `updated`,
+`up to date`, or `kept` when local work stopped the update. Details are in
+`<TARGET>/target_clone.log`.
+
+Sources [shared between targets](package.md#target-packages-list) are the same
+repository for every target using them, so updating them from one target
+updates them for all. Sources a target holds its own copy of are updated for
+that target only. [Tools](tool.md) are installed once per project and shared by
+all its targets, so updating a tool updates it for every target requiring it.
+
+A single package can be updated with [`bbx fetch -u`](package.md#fetch-package).
+
+`-p` gets the [prebuilt files](#prebuilt-targets) of the target.
 
 In case of error, logs can be accessed from `<TARGET>/target_clone.log`.
 

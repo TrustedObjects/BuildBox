@@ -179,6 +179,45 @@ function bb_clone_tool () (
 )
 bb_exportfn bb_clone_tool
 
+## @fn bb_update_tool
+## Update an already cloned tool, when the revision it sits on can move.
+##
+## The update is delegated to the `bb_{proto}_update` function of the tool
+## protocol. A protocol providing no such function has nothing to update, and
+## sources holding local work are kept as they are.
+##
+## Tools are installed once per project and shared by all its targets, so
+## updating a tool updates it for every target requiring it.
+## @param Tool package name
+## @env `BB_TOOLS_DIR`: path where tools are installed
+## @env `BB_PROJECT_PROFILE_DIR`: current project path
+## @print What has been done, or why nothing was
+## @return 0 when updated, 2 when there is nothing to update, 3 when the tool
+## holds local work and is kept as it is, else error
+function bb_update_tool () (
+	bb_trap_errors_silent
+	local tool_name=${1}
+	bb_load_package ${tool_name}
+	[ $? -ne 0 ] && return 1
+	local tool_dir=${BB_TOOLS_DIR}/$(bb_get_tool_dir ${tool_name})
+	if [ ! -d ${tool_dir} ]; then
+		echo "not cloned, nothing to update"
+		return 2
+	fi
+	bb_source _clone_${SRC_PROTO}.sh
+	[ $? -ne 0 ] && return 1
+	if ! typeset -f bb_${SRC_PROTO}_update > /dev/null; then
+		echo "tools cloned with ${SRC_PROTO} have nothing to update"
+		return 2
+	fi
+	# A tool built as 'executable' had its file moved into bin/ after the
+	# clone, so its working tree never matches its revision: bb_git_update
+	# sees that and keeps it as it is
+	bb_${SRC_PROTO}_update ${tool_dir} ${SRC_REVISION}
+	return $?
+)
+bb_exportfn bb_update_tool
+
 ## @fn bb_load_tools
 ## Load current target tools by running their (optional) `load.sh` script.
 ## Tools are loaded in order of appearance in target tools list file

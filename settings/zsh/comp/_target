@@ -30,6 +30,9 @@ function _target {
 	set)
 		_target_set
 		;;
+	clone)
+		_target_clone
+		;;
 	build|fastbuild)
 		_target_build
 		;;
@@ -56,6 +59,11 @@ function _target_set {
 function _target_pkg {
 	_arguments -C \
 		"1: :(-m -v)"
+}
+
+function _target_clone {
+	_arguments -C \
+		"1: :(-p -u --update)"
 }
 
 function _target_build {

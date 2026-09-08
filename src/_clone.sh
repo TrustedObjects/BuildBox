@@ -106,6 +106,57 @@ function bb_clone_package () (
 )
 bb_exportfn bb_clone_package
 
+## @fn bb_update_package
+## Update the sources of an already cloned package, when the revision it sits
+## on can move.
+##
+## The update is delegated to the `bb_{proto}_update` function of the package
+## protocol, on the sources the current target uses. A protocol providing no
+## such function has nothing to update. Sources holding local work are kept as
+## they are: an update never discards anything.
+##
+## Sources shared between targets are updated once, for every target using
+## them, which is what sharing means (see bb_clone_package()).
+## @param Package name
+## @env `BB_PROJECT_PROFILE_DIR`: current project path
+## @env `BB_TARGET_SRC_DIR`: path where the target sources are
+## @print What has been done, or why nothing was
+## @return 0 when updated, 2 when there is nothing to update, 3 when the
+## sources hold local work and are kept as they are, else error
+function bb_update_package () (
+	local pkg_name=${1}
+	bb_load_package ${pkg_name}
+	[ $? -ne 0 ] && return 1
+	local pkg_dir=$(bb_escape_package_name "${pkg_name}")
+	local src_dir=${BB_TARGET_SRC_DIR}/${pkg_dir}
+	if [ ! -e ${src_dir} ]; then
+		echo "not cloned, nothing to update"
+		return 2
+	fi
+	bb_source _clone_${SRC_PROTO}.sh
+	[ $? -ne 0 ] && return 1
+	if ! typeset -f bb_${SRC_PROTO}_update > /dev/null; then
+		echo "sources cloned with ${SRC_PROTO} have nothing to update"
+		return 2
+	fi
+	# Local work is never discarded, so it stops the update
+	local modified=0
+	bb_package_is_modified ${pkg_name} || modified=$?
+	case ${modified} in
+		1)
+			echo "locally modified, kept as it is"
+			return 3
+			;;
+		2)
+			echo "revision unknown, kept as it is"
+			return 3
+			;;
+	esac
+	bb_${SRC_PROTO}_update ${src_dir} ${SRC_REVISION}
+	return $?
+)
+bb_exportfn bb_update_package
+
 ## @fn bb_is_package_cloned
 ## Check if a package is cloned.
 ## @param Target name

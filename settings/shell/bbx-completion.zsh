@@ -68,6 +68,9 @@ function _bbx_target {
 					local -a targets=($(__bbx_comp_targets))
 					_arguments "1: :(${targets[*]})"
 					;;
+				clone)
+					_arguments "1: :(-p -u --update)"
+					;;
 				build|fastbuild)
 					_arguments "1: :(-c --continue -v)"
 					;;
@@ -101,6 +104,13 @@ function _bbx_project {
 function _bbx_pkg {
 	local -a packages=($(__bbx_comp_packages))
 	_sep_parts "(${packages[*]})"
+}
+
+# Completion for: bbx fetch [-u|--update] <package>...
+function _bbx_fetch {
+	local -a packages=($(__bbx_comp_packages))
+	_arguments \
+		"*: :(-u --update ${packages[*]})"
 }
 
 # Completion for: bbx goto <package> [-b]
@@ -207,6 +217,7 @@ function _bbx {
 				target)   _bbx_target ;;
 				project)  _bbx_project ;;
 				pkg)      _bbx_pkg ;;
+				fetch)    _bbx_fetch ;;
 				goto)     _bbx_goto ;;
 				image)    _bbx_image ;;
 				instance) _bbx_instance ;;

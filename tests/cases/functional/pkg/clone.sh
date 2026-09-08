@@ -117,3 +117,116 @@ function test_pkg_clone_project_not_set {
 }
 bb_declare_test test_pkg_clone_project_not_set
 
+## Tests for 'bbx fetch -u'. The remote lives in the test workspace, so the
+## shared fixture repositories are never modified.
+
+# Create a repository holding one commit, and its bare remote
+# @param Remote name
+# @print Bare remote path
+function setup_fetch_remote {
+	local name="${1}"
+	local work="${BB_TEST_WORKSPACE}/${name}"
+	local bare="${BB_TEST_WORKSPACE}/${name}.git"
+	rm -rf "${work}" "${bare}"
+	mkdir -p "${work}"
+	(
+		cd "${work}"
+		git init -q -b master
+		git config user.email test@buildbox
+		git config user.name BuildBox
+		echo "first" > CONTENT
+		git add CONTENT
+		git commit -q -m "First commit"
+		git clone -q --bare . "${bare}"
+		git remote add origin "${bare}"
+	)
+	echo "${bare}"
+}
+
+# Add a commit on the master branch of a remote created above
+# @param Remote name
+function advance_fetch_remote {
+	(
+		cd "${BB_TEST_WORKSPACE}/${1}"
+		echo "second" > CONTENT
+		git commit -q -a -m "Second commit"
+		git push -q origin master
+	)
+}
+
+# Declare a package and a target using it in the current project profile
+# @param Package name
+# @param Remote path
+# @param Target name
+function declare_fetch_target {
+	printf 'SRC_PROTO=git\nSRC_URI=%s\nSRC_REVISION=master\nSRC_BUILD=autotools\n' \
+		"${2}" > "${BB_PROJECT_PROFILE_DIR}/packages/${1}"
+	printf '%s\n' "${1}" > "${BB_PROJECT_PROFILE_DIR}/packages.${3}"
+	printf 'CPU=x86\nPACKAGES=packages.%s\n' "${3}" \
+		> "${BB_PROJECT_PROFILE_DIR}/target.${3}"
+}
+
+function test_pkg_fetch_update {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	bare=$(setup_fetch_remote fetch_upd)
+	declare_fetch_target fetch_pkg "${bare}" fetchupd
+	bb_set_project_current_target fetchupd
+	asserteq $? 0
+
+	# Not fetched yet: '-u' does a plain fetch
+	clone -u fetch_pkg
+	asserteq $? 0
+	asserteq "$(cat ${BB_TARGET_SRC_DIR}/fetch_pkg/CONTENT)" "first"
+
+	# The branch moves: the sources follow
+	advance_fetch_remote fetch_upd
+	out=$(clone -u fetch_pkg)
+	asserteq $? 0
+	asserteq "$(cat ${BB_TARGET_SRC_DIR}/fetch_pkg/CONTENT)" "second"
+	assert "echo '${out}' | grep -q 'Updating'"
+}
+bb_declare_test test_pkg_fetch_update
+
+function test_pkg_fetch_without_update_keeps_sources {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	bare=$(setup_fetch_remote fetch_noopt)
+	declare_fetch_target fetch_pkg "${bare}" fetchnoopt
+	bb_set_project_current_target fetchnoopt
+	asserteq $? 0
+	clone fetch_pkg
+	asserteq $? 0
+	advance_fetch_remote fetch_noopt
+	# Without '-u' sources already there are left as they are
+	clone fetch_pkg
+	asserteq $? 0
+	asserteq "$(cat ${BB_TARGET_SRC_DIR}/fetch_pkg/CONTENT)" "first"
+}
+bb_declare_test test_pkg_fetch_without_update_keeps_sources
+
+function test_pkg_fetch_update_keeps_local_work {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	bare=$(setup_fetch_remote fetch_local)
+	declare_fetch_target fetch_pkg "${bare}" fetchlocal
+	bb_set_project_current_target fetchlocal
+	asserteq $? 0
+	clone -u fetch_pkg
+	asserteq $? 0
+	echo "local work" > "${BB_TARGET_SRC_DIR}/fetch_pkg/CONTENT"
+	advance_fetch_remote fetch_local
+	clone -u fetch_pkg
+	asserteq $? 0
+	asserteq "$(cat ${BB_TARGET_SRC_DIR}/fetch_pkg/CONTENT)" "local work"
+}
+bb_declare_test test_pkg_fetch_update_keeps_local_work
+
+function test_pkg_fetch_unknown_option {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	out="$(clone --nope foo_package 2>&1 >/dev/null)"
+	assertne $? 0
+	assertn "${out}"
+}
+bb_declare_test test_pkg_fetch_unknown_option

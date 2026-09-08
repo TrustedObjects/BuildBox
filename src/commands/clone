@@ -18,17 +18,37 @@
 source buildbox_utils.sh
 
 function help {
-	echo "Usage: bbx fetch <PKG...>"
+	echo "Usage: bbx fetch [-u|--update] <PKG...>"
 	echo ""
 	echo "Fetch (clone) package sources for the current target."
-	echo "  PKG...   Package name(s) to fetch (glob patterns supported)"
+	echo "  PKG...           Package name(s) to fetch (glob patterns supported)"
+	echo "  -u, --update     Update the sources already fetched, when they can"
+	echo "                   move, instead of leaving them as they are"
 }
 
 case "$1" in
 	help|-h|--help) help; exit 0 ;;
 esac
 
-if [ $# -lt 1 ]; then
+update=0
+packages_list=()
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		-u|--update)
+			update=1
+			;;
+		-*)
+			>&2 echo "Unknown option ${1}"
+			exit 1
+			;;
+		*)
+			packages_list+=("${1}")
+			;;
+	esac
+	shift
+done
+
+if [ ${#packages_list[@]} -lt 1 ]; then
 	help >&2
 	exit 1
 fi
@@ -36,7 +56,6 @@ if [ -z "${BB_PROJECT_DIR}" ] || [ ! -d "${BB_PROJECT_DIR}" ]; then
 	>&2 echo "Not in a BuildBox project directory"
 	exit 1
 fi
-packages_list=$@
 
 bb_trap_errors_nolog
 
@@ -45,7 +64,7 @@ mkdir -p ${BB_TARGET_SRC_DIR}
 source $(bb_get_target_profile_path ${BB_TARGET})
 
 # Select packages matching given list, and make results unique
-selected_packages=$(bb_find_matching_packages 1 ${packages_list})
+selected_packages=$(bb_find_matching_packages 1 "${packages_list[@]}")
 if [ "${selected_packages}" == "" ]; then
 	>&2 echo "No matching packages !"
 	exit 1
@@ -64,8 +83,25 @@ while read -r line
 do
 	readarray -d : -t package <<< "${line}"
 	pkg_name=${package[0]/$'\n'/}
-	echo "Cloning ${pkg_name} ..."
-	bb_clone_package ${pkg_name}
+	# bb_is_package_cloned returns 1 when the package is cloned. Calling it
+	# through '||' also keeps the error trap out of the way, its return code
+	# carrying an answer rather than a failure
+	cloned=0
+	bb_is_package_cloned ${BB_TARGET} ${pkg_name} || cloned=1
+	if [ ${update} -eq 1 ] && [ ${cloned} -eq 1 ]; then
+		echo "Updating ${pkg_name} ..."
+		# Same reason for '||': 2 and 3 tell what happened, they are not
+		# failures. bb_update_package says what it did on stdout.
+		ret=0
+		bb_update_package ${pkg_name} || ret=$?
+		if [ ${ret} -ne 0 ] && [ ${ret} -ne 2 ] && [ ${ret} -ne 3 ]; then
+			>&2 echo "Unable to update ${pkg_name} !"
+			exit 1
+		fi
+	else
+		echo "Cloning ${pkg_name} ..."
+		bb_clone_package ${pkg_name}
+	fi
 	echo
 done < <(echo "${selected_packages}")
 

@@ -175,11 +175,16 @@ See [filtering packages](#filters-in-packages-management-commands) for more info
 
 To fetch some of target packages sources:
 ```
-bbx fetch <FILTER> [FILTER]...
+bbx fetch [-u|--update] <FILTER> [FILTER]...
 ```
 
 It fetches packages having their name matching `FILTER` into the current target.
 See [filtering packages](#filters-in-packages-management-commands) for more information about filter.
+
+With `-u`, a package whose sources are already there is updated instead of being
+left as it is, following the same rules as
+[`bbx target clone -u`](target.md#fetch-target): only sources which can move are
+updated, and nothing is ever discarded.
 
 Sources may be shared between the project targets, according to the used build mode (see [package sources](#package-sources)).
 

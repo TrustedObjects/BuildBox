@@ -67,6 +67,8 @@ function _bbx_target_complete {
 		case "${COMP_WORDS[${offset}]}" in
 			set|info)
 				COMPREPLY=($(compgen -W "$(__bbx_comp_targets)" -- "${cur}")) ;;
+			clone)
+				COMPREPLY=($(compgen -W "-p -u --update" -- "${cur}")) ;;
 			build|fastbuild)
 				COMPREPLY=($(compgen -W "-c --continue -v" -- "${cur}")) ;;
 			test)
@@ -133,8 +135,10 @@ function _bbx_complete {
 		project)   _bbx_project_complete ;;
 		pkg)       _bbx_pkg_complete ;;
 		goto)      _bbx_goto_complete ;;
-		build|fastbuild|clean|mrproper|fetch)
+		build|fastbuild|clean|mrproper)
 			COMPREPLY=($(compgen -W "$(__bbx_comp_packages)" -- "${cur}")) ;;
+		fetch)
+			COMPREPLY=($(compgen -W "-u --update $(__bbx_comp_packages)" -- "${cur}")) ;;
 		image)
 			if [ "${cword}" -eq 2 ]; then
 				COMPREPLY=($(compgen -W "list fetch" -- "${cur}"))

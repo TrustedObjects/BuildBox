@@ -29,7 +29,7 @@ function help {
 	echo "  fastbuild [-c]     Fast build all target packages"
 	echo "  clean              Clean all target build artifacts"
 	echo "  mrproper           Wipe target sources and built files"
-	echo "  clone              Fetch all target package sources"
+	echo "  clone [-p] [-u]    Fetch all target package sources"
 	echo "  test [-q]          Run target tests"
 	echo "  dist               Create target distribution"
 	echo "  dist-prebuilt      Archive prebuilt binaries"
