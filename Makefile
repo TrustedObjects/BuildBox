@@ -46,13 +46,16 @@ install-core: version
 	install -d $(SHAREDIR)/lib
 	install -m 644 src/_*.sh src/buildbox_utils.sh src/_pre_cmd $(SHAREDIR)/lib/
 
-	# Commands (skip symlinks; re-create explicitly below)
+	# Commands: a symlink is re-created as a symlink, so that every alias of
+	# src/commands/ is installed without having to be listed here
 	install -d $(SHAREDIR)/commands
 	for cmd in src/commands/*; do \
-	    [ -L "$$cmd" ] && continue; \
-	    install -m 755 "$$cmd" "$(SHAREDIR)/commands/"; \
+	    if [ -L "$$cmd" ]; then \
+	        ln -sf "$$(readlink "$$cmd")" "$(SHAREDIR)/commands/$$(basename "$$cmd")"; \
+	    else \
+	        install -m 755 "$$cmd" "$(SHAREDIR)/commands/"; \
+	    fi; \
 	done
-	ln -sf build $(SHAREDIR)/commands/fastbuild
 
 	# Patch container-side bbx: activate installed layout
 	sed -i 's|^_BB_SHARE=.*|_BB_SHARE="$(SHAREDIR)"|' $(SHAREDIR)/commands/bbx
