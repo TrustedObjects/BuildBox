@@ -1,3 +1,9 @@
+2.1.2 - 9/8/2026
+- Target package update feature
+- Fix missing target fastbuild command
+- Ensure container hostname do not exceed HOST_NAME_MAX
+- Avoid accumulating target variables
+
 2.1.1 - 9/3/2026
 - Improved target variables evaluation
 - Tools packages now support revision including '/'
