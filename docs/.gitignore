@@ -4,3 +4,4 @@ src/.vitepress/cache/
 src/.vitepress/.temp/
 src/dev/api.md
 src/parts/news.md
+src/public/cheatsheet.pdf

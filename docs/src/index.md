@@ -9,6 +9,9 @@ hero:
     - theme: brand
       text: Getting started →
       link: /getting-started/
+    - theme: alt
+      text: Cheat sheet (PDF)
+      link: /cheatsheet.pdf
 features:
   - title: Reproductible build
     details: All your projects components and all involved tools required to build the deliverable are version constrained to ensure future reproductibility

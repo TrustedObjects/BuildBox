@@ -6,12 +6,30 @@ Two parts of the site are generated, both by `npm run build`:
 |---|---|---|
 | `src/dev/api.md` | `src/dev/generate_apidoc.sh ../src/` | the `##` comments of the API files |
 | `src/parts/news.md` | `src/dev/generate_news.sh ../ChangeLog src/parts/news.md` | the `ChangeLog` |
+| `src/public/cheatsheet.pdf` | `src/dev/generate_cheatsheet.sh` | `src/dev/cheatsheet.html.template` |
 
-Neither is versioned. To regenerate the API documentation alone, without
+None is versioned. To regenerate the API documentation alone, without
 building the site:
 ```
 src/dev/generate_apidoc.sh ../src/
 ```
+
+## Cheat sheet
+
+`src/dev/cheatsheet.html.template` is a single page A4 sheet of the usual
+commands, written for people who need to fetch, build and test a project
+without being developers. `src/dev/generate_cheatsheet.sh` renders it to
+`src/public/cheatsheet.pdf`, which the build copies to the site root and serves
+as `/cheatsheet.pdf`.
+
+Rendering uses a headless Chromium or Chrome. When none is installed the sheet
+is skipped with a warning instead of failing the build, so the site stays
+buildable without a browser. The script also warns when the result spans more
+than one page, which is a layout regression: check it after editing the
+template, with `src/dev/generate_cheatsheet.sh` alone.
+
+`npm run dev` does not regenerate it, being a static asset: run the script once
+to get the download working locally.
 
 The releases news of the home page comes from the `ChangeLog`, so publishing a
 release only requires the `ChangeLog` entry. The last three releases are shown,

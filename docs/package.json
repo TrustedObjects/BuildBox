@@ -8,7 +8,7 @@
   "repository": "/buildbox_doc",
   "scripts": {
     "dev": "src/dev/generate_news.sh ../ChangeLog src/parts/news.md && vitepress dev src",
-    "build": "src/dev/generate_apidoc.sh ../src/ && src/dev/generate_news.sh ../ChangeLog src/parts/news.md && vitepress build src"
+    "build": "src/dev/generate_apidoc.sh ../src/ && src/dev/generate_news.sh ../ChangeLog src/parts/news.md && src/dev/generate_cheatsheet.sh && vitepress build src"
   },
   "devDependencies": {
     "vitepress": "^1.6.3",

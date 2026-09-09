@@ -1,0 +1,409 @@
+<!doctype html>
+<!--
+  Source of the BuildBox Cheat Sheet, rendered to a one page PDF by
+  generate_cheatsheet.sh. @VERSION@ is replaced at generation time.
+  Written for people who need to fetch, build and test a project without being
+  developers: every card names a task, not a mechanism.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BuildBox Cheat Sheet</title>
+<style>
+  /* Brand palette, same as the documentation site */
+  :root {
+    --brand: #ee7214;
+    --brand-dark: #cc5f10;
+    --ink: #1f2430;
+    --ink-soft: #5b6472;
+    --rule: #e3e6ec;
+    --code-bg: #f5f6f8;
+    --project: #ee7214;
+    --target: #2563eb;
+    --build: #16a34a;
+    --deliver: #7c3aed;
+    --inspect: #0891b2;
+    --clean: #dc2626;
+    --help: #b45309;
+  }
+
+  @page { size: A4 portrait; margin: 0; }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    /* Backgrounds and colours must survive printing */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    width: 210mm;
+    height: 297mm;
+    padding: 7mm 9mm 5mm;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 9.1pt;
+    line-height: 1.38;
+    color: var(--ink);
+  }
+
+  code, .cmd {
+    font-family: "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  }
+
+  /* --- Header --- */
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 2.2pt solid var(--brand);
+    padding-bottom: 1.8mm;
+    margin-bottom: 2.6mm;
+  }
+  h1 {
+    margin: 0;
+    font-size: 23pt;
+    letter-spacing: -0.4pt;
+    color: var(--brand);
+  }
+  h1 span { color: var(--ink); }
+  .tagline {
+    margin: 0.8mm 0 0;
+    font-size: 9.4pt;
+    color: var(--ink-soft);
+  }
+  .meta {
+    text-align: right;
+    font-size: 8.2pt;
+    color: var(--ink-soft);
+    line-height: 1.45;
+    white-space: nowrap;
+  }
+  .meta strong { color: var(--brand-dark); }
+
+  /* --- Guided path --- */
+  .path {
+    border: 0.8pt solid var(--rule);
+    border-left: 2.6pt solid var(--brand);
+    border-radius: 1.6mm;
+    padding: 2.6mm 3.4mm 2.8mm;
+    margin-bottom: 2.6mm;
+    background: #fffdfb;
+  }
+  .path h2 {
+    margin: 0 0 2.4mm;
+    font-size: 10.4pt;
+    color: var(--brand-dark);
+  }
+  .path h2 em {
+    font-style: normal;
+    font-weight: normal;
+    color: var(--ink-soft);
+    font-size: 8.6pt;
+  }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.6mm 4mm;
+  }
+  .step { position: relative; padding-left: 6mm; }
+  .step .n {
+    position: absolute;
+    left: 0;
+    top: 0.1mm;
+    width: 4.6mm;
+    height: 4.6mm;
+    border-radius: 50%;
+    background: var(--brand);
+    color: #fff;
+    font-size: 7.8pt;
+    font-weight: bold;
+    text-align: center;
+    line-height: 4.6mm;
+  }
+  .step .cmd {
+    display: block;
+    font-size: 9pt;
+    font-weight: bold;
+    color: var(--ink);
+    word-break: break-word;
+  }
+  .step .why {
+    display: block;
+    font-size: 8.2pt;
+    color: var(--ink-soft);
+    margin-top: 0.4mm;
+  }
+
+  /* --- Themed cards --- */
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.6mm;
+    align-items: start;
+  }
+  .card {
+    border: 0.8pt solid var(--rule);
+    border-top: 2.2pt solid var(--accent);
+    border-radius: 1.6mm;
+    padding: 2.6mm 3mm 2.8mm;
+    break-inside: avoid;
+  }
+  .card h3 {
+    margin: 0 0 1.8mm;
+    font-size: 9.8pt;
+    color: var(--accent);
+    display: flex;
+    align-items: baseline;
+    gap: 1.6mm;
+  }
+  .card h3 em {
+    font-style: normal;
+    font-weight: normal;
+    font-size: 8pt;
+    color: var(--ink-soft);
+  }
+  .card dl { margin: 0; }
+  .card dt {
+    font-family: "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    font-size: 8.6pt;
+    font-weight: bold;
+    color: var(--ink);
+    background: var(--code-bg);
+    border-radius: 0.8mm;
+    padding: 0.3mm 1mm;
+    display: inline-block;
+    margin-top: 1.1mm;
+  }
+  .card dt:first-of-type { margin-top: 0; }
+  .card dd {
+    margin: 0.4mm 0 0;
+    font-size: 8.1pt;
+    color: var(--ink-soft);
+  }
+  .card dd b { color: var(--ink); font-weight: 600; }
+
+  .project { --accent: var(--project); }
+  .target  { --accent: var(--target); }
+  .build   { --accent: var(--build); }
+  .deliver { --accent: var(--deliver); }
+  .inspect { --accent: var(--inspect); }
+  .clean   { --accent: var(--clean); }
+
+  /* --- Bottom band --- */
+  .band {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 2.6mm;
+    margin-top: 2.6mm;
+  }
+  .band section {
+    border: 0.8pt solid var(--rule);
+    border-radius: 1.6mm;
+    padding: 2.6mm 3mm;
+  }
+  .band h3 {
+    margin: 0 0 1.6mm;
+    font-size: 9.8pt;
+  }
+  .words h3 { color: var(--ink); }
+  .help {
+    border-color: #f0d9ae;
+    background: #fffaf0;
+  }
+  .help h3 { color: var(--help); }
+  .words p, .help p {
+    margin: 1mm 0 0;
+    font-size: 8.1pt;
+    color: var(--ink-soft);
+  }
+  .words p:first-of-type, .help p:first-of-type { margin-top: 0; }
+  .words b { color: var(--ink); }
+  .help b { color: var(--help); }
+  .help code, .words code {
+    font-size: 8pt;
+    background: var(--code-bg);
+    border-radius: 0.7mm;
+    padding: 0.2mm 0.8mm;
+    color: var(--ink);
+  }
+
+  footer {
+    margin-top: 2mm;
+    padding-top: 1.2mm;
+    border-top: 0.8pt solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    font-size: 7.6pt;
+    color: var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>BuildBox <span>Cheat Sheet</span></h1>
+    <p class="tagline">Fetch, build, test and deliver a project. No development experience needed.</p>
+  </div>
+  <div class="meta">
+    version <strong>@VERSION@</strong><br>
+    buildbox.trusted-objects.com
+  </div>
+</header>
+
+<div class="path">
+  <h2>A whole session, in six steps <em>&mdash; run each command from inside the project directory</em></h2>
+  <div class="steps">
+    <div class="step">
+      <span class="n">1</span>
+      <span class="cmd">bbx clone &lt;url&gt;</span>
+      <span class="why">Gets the project and creates its directory.</span>
+    </div>
+    <div class="step">
+      <span class="n">2</span>
+      <span class="cmd">cd &lt;project&gt;</span>
+      <span class="why">Every command below runs from there.</span>
+    </div>
+    <div class="step">
+      <span class="n">3</span>
+      <span class="cmd">bbx target list</span>
+      <span class="why">Shows what can be built. Pick a name.</span>
+    </div>
+    <div class="step">
+      <span class="n">4</span>
+      <span class="cmd">bbx target set &lt;name&gt;</span>
+      <span class="why">Chooses it. It stays chosen.</span>
+    </div>
+    <div class="step">
+      <span class="n">5</span>
+      <span class="cmd">bbx target build</span>
+      <span class="why">Builds it, fetching whatever is missing.</span>
+    </div>
+    <div class="step">
+      <span class="n">6</span>
+      <span class="cmd">bbx target dist</span>
+      <span class="why">Produces the deliverable.</span>
+    </div>
+  </div>
+</div>
+
+<div class="cards">
+
+  <div class="card project">
+    <h3>Project <em>get one, know its state</em></h3>
+    <dl>
+      <dt>bbx clone [-b BRANCH] &lt;url&gt; [dir]</dt>
+      <dd>Get an existing project. <b>-b</b> picks a version.</dd>
+      <dt>bbx project info</dt>
+      <dd>What this project is, and what is already fetched.</dd>
+      <dt>bbx project update</dt>
+      <dd>Refresh the project <b>settings</b> only. Sources already
+          fetched are left as they are.</dd>
+      <dt>bbx init [DIR]</dt>
+      <dd>Start a new, empty project.</dd>
+    </dl>
+  </div>
+
+  <div class="card target">
+    <h3>Target <em>choose what to build</em></h3>
+    <dl>
+      <dt>bbx target list</dt>
+      <dd>Every target, the current one marked.</dd>
+      <dt>bbx target set &lt;NAME&gt;</dt>
+      <dd>Work on that target from now on.</dd>
+      <dt>bbx target info [NAME]</dt>
+      <dd>What it builds, and whether it is fetched.</dd>
+      <dt>bbx target pkg [-v] &lt;PKG&gt;</dt>
+      <dd>Version and origin of one component. <b>-v</b> tells more.</dd>
+      <dt>bbx target tools</dt>
+      <dd>The tools this target needs.</dd>
+    </dl>
+  </div>
+
+  <div class="card build">
+    <h3>Build <em>fetch, then compile</em></h3>
+    <dl>
+      <dt>bbx target clone</dt>
+      <dd>Fetch every source the target needs.</dd>
+      <dt>bbx target clone -u</dt>
+      <dd>Same, and <b>update</b> what is already there.</dd>
+      <dt>bbx target build [-v] [-c]</dt>
+      <dd><b>-v</b> shows details, <b>-c</b> resumes after a failure.</dd>
+      <dt>bbx build &lt;PKG&gt;</dt>
+      <dd>One component only. <b>bbx fetch &lt;PKG&gt;</b> just gets it.</dd>
+    </dl>
+  </div>
+
+  <div class="card deliver">
+    <h3>Check &amp; deliver <em>the part you are after</em></h3>
+    <dl>
+      <dt>bbx target test</dt>
+      <dd>Run the target tests. Results in <code>&lt;TARGET&gt;/tests.log</code>.</dd>
+      <dt>bbx target dist</dt>
+      <dd>Produce the deliverable of the target.</dd>
+    </dl>
+    <p style="margin:1.6mm 0 0;font-size:8.1pt;color:var(--ink-soft)">
+      Deliverables and logs are written in the <code>&lt;TARGET&gt;/</code> directory.
+    </p>
+  </div>
+
+  <div class="card inspect">
+    <h3>Look around <em>where things are</em></h3>
+    <dl>
+      <dt>bbx shell</dt>
+      <dd>A shell inside the build environment.</dd>
+      <dt>pg &nbsp;&middot;&nbsp; tg &nbsp;&middot;&nbsp; pp</dt>
+      <dd>Short for <b>project goto</b>, <b>target goto</b> and
+          <b>project goto -p</b>: jump to the project, the target,
+          the settings.</dd>
+      <dt>bbx env</dt>
+      <dd>Show the environment a build runs with.</dd>
+    </dl>
+  </div>
+
+  <div class="card clean">
+    <h3>Clean up <em>start over, free space</em></h3>
+    <dl>
+      <dt>bbx target clean</dt>
+      <dd>Remove what was built, keep the sources.</dd>
+      <dt>bbx target mrproper</dt>
+      <dd>Remove sources and build. Asks first.</dd>
+      <dt>bbx stop</dt>
+      <dd>Stop this project environment.</dd>
+      <dt>bbx instance list</dt>
+      <dd>All running environments. <b>instance stop</b> ends idle ones.</dd>
+    </dl>
+  </div>
+
+</div>
+
+<div class="band">
+  <section class="words">
+    <h3>Words you will meet</h3>
+    <p><b>Project</b> &mdash; a directory holding everything one delivery needs.</p>
+    <p><b>Target</b> &mdash; one thing to build: a platform, a variant, a flavour. A project usually has several.</p>
+    <p><b>Package</b> &mdash; one component of the build. <b>Tool</b> &mdash; a compiler or utility the build needs.</p>
+    <p><b>Profile</b> &mdash; the project settings, in the <code>.bbx/</code> directory.</p>
+    <p><b>Container</b> &mdash; the isolated environment builds run in. There is
+       one per project, and BuildBox starts it for you.</p>
+  </section>
+
+  <section class="help">
+    <h3>If something goes wrong</h3>
+    <p><b>A build failed.</b> The reason is at the end of <code>&lt;TARGET&gt;/target_build.log</code>.</p>
+    <p><b>Sources look outdated.</b> Run <code>bbx target clone -u</code>.</p>
+    <p><b>The environment misbehaves.</b> Run <code>bbx stop</code>; the next command restarts it.</p>
+    <p><b>"Not in a BuildBox project directory".</b> Move into the project directory first.</p>
+  </section>
+</div>
+
+<footer>
+  <span>BuildBox @VERSION@ &mdash; Trusted Objects</span>
+  <span>Full documentation: buildbox.trusted-objects.com</span>
+</footer>
+
+</body>
+</html>

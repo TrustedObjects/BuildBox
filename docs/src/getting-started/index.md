@@ -10,3 +10,8 @@ This is helpful to be able to quickly deliver a new release for an old project, 
 
 As BuildBox projects are running in containers, they are isolated from developer's host system.
 
+::: tip Just need to build and test a project?
+The [cheat sheet](/cheatsheet.pdf) is a single page holding the usual commands,
+written for people who are not developers. Print it and keep it next to you.
+:::
+
