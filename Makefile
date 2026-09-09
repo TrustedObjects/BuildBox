@@ -118,7 +118,7 @@ doc:
 
 install-doc: doc
 	install -d $(DOCDIR)
-	cp -r docs/src/.vuepress/dist/. $(DOCDIR)/
+	cp -r docs/src/.vitepress/dist/. $(DOCDIR)/
 
 # --- Uninstall ---
 
