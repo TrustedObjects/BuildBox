@@ -81,6 +81,57 @@ bbx clone ssh://git@server/my_project_profile.git
 bbx clone -b dev ssh://git@server/my_project_profile.git my_project
 ```
 
+## Fetch, build, test and deliver every target
+
+The following commands run over **every target** of the project:
+```
+bbx project clone [-n|--not NAME]... [--stop-on-error] [OPTIONS...]
+bbx project build [-n|--not NAME]... [--stop-on-error] [OPTIONS...]
+bbx project test  [-n|--not NAME]... [--stop-on-error] [OPTIONS...]
+bbx project dist  [-n|--not NAME]... [--stop-on-error] [OPTIONS...]
+```
+
+Each target is processed by the matching `bbx target` command, so every target
+keeps its own logs and its own behaviour, and `OPTIONS...` are passed to it as
+they are (`bbx project clone -u`, `bbx project build -v`,
+`bbx project dist 1.2.3`).
+
+::: tip
+`bbx project clone` fetches sources, while `bbx clone <url>` gets a whole
+project: the first works inside a project, the second creates one.
+:::
+
+A target which cannot be concerned is skipped rather than counted as a failure:
+`test` skips a target defining no `TESTS`, and `dist` one defining no `DIST`.
+`clone` and `build` apply to every target.
+
+`-n` leaves a target out, and can be repeated once per target to exclude:
+`bbx project build --not doc --not test-bench`. Naming a target the project
+does not have prints a warning, the run going on with the others: an exclusion
+which no longer matches anything is a typo worth seeing.
+
+By default a failing target does not stop the others, so a single run tells the
+state of the whole project. With `--stop-on-error` the command stops at the
+first failure, and the targets left untouched are reported as `not run`.
+
+The current target is restored when the command ends.
+
+A report closes the run, one line per target:
+```
+Project build report
+  TARGET  RESULT    WARNINGS
+  foo     ok        2
+  bar     failed    -
+  qux     not run   -
+  doc     excluded  -
+```
+
+`RESULT` is `ok`, `failed`, `skipped`, `excluded` or `not run`. `WARNINGS` counts the build
+warnings of the target, and is only shown by `bbx project build`, the other
+actions producing none. The command
+exits with an error as soon as one target failed, which makes it usable as a
+continuous integration step.
+
 ## Get project information
 
 To get project information, use:

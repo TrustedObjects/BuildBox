@@ -1,0 +1,317 @@
+#!/bin/bash
+# This file is part of BuildBox project
+# Copyright (C) 2020-2026 Trusted Objects
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# version 2, as published by the Free Software Foundation.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, see
+# <https://www.gnu.org/licenses/>.
+
+# Run one target command over every target of the project, then report what
+# happened for each of them. Installed as project_clone_targets, project_test
+# and project_dist too: the action comes from the command name, the four
+# sharing this loop and this report. The per-target work is left to the target
+# commands, so each target keeps its own logs and its own behaviour.
+#
+# 'bbx project clone' lands here as project_clone_targets, project_clone being
+# already the command behind 'bbx clone <url>', which clones a whole project.
+
+source _pre_cmd
+
+source buildbox_utils.sh
+
+cmd=$(basename "${0}")
+case "${cmd}" in
+	project_clone_targets)
+		action="clone"
+		target_cmd="target_clone"
+		# Every target can be cloned, none is ever skipped
+		required_field=""
+		;;
+	project_test)
+		action="test"
+		target_cmd="target_test"
+		# Field the target profile must define for the action to apply
+		required_field="TESTS"
+		;;
+	project_dist)
+		action="dist"
+		target_cmd="target_dist"
+		required_field="DIST"
+		;;
+	*)
+		action="build"
+		target_cmd="target_build"
+		required_field=""
+		;;
+esac
+
+function help {
+	echo "Usage: bbx project ${action} [--stop-on-error] [OPTIONS...]"
+	echo ""
+	case "${action}" in
+		clone) echo "Fetch the sources of every target of the project." ;;
+		build) echo "Build every target of the project." ;;
+		test)  echo "Run the tests of every target of the project." ;;
+		dist)  echo "Produce the deliverable of every target of the project." ;;
+	esac
+	echo ""
+	echo "  -n, --not NAME   Leave the NAME target out. Repeatable, once per"
+	echo "                   target to exclude."
+	echo "  --stop-on-error  Stop at the first target which fails. Without it,"
+	echo "                   every target is processed and the report tells"
+	echo "                   which ones failed."
+	echo "  OPTIONS...       Passed as they are to 'bbx target ${action}'."
+	echo ""
+	echo "A report is printed at the end, one line per target."
+	if [ -n "${required_field}" ]; then
+		echo "A target defining no ${required_field} in its profile is skipped."
+	fi
+}
+
+case "${1}" in
+	help|-h|--help) help; exit 0 ;;
+esac
+
+stop_on_error=0
+excluded=()
+target_args=()
+while [ -n "${1}" ]; do
+	case "${1}" in
+		--stop-on-error)
+			stop_on_error=1
+			;;
+		-n|--not)
+			shift
+			if [ -z "${1}" ]; then
+				>&2 echo "Option --not requires a target name"
+				exit 1
+			fi
+			excluded+=("${1}")
+			;;
+		*)
+			# Everything else belongs to the target command
+			target_args+=("${1}")
+			;;
+	esac
+	shift
+done
+
+if [ -z "${BB_PROJECT_DIR}" ] || [ ! -d "${BB_PROJECT_DIR}" ]; then
+	>&2 echo "Not in a BuildBox project directory"
+	exit 1
+fi
+
+targets=$(bb_get_project_targets)
+if [ -z "${targets}" ]; then
+	>&2 echo "This project has no target !"
+	exit 1
+fi
+
+# An exclusion naming no target of the project is most likely a typo: say so
+# rather than run silently on more targets than expected
+for name in "${excluded[@]}"; do
+	found=0
+	for target in ${targets}; do
+		if [ "${name}" = "${target}" ]; then
+			found=1
+			break
+		fi
+	done
+	if [ ${found} -eq 0 ]; then
+		>&2 echo -e "\e[33mWarning:\e[0m no target named '${name}' to exclude"
+	fi
+done
+
+# Whether a target is left out by a --not option
+function is_excluded {
+	local target="${1}"
+	local name
+	for name in "${excluded[@]}"; do
+		if [ "${name}" = "${target}" ]; then
+			return 0
+		fi
+	done
+	return 1
+}
+
+# Whether a target profile defines the field the action needs. Sourced in a
+# subshell: profile values must not leak from one target to the next
+function target_declares () (
+	local target="${1}"
+	local field="${2}"
+	if [ -z "${field}" ]; then
+		return 0
+	fi
+	local profile
+	profile=$(bb_get_target_profile_path "${target}") || return 1
+	source "${profile}" > /dev/null 2>&1 || return 1
+	local value
+	eval "value=\"\${${field}}\""
+	[ -n "${value}" ]
+)
+
+# Build warnings of the current target, summed over its packages. Only the
+# build action produces any
+function current_target_warnings {
+	if [ "${action}" != "build" ]; then
+		return 0
+	fi
+	local count=0
+	local pkg_name
+	local pkg_warnings
+	while read -r pkg_name; do
+		if [ -z "${pkg_name}" ]; then
+			continue
+		fi
+		pkg_warnings=$(bb_stat_package "${pkg_name}" warning 2>/dev/null)
+		# A build mode with no warning stat prints a message, not a number
+		case "${pkg_warnings}" in
+			''|*[!0-9]*) continue ;;
+		esac
+		count=$((count + pkg_warnings))
+	done < <(bb_get_packages "${BB_TARGET}")
+	echo "${count}"
+}
+
+# Results, kept in the order the targets are processed
+names=()
+states=()
+warnings=()
+failures=0
+stopped=0
+
+# The action switches the current target: the one in use when the command was
+# called is restored at the end
+saved_target="${BB_TARGET}"
+
+processed=0
+for target in ${targets}; do
+	if is_excluded "${target}"; then
+		names+=("${target}")
+		states+=("excluded")
+		warnings+=("")
+		continue
+	fi
+	if ! target_declares "${target}" "${required_field}"; then
+		names+=("${target}")
+		states+=("skipped")
+		warnings+=("")
+		continue
+	fi
+	# Same blue as 'target info' gives the target name
+	echo -e "\e[1;34m${target}\e[0m"
+	if ! bb_set_project_current_target "${target}"; then
+		echo ""
+		processed=1
+		names+=("${target}")
+		states+=("failed")
+		warnings+=("")
+		failures=$((failures + 1))
+		if [ ${stop_on_error} -eq 1 ]; then
+			stopped=1
+			break
+		fi
+		continue
+	fi
+	# '||' keeps the failure of one target from ending the whole command,
+	# which is the point of processing them all
+	ret=0
+	${target_cmd} "${target_args[@]}" || ret=$?
+	echo ""
+	processed=1
+	names+=("${target}")
+	if [ ${ret} -eq 0 ]; then
+		states+=("ok")
+		warnings+=("$(current_target_warnings)")
+	else
+		states+=("failed")
+		warnings+=("")
+		failures=$((failures + 1))
+		if [ ${stop_on_error} -eq 1 ]; then
+			stopped=1
+			break
+		fi
+	fi
+done
+
+# Targets left untouched by an interrupted run still deserve a line
+if [ ${stopped} -eq 1 ]; then
+	for target in ${targets}; do
+		found=0
+		for name in "${names[@]}"; do
+			if [ "${name}" = "${target}" ]; then
+				found=1
+				break
+			fi
+		done
+		if [ ${found} -eq 0 ]; then
+			names+=("${target}")
+			states+=("not run")
+			warnings+=("")
+		fi
+	done
+fi
+
+# Restore previously active target
+if [ -n "${saved_target}" ]; then
+	bb_set_project_current_target "${saved_target}" > /dev/null 2>&1
+fi
+
+# Each processed target already closed its block with a blank line
+if [ ${processed} -eq 0 ]; then
+	echo ""
+fi
+echo -e "\e[1mProject ${action} report\e[0m"
+{
+	if [ "${action}" = "build" ]; then
+		printf 'TARGET\tRESULT\tWARNINGS\n'
+	else
+		printf 'TARGET\tRESULT\n'
+	fi
+	i=0
+	while [ ${i} -lt ${#names[@]} ]; do
+		case "${states[${i}]}" in
+			ok)      result="\e[32mok\e[0m" ;;
+			failed)  result="\e[31mfailed\e[0m" ;;
+			skipped)  result="\e[33mskipped\e[0m" ;;
+			excluded) result="\e[90mexcluded\e[0m" ;;
+			*)       result="\e[90mnot run\e[0m" ;;
+		esac
+		if [ "${action}" = "build" ]; then
+			count="${warnings[${i}]}"
+			if [ -z "${count}" ]; then
+				shown="-"
+			elif [ "${count}" -eq 0 ]; then
+				shown="0"
+			else
+				shown="\e[35m${count}\e[0m"
+			fi
+			printf '%s\t%b\t%b\n' "${names[${i}]}" "${result}" "${shown}"
+		else
+			printf '%s\t%b\n' "${names[${i}]}" "${result}"
+		fi
+		i=$((i + 1))
+	done
+} | bb_print_columns --indent 2
+
+if [ ${failures} -ne 0 ]; then
+	echo ""
+	if [ ${stopped} -eq 1 ]; then
+		>&2 echo "Stopped on error, ${failures} target(s) failed."
+	else
+		>&2 echo "${failures} target(s) failed."
+	fi
+	exit 1
+fi
+
+echo ""
+echo "Done."

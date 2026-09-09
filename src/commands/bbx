@@ -137,11 +137,19 @@ case "${cmd}" in
 				echo "Usage: bbx project <subcommand>"
 				echo ""
 				echo "  info       Show project information"
+				echo "  clone      Fetch the sources of all targets"
+				echo "  build      Build all targets"
+				echo "  test       Run the tests of all targets"
+				echo "  dist       Produce the deliverable of all targets"
 				echo "  clean      Clean all targets built files"
 				echo "  mrproper   Wipe all sources and built files (asks confirmation)"
 				echo "  update     Update project profile (.bbx/)"
 				exit 0
 				;;
+			clone)    project_clone_targets "$@" ;;
+			build)    project_build "$@" ;;
+			test)     project_test "$@" ;;
+			dist)     project_dist "$@" ;;
 			clean)    project_clean "$@" ;;
 			mrproper) project_mrproper "$@" ;;
 			info)     project_info "$@" ;;

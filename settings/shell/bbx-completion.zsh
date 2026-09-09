@@ -89,12 +89,24 @@ function _bbx_target {
 function _bbx_project {
 	local state line
 	_arguments -C \
-		"1: :(help update clean mrproper info goto)" \
+		"1: :(help clone build test dist update clean mrproper info goto)" \
 		"*::arg:->args"
 	case $state in
 		args)
 			case $line[1] in
 				goto) _arguments "1: :(-p)" ;;
+				clone)
+					local -a targets=($(__bbx_comp_targets))
+					_arguments \
+						"--not=[target to leave out]:target:(${targets[*]})" \
+						"*: :(--stop-on-error -n --not -p -u --update)"
+					;;
+				build|test|dist)
+					local -a targets=($(__bbx_comp_targets))
+					_arguments \
+						"--not=[target to leave out]:target:(${targets[*]})" \
+						"*: :(--stop-on-error -n --not)"
+					;;
 			esac
 			;;
 	esac

@@ -89,10 +89,23 @@ function _bbx_project_complete {
 
 	if [ "${cword}" -eq "${offset}" ]; then
 		COMPREPLY=($(compgen -W \
-			"help update clean mrproper info goto" \
+			"help clone build test dist update clean mrproper info goto" \
 			-- "${cur}"))
-	elif [ "${cword}" -gt "${offset}" ] && [ "${COMP_WORDS[${offset}]}" = "goto" ]; then
-		COMPREPLY=($(compgen -W "-p" -- "${cur}"))
+	elif [ "${cword}" -gt "${offset}" ]; then
+		# A target name follows '-n', whatever the subcommand
+		if [ "${COMP_WORDS[$((cword - 1))]}" = "-n" ] || \
+		   [ "${COMP_WORDS[$((cword - 1))]}" = "--not" ]; then
+			COMPREPLY=($(compgen -W "$(__bbx_comp_targets)" -- "${cur}"))
+			return
+		fi
+		case "${COMP_WORDS[${offset}]}" in
+			goto)
+				COMPREPLY=($(compgen -W "-p" -- "${cur}")) ;;
+			clone)
+				COMPREPLY=($(compgen -W "--stop-on-error -n --not -p -u --update" -- "${cur}")) ;;
+			build|test|dist)
+				COMPREPLY=($(compgen -W "--stop-on-error -n --not" -- "${cur}")) ;;
+		esac
 	fi
 }
 
