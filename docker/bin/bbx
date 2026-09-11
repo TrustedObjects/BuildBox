@@ -169,6 +169,47 @@ function bbx_read_project_image {
 	echo "${img:-${BBX_IMAGE}}"
 }
 
+# Wait until the container entrypoint has fully completed, which systemd-udevd
+# running tells: it is the last thing the entrypoint starts, after usermod,
+# groupmod, chgrp and sysctl.
+# @param Container name
+# @return 0 when the container is ready, 1 when it did not become ready in time
+function bbx_wait_container_ready {
+	local container="${1}"
+	local i
+	for i in $(seq 1 20); do
+		if docker exec "${container}" pgrep -x systemd-udevd > /dev/null 2>&1; then
+			return 0
+		fi
+		sleep 0.5
+	done
+	>&2 echo "Container did not become ready in time"
+	return 1
+}
+
+# Tell whether a running container still holds the project directory it was
+# started with. Removing a project directory and creating another one at the
+# same path, a re-clone for instance, leaves the container with the old one
+# bind-mounted: the path still matches, the directory no longer does, and the
+# inode is what tells them apart.
+#
+# The inode is read from the container rather than from a label recorded at
+# creation, because a label would not survive a legitimate restart: Docker
+# resolves bind mounts on start, so a restarted container holds whatever the
+# path points at then.
+# @param Container name
+# @param Project root path
+# @return 0 when the container holds a directory which is no longer the project
+function bbx_container_is_stale {
+	local container="${1}"
+	local project_root="${2}"
+	local host_inode
+	host_inode=$(stat -c %i "${project_root}" 2>/dev/null) || return 1
+	local container_inode
+	container_inode=$(docker exec "${container}" stat -c %i "${project_root}" 2>/dev/null) || return 1
+	[ -n "${container_inode}" ] && [ "${container_inode}" != "${host_inode}" ]
+}
+
 function bbx_ensure_container {
 	local project_root="${1}"
 	local container
@@ -188,6 +229,19 @@ function bbx_ensure_container {
 			>&2 echo "Image changed, recreating container..."
 			bbx_stop_container "${container}" "${project_root}"
 		fi
+	fi
+
+	# A container left running while its project directory was removed and
+	# recreated at the same path keeps the old directory mounted. Every
+	# command then fails with "current working directory is outside of
+	# container mount namespace root", which says nothing to someone who did
+	# not expect it. Restarting the container makes Docker resolve its mounts
+	# again, on the directory which is there now.
+	if [ "$(docker inspect -f '{{.State.Running}}' "${container}" 2>/dev/null)" = "true" ] && \
+	   bbx_container_is_stale "${container}" "${project_root}"; then
+		>&2 echo "Project directory was replaced, restarting container..."
+		docker restart "${container}" > /dev/null
+		bbx_wait_container_ready "${container}" || exit 1
 	fi
 
 	if ! docker inspect "${container}" > /dev/null 2>&1; then
@@ -237,20 +291,7 @@ function bbx_ensure_container {
 			fi
 			sleep 1
 		done
-		# Wait until systemd-udevd is running, which means the entrypoint has
-		# fully completed (usermod, groupmod, chgrp, sysctl... udevd is last).
-		local ready=0
-		for i in $(seq 1 20); do
-			if docker exec "${container}" pgrep -x systemd-udevd > /dev/null 2>&1; then
-				ready=1
-				break
-			fi
-			sleep 0.5
-		done
-		if [ ${ready} -eq 0 ]; then
-			>&2 echo "Container did not become ready in time"
-			exit 1
-		fi
+		bbx_wait_container_ready "${container}" || exit 1
 		# Trust all bind-mounted directories for git. Project files are owned by
 		# the host user (UID != 0 inside the container for buildbox).
 		# Git 2.35.2+ refuses to operate in such directories without this config.
@@ -556,7 +597,7 @@ function bbx_stop_container {
 		-e BB_USER_CONFIG_DIR="${BBX_USER_CONFIG_DIR}" \
 		-e PATH="${BBX_COMMANDS}:${BBX_LIB}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
 		"${container}" \
-		bash -c "source buildbox_utils.sh && bb_unload_tools" 2>/dev/null || true
+		bash -c "source buildbox_utils.sh && bb_unload_tools" > /dev/null 2>&1 || true
 	docker rm -f "${container}" > /dev/null
 }
 
