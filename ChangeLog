@@ -1,3 +1,9 @@
+2.1.3 - 9/11/2026
+- Add clone, build, test and dist project commands, to address all targets at once
+- Doc: BuildBox SBOM tools to generate the Software Bill of Materials (CRA compliance)
+- Doc: add cheat sheet
+- Restart the project container when its directory has been replaced, a re-clone at the same path leaving the old one mounted
+
 2.1.2 - 9/8/2026
 - Target package update feature
 - Fix missing target fastbuild command
