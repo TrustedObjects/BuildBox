@@ -86,6 +86,7 @@ The tools appearance order in tools list is used to execute `load.sh` scripts, a
 |---|---|
 | [Docker tools](https://github.com/TrustedObjects/BuildBox-docker-tools) | Manages a Docker daemon in a BuildBox target environment |
 | [Python tools](https://github.com/TrustedObjects/BuildBox-python-tools) | Manage BuildBox targets Python virtual environments |
+| [SBOM tools](https://github.com/TrustedObjects/BuildBox-sbom-tools) | Generates the SBOM of a target, in SPDX and CycloneDX |
 
 ### BuildBox Docker tools
 
@@ -102,3 +103,28 @@ buildbox-docker:M.m.r
 
 See [Docker variant image](/dev/container.md#docker-variant-image) for how to
 build and tag that image.
+
+### BuildBox SBOM tools
+
+BuildBox SBOM tools generates the Software Bill of Materials of a target, in
+SPDX 2.3 and CycloneDX 1.6, for Cyber Resilience Act compliance.
+
+A target already declares every component of a delivery, each pinned to an
+exact revision: the package list is a SBOM skeleton. The tool formats it, and
+expands the packages which themselves contain many components, such as a
+firmware built from a distribution, or a container image.
+
+It brings the `bbx-sbom` command, which has to be called once the target is
+built, so from its [delivery script](/user/target.md#target-test-and-delivery-scripts):
+
+```bash
+bbx-sbom
+```
+
+What is reported comes from the package files, through optional `SBOM_*` fields
+sitting next to the `SRC_*` ones: the licence, the supplier, the CPE, whether a
+package is shipped, needed only to build or out of the document, which plugin
+expands it, and which source URL to publish when the one BuildBox clones from
+must not appear. See the tool
+[documentation](https://github.com/TrustedObjects/BuildBox-sbom-tools) for the
+whole list.
