@@ -138,6 +138,39 @@ function test_target_clone_update_tag_is_untouched {
 }
 bb_declare_test test_target_clone_update_tag_is_untouched
 
+function test_target_clone_update_moved_tag {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	bare=$(setup_update_remote upd_movedtag)
+	(
+		cd "${BB_TEST_WORKSPACE}/upd_movedtag"
+		git tag v1
+		git push -q origin v1
+	)
+	declare_update_target upd_pkg "${bare}" v1 autotools updmovedtag
+	bb_set_project_current_target updmovedtag
+	asserteq $? 0
+	target clone -u
+	asserteq $? 0
+
+	# The tag moves upstream: fetching it would be refused, which is no
+	# reason for the update to fail
+	advance_update_remote upd_movedtag
+	(
+		cd "${BB_TEST_WORKSPACE}/upd_movedtag"
+		git tag -f v1
+		git push -q -f origin v1
+	)
+	out=$(target clone -u)
+	asserteq $? 0
+	assert "echo '${out}' | grep -q 'up to date'"
+	# A tag designates a fixed commit: the sources stay where they are, and
+	# the log says what happened upstream
+	asserteq "$(cat ${BB_TARGET_SRC_DIR}/upd_pkg/CONTENT)" "first"
+	assert "grep -q 'history of the remote repository changed' ${BB_TARGET_DIR}/target_clone.log"
+}
+bb_declare_test test_target_clone_update_moved_tag
+
 function test_target_clone_update_keeps_local_work {
 	bb_use_test_project foo_project
 	asserteq $? 0

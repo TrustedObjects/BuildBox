@@ -56,7 +56,19 @@ function bb_git_update () (
 	cd "${dir}"
 	[ $? -ne 0 ] && return 1
 	git fetch --quiet --tags origin
-	[ $? -ne 0 ] && return 1
+	if [ $? -ne 0 ]; then
+		# Fetching the tags fails when one of them moved upstream, Git
+		# refusing to overwrite a tag it already has. The branches are
+		# fetched apart, so that the update goes on: a tag designates a
+		# fixed commit, so the ones here are kept as they are, and what
+		# happened upstream is said rather than guessed at
+		git fetch --quiet origin
+		if [ $? -ne 0 ]; then
+			echo "unable to fetch from origin"
+			return 1
+		fi
+		echo "the history of the remote repository changed: a tag there does not designate the same commit any more, the tags here are kept as they are"
+	fi
 	# Only a branch moves: a tag and a changeset designate a fixed commit
 	if ! git rev-parse --verify --quiet "refs/remotes/origin/${revision}" > /dev/null; then
 		echo "revision '${revision}' is not a branch, nothing to update"
