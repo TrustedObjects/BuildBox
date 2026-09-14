@@ -37,6 +37,38 @@ function bb_git_clone () (
 )
 bb_exportfn bb_git_clone
 
+## @fn bb_git_moved_tags
+## Print the tags of a repository which do not designate the same commit
+## upstream any more, one per line.
+##
+## Such a tag is the mark of a remote repository whose history changed, and it
+## is what makes a fetch of the tags fail: Git refuses to overwrite a tag it
+## already has. A tag which is not here yet is not one of them, it is simply
+## fetched.
+## @param Directory holding the repository
+## @print The name of every tag which moved upstream, one per line
+## @return 0 on success, else error
+function bb_git_moved_tags () (
+	local dir="${1}"
+	cd "${dir}"
+	[ $? -ne 0 ] && return 1
+	local sha ref name here
+	while read -r sha ref; do
+		# A peeled reference (refs/tags/<name>^{}) says which commit an
+		# annotated tag points at: the tag object itself is compared
+		case "${ref}" in
+			*"^{}") continue ;;
+		esac
+		name=${ref#refs/tags/}
+		here=$(git rev-parse --verify --quiet "refs/tags/${name}")
+		if [ -n "${here}" ] && [ "${here}" != "${sha}" ]; then
+			echo "${name}"
+		fi
+	done < <(git ls-remote --tags origin)
+	return 0
+)
+bb_exportfn bb_git_moved_tags
+
 ## @fn bb_git_update
 ## Update an already cloned Git repository, when the revision it sits on can
 ## move: a branch which got new commits.
@@ -55,24 +87,37 @@ function bb_git_update () (
 	local revision="${2}"
 	cd "${dir}"
 	[ $? -ne 0 ] && return 1
+	# The branch as it is known here, before the fetch moves it: what it
+	# becomes tells a branch which grew from one which was rewritten
+	local known=$(git rev-parse --verify --quiet "refs/remotes/origin/${revision}")
 	git fetch --quiet --tags origin
 	if [ $? -ne 0 ]; then
-		# Fetching the tags fails when one of them moved upstream, Git
-		# refusing to overwrite a tag it already has. The branches are
-		# fetched apart, so that the update goes on: a tag designates a
-		# fixed commit, so the ones here are kept as they are, and what
-		# happened upstream is said rather than guessed at
-		git fetch --quiet origin
-		if [ $? -ne 0 ]; then
+		# Git refuses to overwrite a tag it already has, so a tag which
+		# moved upstream makes the fetch fail. The history of the remote
+		# repository changed: what it means for the sources here takes a
+		# look by hand, so the update stops and says which tags moved
+		local moved=$(bb_git_moved_tags . | tr '\n' ' ')
+		if [ -n "${moved}" ]; then
+			echo "the history of the remote repository changed, these tags do not designate the same commit any more: ${moved}"
+			echo "check by hand what happened upstream before updating"
+		else
 			echo "unable to fetch from origin"
-			return 1
 		fi
-		echo "the history of the remote repository changed: a tag there does not designate the same commit any more, the tags here are kept as they are"
+		return 1
 	fi
 	# Only a branch moves: a tag and a changeset designate a fixed commit
 	if ! git rev-parse --verify --quiet "refs/remotes/origin/${revision}" > /dev/null; then
 		echo "revision '${revision}' is not a branch, nothing to update"
 		return 2
+	fi
+	local upstream=$(git rev-parse "refs/remotes/origin/${revision}")
+	# A branch rewritten upstream is not local work: the history of the
+	# remote repository changed, and what it means for the sources here
+	# takes a look by hand
+	if [ -n "${known}" ] && ! git merge-base --is-ancestor "${known}" "${upstream}"; then
+		echo "the history of the remote repository changed, branch '${revision}' does not hold commit ${known} any more"
+		echo "check by hand what happened upstream before updating"
+		return 1
 	fi
 	# Uncommitted work stops the update, it must not be discarded
 	if ! git diff --quiet HEAD; then
@@ -80,7 +125,6 @@ function bb_git_update () (
 		return 3
 	fi
 	local current=$(git rev-parse HEAD)
-	local upstream=$(git rev-parse "refs/remotes/origin/${revision}")
 	if [ "${current}" = "${upstream}" ]; then
 		echo "already on the last commit of '${revision}'"
 		return 2

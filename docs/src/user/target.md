@@ -181,6 +181,8 @@ only concerns sources which can move, and never discards anything:
 | On a tag or a changeset | Left as they are, such a revision designates a fixed commit |
 | Holding local changes, or local commits which are not upstream | Left as they are |
 | Fetched with a protocol other than Git | Left as they are |
+| Whose remote repository holds a tag which does not designate the same commit any more | The update stops with an error, the history of the remote repository changed |
+| On a branch which was rewritten upstream, the commit they sit on being gone from it | The update stops with an error, the history of the remote repository changed |
 
 With `-u`, the sources of the current target are also brought back in line with
 the [sources sharing](package.md#package-sources) the packages support, when the
@@ -193,6 +195,11 @@ of the project sources. Here too nothing is ever discarded: a target copy
 holding local work the project sources do not have is kept as it is, and so is a
 copy fetched with a protocol other than Git, which can not be asked for local
 work.
+
+A remote repository whose history changed stops the update with an error rather
+than going past it, since the sources here may sit on a commit which does not
+exist upstream any more. The log says what moved, a tag or a branch, and what it
+means for the sources takes a look by hand.
 
 The command reports what happened for each package and each tool: `updated`,
 `up to date`, or `kept` when local work stopped the update, preceded by

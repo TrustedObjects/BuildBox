@@ -54,6 +54,18 @@ function advance_update_remote {
 	)
 }
 
+# Rewrite the history of the master branch of a remote created by
+# setup_update_remote(), the commits it held being dropped
+# @param Remote name
+function rewrite_update_remote {
+	(
+		cd "${BB_TEST_WORKSPACE}/${1}"
+		echo "rewritten" > CONTENT
+		git commit -q -a --amend -m "Rewritten commit"
+		git push -q -f origin master
+	)
+}
+
 # Declare a package and a target using it in the current project profile
 # @param Package name
 # @param Remote path
@@ -153,23 +165,48 @@ function test_target_clone_update_moved_tag {
 	target clone -u
 	asserteq $? 0
 
-	# The tag moves upstream: fetching it would be refused, which is no
-	# reason for the update to fail
+	# The tag moves upstream: the history of the remote repository changed,
+	# which stops the update until someone looks at it
 	advance_update_remote upd_movedtag
 	(
 		cd "${BB_TEST_WORKSPACE}/upd_movedtag"
 		git tag -f v1
 		git push -q -f origin v1
 	)
-	out=$(target clone -u)
-	asserteq $? 0
-	assert "echo '${out}' | grep -q 'up to date'"
-	# A tag designates a fixed commit: the sources stay where they are, and
-	# the log says what happened upstream
+	out=$(target clone -u 2>&1)
+	assertne $? 0
+	assert "echo '${out}' | grep -q 'failed'"
+	# The sources are left as they are, and the log says what happened
+	# upstream and which tag it is about
 	asserteq "$(cat ${BB_TARGET_SRC_DIR}/upd_pkg/CONTENT)" "first"
 	assert "grep -q 'history of the remote repository changed' ${BB_TARGET_DIR}/target_clone.log"
+	assert "grep -q 'these tags do not designate the same commit any more: v1' ${BB_TARGET_DIR}/target_clone.log"
 }
 bb_declare_test test_target_clone_update_moved_tag
+
+function test_target_clone_update_rewritten_branch {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	bare=$(setup_update_remote upd_rewritten)
+	declare_update_target upd_pkg "${bare}" master autotools updrewritten
+	bb_set_project_current_target updrewritten
+	asserteq $? 0
+	target clone -u
+	asserteq $? 0
+	known=$(git -C "${BB_PROJECT_SRC_DIR}/upd_pkg" rev-parse HEAD)
+
+	# The branch is rewritten upstream: the commit the sources sit on is
+	# gone from it, which is a changed history and not local work
+	rewrite_update_remote upd_rewritten
+	out=$(target clone -u 2>&1)
+	assertne $? 0
+	assert "echo '${out}' | grep -q 'failed'"
+	# The sources are left as they are, and the log says what happened
+	asserteq "$(cat ${BB_TARGET_SRC_DIR}/upd_pkg/CONTENT)" "first"
+	assert "grep -q 'history of the remote repository changed' ${BB_TARGET_DIR}/target_clone.log"
+	assert "grep -q \"branch 'master' does not hold commit ${known} any more\" ${BB_TARGET_DIR}/target_clone.log"
+}
+bb_declare_test test_target_clone_update_rewritten_branch
 
 function test_target_clone_update_keeps_local_work {
 	bb_use_test_project foo_project
