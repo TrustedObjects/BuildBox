@@ -98,3 +98,39 @@ function test_bb_package_supports_sources_sharing_explicit_enabled {
 }
 bb_declare_test test_bb_package_supports_sources_sharing_explicit_enabled
 
+
+function test_bb_package_supports_sources_sharing_no_build_mode_explicit_enabled {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	bb_set_project_current_target bar
+	asserteq $? 0
+	printf 'SRC_PROTO=local\nSRC_BUILD=\nSRC_SUPPORTS_SHARING=1\n' \
+		> "${BB_PROJECT_PROFILE_DIR}/packages/fetch_only_shared_package"
+	bb_package_supports_sources_sharing "fetch_only_shared_package"
+	asserteq $? 1
+}
+bb_declare_test test_bb_package_supports_sources_sharing_no_build_mode_explicit_enabled
+
+function test_bb_package_supports_sources_sharing_no_build_mode_explicit_disabled {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	bb_set_project_current_target bar
+	asserteq $? 0
+	printf 'SRC_PROTO=local\nSRC_BUILD=\nSRC_SUPPORTS_SHARING=0\n' \
+		> "${BB_PROJECT_PROFILE_DIR}/packages/fetch_only_unshared_package"
+	bb_package_supports_sources_sharing "fetch_only_unshared_package"
+	asserteq $? 0
+}
+bb_declare_test test_bb_package_supports_sources_sharing_no_build_mode_explicit_disabled
+
+function test_bb_package_supports_sources_sharing_no_build_mode_default {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	bb_set_project_current_target bar
+	asserteq $? 0
+	printf 'SRC_PROTO=local\nSRC_BUILD=\n' \
+		> "${BB_PROJECT_PROFILE_DIR}/packages/fetch_only_package"
+	bb_package_supports_sources_sharing "fetch_only_package"
+	asserteq $? 0
+}
+bb_declare_test test_bb_package_supports_sources_sharing_no_build_mode_default

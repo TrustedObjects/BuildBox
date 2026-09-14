@@ -210,18 +210,22 @@ bb_exportfn bb_stat_package
 
 ## @fn bb_package_supports_sources_sharing
 ## Generic function to know if a package supports sources sharing.
-## Package doesn't need to be cloned yet. Returns 0 if package build mode is
-## unknown.
+## Package doesn't need to be cloned yet.
+##
+## `SRC_SUPPORTS_SHARING` declared in the package file always wins, and is the
+## only way a package with no build mode can support sharing, since there is no
+## build mode to ask. Without it, the answer comes from the build mode, and is 0
+## when the build mode is unknown or does not tell.
 ## @param Package name
 ## @return 1 if package supports sources sharing, 0 if not
 function bb_package_supports_sources_sharing () {
 	local pkg_name=${1}
+	local ret
 	bb_load_package ${pkg_name}
 	[ $? -ne 0 ] && return 0
-	if [ -z "${SRC_BUILD}" ]; then
-		return 0
+	if [ -n "${SRC_BUILD}" ]; then
+		bb_source _build_${SRC_BUILD}.sh
 	fi
-	bb_source _build_${SRC_BUILD}.sh
 	if [ -n "${SRC_SUPPORTS_SHARING}" ]; then
 		# Sources sharing support is declared in package file, use this
 		if [ "${SRC_SUPPORTS_SHARING}" = "0" ]; then
@@ -229,10 +233,13 @@ function bb_package_supports_sources_sharing () {
 		else
 			ret=1
 		fi
+	elif [ -z "${SRC_BUILD}" ]; then
+		# No build mode to ask, and nothing declared in package file
+		ret=0
 	else
 		# Sources sharing support depends on build mode
 		bb_function_exists bb_${SRC_BUILD}_supports_sources_sharing
-		local ret=$?
+		ret=$?
 		if [ $ret -eq 1 ]; then
 			bb_${SRC_BUILD}_supports_sources_sharing
 			ret=$?
