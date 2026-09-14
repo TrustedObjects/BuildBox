@@ -11,6 +11,24 @@ try {
 const BASE_URL = process.env.BASE_URL
 const SITE_URL = process.env.SITE_URL
 
+// A release is deployed under /v/<VERSION>/ and its base has to match, because
+// nothing downstream will say otherwise: built with the base of another
+// version, the pages load that version's assets, which exist, and its router
+// then sends every reader there. The site looks fine and serves the wrong
+// version. Warn rather than fail, a base of its own is legitimate for anyone
+// deploying the site elsewhere. See docs/README.md for the release steps.
+const releaseTag = version.replace(/-\d+-g[0-9a-f]+$/, '')
+if (BASE_URL && BASE_URL !== 'undefined' && BASE_URL !== '/' && releaseTag !== 'dev') {
+  const expected = `/v/${releaseTag}/`
+  const given = BASE_URL.endsWith('/') ? BASE_URL : `${BASE_URL}/`
+  if (given !== expected) {
+    console.warn(
+      `\n\x1b[33mWarning:\x1b[0m BASE_URL is '${BASE_URL}' while this tree is ${version}.\n` +
+      `         Expected '${expected}'. A versioned build whose base names another\n` +
+      `         version is served from its own directory but redirects to that one.\n`)
+  }
+}
+
 export default defineConfig({
   title: 'BuildBox',
   description: 'version ' + version,

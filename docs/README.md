@@ -75,6 +75,12 @@ BASE_URL=/v/2.0.0/ SITE_URL=https://buildbox.trusted-objects.com npm run build
 ```
 Upload `src/.vitepress/dist/` to the server at `/v/2.0.0/`.
 
+The build warns when `BASE_URL` does not match the version of the tree being
+built, which is the one mistake this step cannot survive: the pages of a
+versioned build carrying the base of another version load that version's
+assets, which exist, and its router then redirects every reader to it. The site
+answers 200 and serves the wrong version.
+
 **Step 2:** Build for root (latest):
 ```
 BASE_URL=/ SITE_URL=https://buildbox.trusted-objects.com npm run build
