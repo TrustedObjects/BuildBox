@@ -182,9 +182,22 @@ only concerns sources which can move, and never discards anything:
 | Holding local changes, or local commits which are not upstream | Left as they are |
 | Fetched with a protocol other than Git | Left as they are |
 
+With `-u`, the sources of the current target are also brought back in line with
+the [sources sharing](package.md#package-sources) the packages support, when the
+two do not agree any more: sharing is decided when the sources are cloned, and a
+package whose package file or build mode changed afterwards keeps the layout it
+got on the day it was cloned. Sources which are shared now replace the target
+copy by a symlink to the project sources, the copy being sent to the BuildBox
+trash, and sources which are not shared any more replace the symlink by a copy
+of the project sources. Here too nothing is ever discarded: a target copy
+holding local work the project sources do not have is kept as it is, and so is a
+copy fetched with a protocol other than Git, which can not be asked for local
+work.
+
 The command reports what happened for each package and each tool: `updated`,
-`up to date`, or `kept` when local work stopped the update. Details are in
-`<TARGET>/target_clone.log`.
+`up to date`, or `kept` when local work stopped the update, preceded by
+`sharing fixed` or `sharing kept` when the sources layout was concerned. Details
+are in `<TARGET>/target_clone.log`.
 
 Sources [shared between targets](package.md#target-packages-list) are the same
 repository for every target using them, so updating them from one target

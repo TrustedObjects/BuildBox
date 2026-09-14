@@ -108,21 +108,40 @@ while read -r pkg_name; do
 	cloned=0
 	bb_is_package_cloned ${BB_TARGET} ${pkg_name} || cloned=1
 	if [ ${update} -eq 1 ] && [ ${cloned} -eq 1 ]; then
+		# The sources sharing the package supports may have changed
+		# since it was cloned: the sources layout is brought back in
+		# line before they are updated. Same reason for '||' as below
+		sharing=0
+		bb_apply_package_sources_sharing ${pkg_name} || sharing=$?
+		case ${sharing} in
+			0) sharing_status="\e[32msharing fixed\e[0m, " ;;
+			2) sharing_status="" ;;
+			3) sharing_status="\e[33msharing kept\e[0m, " ;;
+			*)
+				bb_disable_log_file
+				echo -e "\e[31mfailed\e[0m"
+				>&2 echo "Unable to apply sources sharing of ${pkg_name}, see ${BB_CURRENT_LOG_FILE}"
+				exit 1
+				;;
+		esac
 		# Same reason for '||': 2 and 3 tell what happened, they are not
 		# failures
 		ret=0
 		bb_update_package ${pkg_name} || ret=$?
 		bb_disable_log_file
 		case ${ret} in
-			0) echo -e "\e[32mupdated\e[0m" ;;
-			2) echo -e "\e[32mup to date\e[0m" ;;
-			3) echo -e "\e[33mkept\e[0m" ;;
+			0) echo -e "${sharing_status}\e[32mupdated\e[0m" ;;
+			2) echo -e "${sharing_status}\e[32mup to date\e[0m" ;;
+			3) echo -e "${sharing_status}\e[33mkept\e[0m" ;;
 			*)
-				echo -e "\e[31mfailed\e[0m"
+				echo -e "${sharing_status}\e[31mfailed\e[0m"
 				>&2 echo "Unable to update ${pkg_name}, see ${BB_CURRENT_LOG_FILE}"
 				exit 1
 				;;
 		esac
+		if [ ${sharing} -eq 3 ]; then
+			>&2 echo "Sources layout of ${pkg_name} left as it is, see ${BB_CURRENT_LOG_FILE}"
+		fi
 	else
 		bb_clone_package ${pkg_name}
 		bb_disable_log_file

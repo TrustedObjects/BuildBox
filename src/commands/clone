@@ -90,6 +90,15 @@ do
 	bb_is_package_cloned ${BB_TARGET} ${pkg_name} || cloned=1
 	if [ ${update} -eq 1 ] && [ ${cloned} -eq 1 ]; then
 		echo "Updating ${pkg_name} ..."
+		# The sources sharing the package supports may have changed
+		# since it was cloned: the sources layout is brought back in
+		# line before they are updated. Same reason for '||' as below
+		ret=0
+		bb_apply_package_sources_sharing ${pkg_name} || ret=$?
+		if [ ${ret} -ne 0 ] && [ ${ret} -ne 2 ] && [ ${ret} -ne 3 ]; then
+			>&2 echo "Unable to apply sources sharing of ${pkg_name} !"
+			exit 1
+		fi
 		# Same reason for '||': 2 and 3 tell what happened, they are not
 		# failures. bb_update_package says what it did on stdout.
 		ret=0

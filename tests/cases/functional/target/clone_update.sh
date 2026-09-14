@@ -60,9 +60,13 @@ function advance_update_remote {
 # @param Revision
 # @param Build mode
 # @param Target name
+# @param Extra package file line, if any
 function declare_update_target {
 	printf 'SRC_PROTO=git\nSRC_URI=%s\nSRC_REVISION=%s\nSRC_BUILD=%s\n' \
 		"${2}" "${3}" "${4}" > "${BB_PROJECT_PROFILE_DIR}/packages/${1}"
+	if [ -n "${6}" ]; then
+		printf '%s\n' "${6}" >> "${BB_PROJECT_PROFILE_DIR}/packages/${1}"
+	fi
 	printf '%s\n' "${1}" > "${BB_PROJECT_PROFILE_DIR}/packages.${5}"
 	printf 'CPU=x86\nPACKAGES=packages.%s\n' "${5}" \
 		> "${BB_PROJECT_PROFILE_DIR}/target.${5}"
@@ -171,6 +175,118 @@ function test_target_clone_update_copied_sources {
 	asserteq "$(cat ${BB_TARGET_SRC_DIR}/upd_pkg/CONTENT)" "second"
 }
 bb_declare_test test_target_clone_update_copied_sources
+
+function test_target_clone_update_shares_copied_sources {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	bare=$(setup_update_remote upd_share)
+	# 'custom' does not support sources sharing: the target holds its own copy
+	declare_update_target upd_pkg "${bare}" master custom updshare
+	bb_set_project_current_target updshare
+	asserteq $? 0
+	target clone
+	asserteq $? 0
+	assertnl "${BB_TARGET_SRC_DIR}/upd_pkg"
+
+	# The package declares its sources shared: the copy gives way to a
+	# symlink to the project sources, and is kept in the trash
+	declare_update_target upd_pkg "${bare}" master custom updshare SRC_SUPPORTS_SHARING=1
+	out=$(target clone -u)
+	asserteq $? 0
+	assertl "${BB_TARGET_SRC_DIR}/upd_pkg"
+	asserteq "$(readlink ${BB_TARGET_SRC_DIR}/upd_pkg)" "../../src/upd_pkg"
+	asserteq "$(cat ${BB_TARGET_SRC_DIR}/upd_pkg/CONTENT)" "first"
+	assert "echo '${out}' | grep -q 'sharing fixed'"
+	assert "ls ${BB_TRASH_DIR} | grep -q '^upd_pkg-'"
+
+	# Sharing is what it means: the sources are updated once, for the
+	# project and the target at the same time
+	advance_update_remote upd_share
+	target clone -u
+	asserteq $? 0
+	asserteq "$(cat ${BB_PROJECT_SRC_DIR}/upd_pkg/CONTENT)" "second"
+	asserteq "$(cat ${BB_TARGET_SRC_DIR}/upd_pkg/CONTENT)" "second"
+}
+bb_declare_test test_target_clone_update_shares_copied_sources
+
+function test_target_clone_update_unshares_shared_sources {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	bare=$(setup_update_remote upd_unshare)
+	# 'autotools' supports sources sharing: the target holds a symlink
+	declare_update_target upd_pkg "${bare}" master autotools updunshare
+	bb_set_project_current_target updunshare
+	asserteq $? 0
+	target clone
+	asserteq $? 0
+	assertl "${BB_TARGET_SRC_DIR}/upd_pkg"
+
+	# The package declares its sources not shared: the target gets its own
+	# copy, the project sources staying where they are
+	declare_update_target upd_pkg "${bare}" master autotools updunshare SRC_SUPPORTS_SHARING=0
+	out=$(target clone -u)
+	asserteq $? 0
+	assertd "${BB_TARGET_SRC_DIR}/upd_pkg"
+	assertnl "${BB_TARGET_SRC_DIR}/upd_pkg"
+	assertd "${BB_PROJECT_SRC_DIR}/upd_pkg"
+	asserteq "$(cat ${BB_TARGET_SRC_DIR}/upd_pkg/CONTENT)" "first"
+	assert "echo '${out}' | grep -q 'sharing fixed'"
+
+	# The copy is now the target own sources: updating it leaves the project
+	# sources where they were
+	advance_update_remote upd_unshare
+	target clone -u
+	asserteq $? 0
+	asserteq "$(cat ${BB_TARGET_SRC_DIR}/upd_pkg/CONTENT)" "second"
+	asserteq "$(cat ${BB_PROJECT_SRC_DIR}/upd_pkg/CONTENT)" "first"
+}
+bb_declare_test test_target_clone_update_unshares_shared_sources
+
+function test_target_clone_update_keeps_copy_holding_local_work {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	bare=$(setup_update_remote upd_sharework)
+	declare_update_target upd_pkg "${bare}" master custom updsharework
+	bb_set_project_current_target updsharework
+	asserteq $? 0
+	target clone
+	asserteq $? 0
+	# A commit the project sources have never seen: sharing the sources
+	# would discard it
+	(
+		cd "${BB_TARGET_SRC_DIR}/upd_pkg"
+		git config user.email test@buildbox
+		git config user.name BuildBox
+		echo "local work" > CONTENT
+		git commit -q -a -m "Local commit"
+	)
+	local_commit=$(git -C "${BB_TARGET_SRC_DIR}/upd_pkg" rev-parse HEAD)
+
+	declare_update_target upd_pkg "${bare}" master custom updsharework SRC_SUPPORTS_SHARING=1
+	out=$(target clone -u 2>&1)
+	asserteq $? 0
+	assertnl "${BB_TARGET_SRC_DIR}/upd_pkg"
+	asserteq "$(cat ${BB_TARGET_SRC_DIR}/upd_pkg/CONTENT)" "local work"
+	asserteq "$(git -C ${BB_TARGET_SRC_DIR}/upd_pkg rev-parse HEAD)" "${local_commit}"
+	assert "echo '${out}' | grep -q 'sharing kept'"
+}
+bb_declare_test test_target_clone_update_keeps_copy_holding_local_work
+
+function test_target_clone_fetch_only_package_is_shared {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	bare=$(setup_update_remote upd_fetchonly)
+	# No build mode: sources are only fetched, and shared because the
+	# package file says so
+	declare_update_target upd_pkg "${bare}" master "" updfetchonly SRC_SUPPORTS_SHARING=1
+	bb_set_project_current_target updfetchonly
+	asserteq $? 0
+	target clone
+	asserteq $? 0
+	assertl "${BB_TARGET_SRC_DIR}/upd_pkg"
+	asserteq "$(readlink ${BB_TARGET_SRC_DIR}/upd_pkg)" "../../src/upd_pkg"
+}
+bb_declare_test test_target_clone_fetch_only_package_is_shared
 
 function test_target_clone_unknown_option {
 	bb_use_test_project foo_project

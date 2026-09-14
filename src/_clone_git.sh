@@ -87,3 +87,43 @@ function bb_git_update () (
 	return 0
 )
 bb_exportfn bb_git_update
+
+## @fn bb_git_has_local_work
+## Tell if a repository holds work another clone of the same repository does not
+## have: uncommitted changes, untracked files, or commits the other clone has
+## never seen.
+##
+## This answers the question asked before a clone is discarded, so anything
+## which can not be checked is reported as local work: the answer is never
+## optimistic.
+## @param Directory holding the repository
+## @param Directory holding the repository to compare with
+## @print What the repository holds, when it holds local work
+## @return 1 when the repository holds local work, 2 when it can not be told,
+## 0 when it holds nothing the other clone has not
+function bb_git_has_local_work () (
+	local dir="${1}"
+	local reference="${2}"
+	cd "${dir}"
+	[ $? -ne 0 ] && return 2
+	if [ ! -d .git ]; then
+		echo "${dir} is not a Git repository"
+		return 2
+	fi
+	if ! git diff --quiet HEAD; then
+		echo "holds uncommitted changes"
+		return 1
+	fi
+	if [ -n "$(git ls-files --others --exclude-standard)" ]; then
+		echo "holds untracked files"
+		return 1
+	fi
+	local head=$(git rev-parse HEAD)
+	[ $? -ne 0 ] && return 2
+	if ! git -C "${reference}" cat-file -e "${head}^{commit}" 2> /dev/null; then
+		echo "sits on commit ${head}, which ${reference} does not have"
+		return 1
+	fi
+	return 0
+)
+bb_exportfn bb_git_has_local_work

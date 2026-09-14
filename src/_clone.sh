@@ -106,6 +106,93 @@ function bb_clone_package () (
 )
 bb_exportfn bb_clone_package
 
+## @fn bb_apply_package_sources_sharing
+## Make the sources of a package in the current target match the sources sharing
+## it supports, when the two do not agree any more.
+##
+## Sharing support is read when the sources are cloned (see bb_clone_package()),
+## and the layout stays as it is afterwards: a package whose package file or
+## build mode changed keeps the layout it got on the day it was cloned. This
+## brings it back in line, for the current target only:
+## - sources which are shared now replace the target copy by a symlink to the
+##   project sources, the copy being moved to the trash,
+## - sources which are not shared any more replace the symlink by a copy of the
+##   project sources, the project sources being left untouched.
+##
+## A target copy holding local work the project sources do not have is kept as
+## it is: replacing it would discard that work, which is never done. So is a
+## copy whose protocol can not be asked for local work.
+## @param Package name
+## @env `BB_PROJECT_SRC_DIR`: path where the project sources are
+## @env `BB_TARGET_SRC_DIR`: path where the target sources are
+## @print What has been done, or why nothing was
+## @return 0 when the sources layout changed, 2 when there is nothing to change,
+## 3 when the sources hold local work and are kept as they are, else error
+function bb_apply_package_sources_sharing () (
+	local pkg_name=${1}
+	bb_load_package ${pkg_name}
+	[ $? -ne 0 ] && return 1
+	local pkg_dir=$(bb_escape_package_name "${pkg_name}")
+	local target_src=${BB_TARGET_SRC_DIR}/${pkg_dir}
+	local project_src=${BB_PROJECT_SRC_DIR}/${pkg_dir}
+	if [ ! -L ${target_src} ] && [ ! -d ${target_src} ]; then
+		echo "not cloned, nothing to share"
+		return 2
+	fi
+	# '||' keeps the error trap out of the way, the return code carrying an
+	# answer rather than a failure
+	local shared=0
+	bb_package_supports_sources_sharing ${pkg_name} || shared=$?
+	if [ -L ${target_src} ]; then
+		if [ ${shared} -eq 1 ]; then
+			return 2
+		fi
+		# Sources are not shared any more: the target gets its own copy
+		if [ ! -d ${project_src} ]; then
+			echo "project sources are missing, kept as it is"
+			return 3
+		fi
+		rm ${target_src}
+		[ $? -ne 0 ] && return 1
+		cp -a ${project_src} ${target_src}
+		[ $? -ne 0 ] && return 1
+		echo "sources are not shared any more, copied from ${project_src}"
+		return 0
+	fi
+	if [ ${shared} -eq 0 ]; then
+		return 2
+	fi
+	# Sources are shared now: the target copy gives way to a symlink to the
+	# project sources, as long as it holds nothing they do not have
+	if [ ! -d ${project_src} ]; then
+		echo "project sources are missing, kept as it is"
+		return 3
+	fi
+	bb_source _clone_${SRC_PROTO}.sh
+	[ $? -ne 0 ] && return 1
+	if ! typeset -f bb_${SRC_PROTO}_has_local_work > /dev/null; then
+		echo "sources cloned with ${SRC_PROTO} can not be checked for local work, kept as it is"
+		return 3
+	fi
+	# Same reason for '||' as above
+	local work=0
+	bb_${SRC_PROTO}_has_local_work ${target_src} ${project_src} || work=$?
+	if [ ${work} -ne 0 ]; then
+		echo "kept as it is, sharing would discard this"
+		return 3
+	fi
+	local trashed
+	trashed=$(bb_trash ${target_src})
+	[ $? -ne 0 ] && return 1
+	# Get relative path to go from target sources dir to project sources dir
+	local relative_path=$(bb_get_relative_path ${BB_TARGET_SRC_DIR} ${BB_PROJECT_SRC_DIR})
+	ln -s ${relative_path}/${pkg_dir} ${target_src}
+	[ $? -ne 0 ] && return 1
+	echo "sources are shared now, the target copy moved to the trash as ${trashed}"
+	return 0
+)
+bb_exportfn bb_apply_package_sources_sharing
+
 ## @fn bb_update_package
 ## Update the sources of an already cloned package, when the revision it sits
 ## on can move.
