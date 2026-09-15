@@ -1,3 +1,9 @@
+2.1.4 - 9/15/2026
+- Add '-u' option to 'project clone' and '-a' to 'project update'
+- Abort package update if remote repository history changed
+- Keep packages source sharing aligned with config
+- Fix packages sources sharing when no build mode is defined
+
 2.1.3 - 9/11/2026
 - Add clone, build, test and dist project commands, to address all targets at once
 - Doc: BuildBox SBOM tools to generate the Software Bill of Materials (CRA compliance)
