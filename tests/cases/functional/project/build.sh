@@ -236,3 +236,12 @@ function test_project_output_layout {
 	assert "! echo '${out}' | grep -q '==='"
 }
 bb_declare_test test_project_output_layout
+
+function test_project_clone_targets_help_tells_update {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	out=$(bbx project clone --help)
+	asserteq $? 0
+	assert "echo '${out}' | grep -qe '--update'"
+}
+bb_declare_test test_project_clone_targets_help_tells_update

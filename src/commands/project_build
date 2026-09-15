@@ -64,6 +64,10 @@ function help {
 		dist)  echo "Produce the deliverable of every target of the project." ;;
 	esac
 	echo ""
+	if [ "${action}" = "clone" ]; then
+		echo "  -u, --update     Update what is already cloned instead of leaving"
+		echo "                   it as it is, like 'bbx target clone -u'."
+	fi
 	echo "  -n, --not NAME   Leave the NAME target out. Repeatable, once per"
 	echo "                   target to exclude."
 	echo "  --stop-on-error  Stop at the first target which fails. Without it,"

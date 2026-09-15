@@ -20,9 +20,38 @@
 ## - If .bbx/ has its own git history, runs 'git pull' inside .bbx/.
 ## - If .bbx/packages is a submodule (of the project or of .bbx/), updates it.
 ## At least one of the above must apply, otherwise an error is returned.
+## With '-a', the sources of every target are updated afterwards, which is what
+## the new profile asks for.
 source _pre_cmd
 
 source buildbox_utils.sh
+
+function help {
+	echo "Usage: bbx project update [-a|--all]"
+	echo ""
+	echo "Update the project profile (.bbx/) from its remote."
+	echo ""
+	echo "  -a, --all   Update the sources of every target too, once the"
+	echo "              profile is up to date, as 'bbx project clone -u' does."
+}
+
+case "${1}" in
+	help|-h|--help) help; exit 0 ;;
+esac
+
+all=0
+while [ -n "${1}" ]; do
+	case "${1}" in
+		-a|--all)
+			all=1
+			shift
+			;;
+		*)
+			>&2 echo "Unknown option ${1}"
+			exit 1
+			;;
+	esac
+done
 
 if [ -z "${BB_PROJECT_DIR}" ]; then
 	>&2 echo "Not in a BuildBox project directory"
@@ -73,3 +102,12 @@ if [ $updated -eq 0 ]; then
 fi
 
 echo "Project profile updated."
+
+if [ ${all} -eq 1 ]; then
+	echo ""
+	# The profile which has just changed is what says the targets, the
+	# packages they use and the sources sharing these support: the sources
+	# of every target are brought in line with it
+	project_clone_targets -u
+	exit $?
+fi

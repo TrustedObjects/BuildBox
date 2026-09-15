@@ -302,6 +302,8 @@
       <dd>What this project is, and what is already fetched.</dd>
       <dt>bbx project update</dt>
       <dd>Refresh the project <b>settings</b> only, not fetched sources.</dd>
+      <dt>bbx project update -a</dt>
+      <dd>Same, then <b>update the sources</b> of every target.</dd>
       <dt>bbx init [DIR]</dt>
       <dd>Start a new, empty project.</dd>
     </dl>

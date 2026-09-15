@@ -93,8 +93,11 @@ bbx project dist  [-n|--not NAME]... [--stop-on-error] [OPTIONS...]
 
 Each target is processed by the matching `bbx target` command, so every target
 keeps its own logs and its own behaviour, and `OPTIONS...` are passed to it as
-they are (`bbx project clone -u`, `bbx project build -v`,
-`bbx project dist 1.2.3`).
+they are (`bbx project build -v`, `bbx project dist 1.2.3`).
+
+`bbx project clone -u` is the one to know: it updates what is already cloned in
+every target, instead of leaving it as it is, exactly as
+[`bbx target clone -u`](target.md#fetch-target) does for the current target.
 
 ::: tip
 `bbx project clone` fetches sources, while `bbx clone <url>` gets a whole
@@ -152,13 +155,20 @@ Displayed information:
 
 To update a locally available project profile, use:
 ```
-bbx project update
+bbx project update [-a|--all]
 ```
 
 This updates the project profile (`.bbx/`) from its remote.
 
+With `-a`, the sources of every target are updated too, once the profile is up
+to date, exactly as [`bbx project clone -u`](#fetch-build-test-and-deliver-every-target)
+does. This is usually what you want after a profile update: the profile is what
+says which targets exist, which packages they use and which of them share their
+sources, so the targets follow what has just changed.
+
 ::: warning
-This only updates the project profile, and does not update the packages themselves. You have to fetch and build targets explicitly after project update.
+Without `-a`, only the project profile is updated: the packages sources stay as
+they are, and it is up to you to fetch and build the targets afterwards.
 :::
 
 ## Commit project profile

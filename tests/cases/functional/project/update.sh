@@ -34,3 +34,70 @@ function test_project_update_no_remote {
 	assertn "${out}"
 }
 bb_declare_test test_project_update_no_remote
+
+## A project whose profile has a remote, so that 'project update' has something
+## to update, unlike the fixtures used above
+## @print The project directory
+function setup_updatable_project {
+	local dir="${BB_TEST_WORKSPACE}/upd_project_$$"
+	rm -rf "${dir}"
+	bbx clone "file://${BB_DIR}/tests/repositories/remote/foo_profile.git" \
+		"${dir}" > /dev/null 2>&1
+	echo "${dir}"
+}
+
+function test_project_update_all {
+	dir=$(setup_updatable_project)
+	bb_set_current_project "${dir}"
+	asserteq $? 0
+	out=$(bbx project update -a)
+	asserteq $? 0
+	# The profile first, then the sources of every target
+	assert "echo '${out}' | grep -q 'Project profile updated'"
+	assert "echo '${out}' | grep -q 'Project clone report'"
+	assert "echo '${out}' | grep -qE 'foo .*ok'"
+	assert "echo '${out}' | grep -qE 'bar .*ok'"
+	assertl "${dir}/foo/src/bar_package"
+	assertl "${dir}/bar/src/foo_package@1.0"
+}
+bb_declare_test test_project_update_all
+
+function test_project_update_all_long_option {
+	dir=$(setup_updatable_project)
+	bb_set_current_project "${dir}"
+	asserteq $? 0
+	out=$(bbx project update --all)
+	asserteq $? 0
+	assert "echo '${out}' | grep -q 'Project clone report'"
+}
+bb_declare_test test_project_update_all_long_option
+
+function test_project_update_without_all_keeps_sources {
+	dir=$(setup_updatable_project)
+	bb_set_current_project "${dir}"
+	asserteq $? 0
+	out=$(bbx project update)
+	asserteq $? 0
+	assert "echo '${out}' | grep -q 'Project profile updated'"
+	# Without '-a' the sources are none of its business
+	assert "! echo '${out}' | grep -q 'Project clone report'"
+	assertnd "${dir}/foo/src"
+	assertnd "${dir}/src"
+}
+bb_declare_test test_project_update_without_all_keeps_sources
+
+function test_project_update_unknown_option {
+	bb_use_test_project foo_project
+	asserteq $? 0
+	out="$(bbx project update --nope 2>&1 >/dev/null)"
+	assertne $? 0
+	assertn "${out}"
+}
+bb_declare_test test_project_update_unknown_option
+
+function test_project_update_help {
+	out=$(bbx project update --help)
+	asserteq $? 0
+	assert "echo '${out}' | grep -qe '--all'"
+}
+bb_declare_test test_project_update_help
