@@ -44,7 +44,7 @@ if [[ "${1}" == "-q" ]]; then
 	shift
 fi
 
-options=$@
+options=("$@")
 
 function cleanup {
 	# Restore initial target, if changed
@@ -65,13 +65,13 @@ if [ -n "$quiet" ]; then
 	# The pipe makes seeking impossible on output file.
 	bb_enable_log_file
 	set -o pipefail
-	${TESTS} ${options} 2>&1 | cat
+	${TESTS} "${options[@]}" 2>&1 | cat
 	set +o pipefail
 	bb_disable_log_file
 else
 	echo
 	set -o pipefail
-	${TESTS} ${options} 2>&1 | tee -a "${tests_log_file}"
+	${TESTS} "${options[@]}" 2>&1 | tee -a "${tests_log_file}"
 	set +o pipefail
 fi
 

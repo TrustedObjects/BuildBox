@@ -19,7 +19,7 @@ source _pre_cmd
 
 source buildbox_utils.sh
 
-options=$@
+options=("$@")
 
 if [ -z ${BB_TARGET} ]; then
 	echo "Please set current project target with 'target set <name>'"
@@ -56,7 +56,7 @@ echo -n "Generating ${BB_TARGET} deliverables ... "
 # The pipe makes seeking impossible on output file.
 bb_enable_log_file
 set -o pipefail
-${DIST} ${options} 2>&1 | cat
+${DIST} "${options[@]}" 2>&1 | cat
 set +o pipefail
 bb_disable_log_file
 
