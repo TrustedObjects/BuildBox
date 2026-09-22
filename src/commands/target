@@ -53,39 +53,39 @@ function set_current {
 }
 
 function clone {
-	target_clone $@
+	target_clone "$@"
 }
 
 function build {
-	target_build $@
+	target_build "$@"
 }
 
 function fastbuild {
-	target_fastbuild $@
+	target_fastbuild "$@"
 }
 
 function run_tests {
-	target_test $@
+	target_test "$@"
 }
 
 function dist {
-	target_dist $@
+	target_dist "$@"
 }
 
 function dist_prebuilt {
-	target_dist_prebuilt $@
+	target_dist_prebuilt "$@"
 }
 
 function clean {
-	target_clean $@
+	target_clean "$@"
 }
 
 function mrproper {
-	target_mrproper $@
+	target_mrproper "$@"
 }
 
 function pkg {
-	target_pkg $@
+	target_pkg "$@"
 }
 
 function tools {
@@ -97,7 +97,7 @@ function info {
 		help
 		exit 1
 	fi
-	target_info $@
+	target_info "$@"
 }
 
 if [ -z "${BB_PROJECT_DIR}" ] || [ ! -d "${BB_PROJECT_DIR}" ]; then
