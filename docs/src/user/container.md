@@ -15,7 +15,13 @@ The following settings are shared between host user and container:
 - Git
 - Vim
 
-![BuildBox container](/buildbox_container_structure.png)
+<img class="bbx-diagram-light" src="/buildbox_container_structure.png" alt="BuildBox container structure">
+<img class="bbx-diagram-dark" src="/buildbox_container_structure_dark.png" alt="BuildBox container structure">
+
+Your project directory, the BuildBox installation and those settings are bind
+mounted into the container. The container is privileged and shares the host
+network, so host peripherals such as USB probes are reachable from inside
+without any setup.
 
 ## Manage container images
 

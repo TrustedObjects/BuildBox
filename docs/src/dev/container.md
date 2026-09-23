@@ -1,9 +1,11 @@
 # BuildBox container
 
 BuildBox runs in Docker container to isolate build environment from host system.
-This container runs **privilegied**.
+This container runs **privileged**, and shares the **host network namespace**,
+so host peripherals are reachable from inside.
 
-![BuildBox container](/buildbox_container_structure.png)
+<img class="bbx-diagram-light" src="/buildbox_container_structure.png" alt="BuildBox container structure">
+<img class="bbx-diagram-dark" src="/buildbox_container_structure_dark.png" alt="BuildBox container structure">
 
 The container is dedicated to a single project: one project, one container.
 The container is named `bbx-<project_basename>-<hash>` where `<hash>` is derived from

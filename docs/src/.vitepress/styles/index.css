@@ -189,3 +189,37 @@
     text-align: left;
   }
 }
+
+/* Zoom on the images of a page (medium-zoom, set up in theme/index.ts).
+   The library stylesheet positions the overlay but sets no stacking order, so
+   the backdrop and the zoomed image land under the navigation bar and the
+   sidebar, which then cover a part of the image. Both have to pass above
+   --vp-z-index-sidebar, the highest of the VitePress layout (60). */
+.medium-zoom-overlay {
+  z-index: 100;
+}
+
+.medium-zoom-image--opened {
+  z-index: 101;
+}
+
+/* Diagrams of src/dev/diagrams, rendered in a light and a dark palette by
+   src/dev/generate_diagrams.sh. A page carries both PNG and the theme hides
+   one, rather than swapping the source of a single image, so the right one is
+   there at first paint and never flashes. */
+.bbx-diagram-light,
+.bbx-diagram-dark {
+  margin: 16px 0;
+}
+
+.bbx-diagram-dark {
+  display: none;
+}
+
+.dark .bbx-diagram-light {
+  display: none;
+}
+
+.dark .bbx-diagram-dark {
+  display: block;
+}

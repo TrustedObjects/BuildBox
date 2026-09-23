@@ -1,18 +1,59 @@
 # Documentation build
 
-Two parts of the site are generated, both by `npm run build`:
+Several parts of the site are generated, all of them by `npm run build`:
 
 | Generated file | Script | Source |
 |---|---|---|
 | `src/dev/api.md` | `src/dev/generate_apidoc.sh ../src/` | the `##` comments of the API files |
 | `src/parts/news.md` | `src/dev/generate_news.sh ../ChangeLog src/parts/news.md` | the `ChangeLog` |
 | `src/public/cheatsheet.pdf` | `src/dev/generate_cheatsheet.sh` | `src/dev/cheatsheet.html.template` |
+| `src/public/*.png` diagrams | `src/dev/generate_diagrams.sh` | the SVG files of `src/dev/diagrams/` |
 
-None is versioned. To regenerate the API documentation alone, without
-building the site:
+None is versioned except the diagrams, see below. To regenerate the API
+documentation alone, without building the site:
 ```
 src/dev/generate_apidoc.sh ../src/
 ```
+
+## Diagrams
+
+The diagrams of the site are drawn as SVG in `src/dev/diagrams/`, which is
+their source: never edit the PNG. `src/dev/generate_diagrams.sh` renders each
+of them to `src/public/<name>.png`, at twice its SVG size so it stays sharp on
+high density displays, and the pages reference it as `/<name>.png`.
+
+An SVG accompanied by a `<name>.dark.css` file is rendered a second time to
+`src/public/<name>_dark.png`, with that stylesheet appended to the one of the
+SVG. The dark variant holds colours only: the geometry and the type have a
+single source, so a diagram is never drawn twice. This is why every colour of
+an SVG belongs to its `<style>` element, never to a `fill` or a `stroke`
+attribute.
+
+A page carries both PNG and lets the theme hide one, through the
+`.bbx-diagram-light` and `.bbx-diagram-dark` classes of
+`src/.vitepress/styles/index.css`:
+
+```html
+<img class="bbx-diagram-light" src="/foo.png" alt="...">
+<img class="bbx-diagram-dark" src="/foo_dark.png" alt="...">
+```
+
+Two images rather than one swapped source, so the right one is there at first
+paint. VitePress prefixes the `src` of a raw `<img>` with the site base, so
+this keeps working on the versioned deploys.
+
+A diagram is rendered only when its PNG is missing or older than its sources,
+or than the script itself, so a build that changes no diagram costs nothing.
+Pass `--force` to render them all.
+
+Rendering uses the first of `rsvg-convert`, Inkscape, ImageMagick, Chromium or
+Chrome found on the machine. When none is installed the diagrams are skipped
+with a warning instead of failing the build.
+
+Unlike the other generated files the PNG files are committed, because a missing
+diagram would leave a broken image in the pages of anyone building without a
+renderer. A change to an SVG source is therefore committed together with its
+regenerated PNG.
 
 ## Cheat sheet
 

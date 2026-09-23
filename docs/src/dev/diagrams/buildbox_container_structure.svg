@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This file is part of BuildBox project
+     Copyright (C) 2020-2026 Trusted Objects
+
+     Source of public/buildbox_container_structure.png, rendered by
+     src/dev/generate_diagrams.sh. Edit this file, never the PNG.
+
+     Every colour comes from the stylesheet below, never from a fill or a
+     stroke attribute, so that buildbox_container_structure.dark.css can
+     repaint the whole diagram for the dark theme without duplicating any
+     geometry. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="644"
+     viewBox="0 0 1120 644" role="img"
+     aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">BuildBox container structure</title>
+  <desc id="diagram-desc">On the host, the BuildBox installation, the project
+    directory and the user personal settings are bind mounted into a privileged
+    container sharing the host network, one per project, which runs the build,
+    test and release processes from a BuildBox base or derived container
+    image.</desc>
+
+  <defs>
+    <style>
+      /* Palette */
+      .bg         { fill: #ffffff; }
+      .panel      { fill: #f5f6f8; stroke: #c3c9d0; }
+      .home       { fill: #e8eaee; stroke: #c3c9d0; }
+      .card       { fill: #ffffff; stroke: #d3d8de; }
+      .accent-bar { fill: #ee7214; }
+      .mute-bar   { fill: #8a929b; }
+      .ctnr-box   { fill: #2e343a; stroke: #ee7214; }
+      .proc-box   { fill: #ee7214; }
+      .dot        { fill: #ee7214; }
+      .flow-accent, .rail-accent, .mk-accent { stroke: #ee7214; fill: none; }
+      .flow-mute, .mk-mute { stroke: #8a929b; fill: none; }
+      .mk-accent  { fill: #ee7214; stroke: none; }
+      .mk-mute    { fill: #8a929b; stroke: none; }
+      .pill-accent { fill: #f5f6f8; stroke: #ee7214; }
+      .badge       { fill: none; stroke: #f58a3b; }
+
+      /* Type */
+      .t     { font-family: "DejaVu Sans", Verdana, Helvetica, Arial, sans-serif; }
+      .zone  { font-size: 21px; font-weight: bold; fill: #8a929b; letter-spacing: 1.2px; }
+      .group { font-size: 14px; font-weight: bold; fill: #6b7480; letter-spacing: 0.6px; }
+      .box   { font-size: 15px; font-weight: bold; fill: #22282e; }
+      .sub   { font-size: 12px; fill: #6b7480; }
+      .pill  { font-size: 13px; font-weight: bold; fill: #cc5f10; letter-spacing: 0.8px; }
+      .bdg   { font-size: 12px; font-weight: bold; fill: #f58a3b; letter-spacing: 0.8px; }
+      .note  { font-size: 11.5px; fill: #8a929b; font-style: italic; }
+      .ctnr  { font-size: 21px; font-weight: bold; fill: #ffffff; }
+      .cacc  { font-size: 21px; font-weight: bold; fill: #f58a3b; }
+      .proc  { font-size: 17px; font-weight: bold; fill: #ffffff; }
+      .bul   { font-size: 13.5px; fill: #d5dade; }
+    </style>
+    <marker id="arrow-accent" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path class="mk-accent" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+    <marker id="arrow-mute" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path class="mk-mute" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1120" height="644"/>
+
+  <!-- Host -->
+  <rect class="panel" x="20" y="20" width="1080" height="604" rx="14" stroke-width="1.5"/>
+  <text class="t zone" x="48" y="56">HOST</text>
+
+  <!-- User's home directory -->
+  <rect class="home" x="245" y="66" width="424" height="146" rx="10"
+        stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text class="t group" x="457" y="90" text-anchor="middle">USER'S HOME DIRECTORY</text>
+
+  <!-- Host resources -->
+  <g>
+    <rect class="card" x="55" y="104" width="186" height="92" rx="8" stroke-width="1.5"/>
+    <rect class="accent-bar" x="55" y="104" width="5" height="92" rx="2.5"/>
+    <text class="t box" x="148" y="142" text-anchor="middle">BuildBox</text>
+    <text class="t sub" x="148" y="164" text-anchor="middle">launcher, commands</text>
+    <text class="t sub" x="148" y="180" text-anchor="middle">and library</text>
+  </g>
+  <g>
+    <rect class="card" x="261" y="104" width="186" height="92" rx="8" stroke-width="1.5"/>
+    <rect class="accent-bar" x="261" y="104" width="5" height="92" rx="2.5"/>
+    <text class="t box" x="354" y="142" text-anchor="middle">Project directory</text>
+    <text class="t sub" x="354" y="164" text-anchor="middle">sources, targets,</text>
+    <text class="t sub" x="354" y="180" text-anchor="middle">tools and cache</text>
+  </g>
+  <g>
+    <rect class="card" x="467" y="104" width="186" height="92" rx="8" stroke-width="1.5"/>
+    <rect class="accent-bar" x="467" y="104" width="5" height="92" rx="2.5"/>
+    <text class="t box" x="560" y="142" text-anchor="middle">Personal settings</text>
+    <text class="t sub" x="560" y="172" text-anchor="middle">SSH, Git, …</text>
+  </g>
+  <g>
+    <rect class="card" x="673" y="104" width="186" height="92" rx="8" stroke-width="1.5"/>
+    <rect class="mute-bar" x="673" y="104" width="5" height="92" rx="2.5"/>
+    <text class="t box" x="766" y="142" text-anchor="middle">USB devices</text>
+    <text class="t sub" x="766" y="164" text-anchor="middle">and other host</text>
+    <text class="t sub" x="766" y="180" text-anchor="middle">peripherals</text>
+  </g>
+  <g>
+    <rect class="card" x="879" y="104" width="186" height="92" rx="8" stroke-width="1.5"/>
+    <rect class="mute-bar" x="879" y="104" width="5" height="92" rx="2.5"/>
+    <text class="t box" x="972" y="142" text-anchor="middle">Host network</text>
+    <text class="t sub" x="972" y="172" text-anchor="middle">localhost services</text>
+  </g>
+
+  <!-- Bind mounts: one single mechanism, so the three flows are gathered on a
+       rail carrying the label, centered on the project directory one. That
+       flow goes both ways: the build reads and writes the project directory,
+       and the host sees the result straight away. -->
+  <g class="flow-accent" stroke-width="2.5" marker-end="url(#arrow-accent)">
+    <line x1="148" y1="200" x2="148" y2="306"/>
+    <line x1="560" y1="200" x2="560" y2="306"/>
+    <line x1="354" y1="200" x2="354" y2="306" marker-start="url(#arrow-accent)"/>
+  </g>
+  <line class="rail-accent" x1="148" y1="248" x2="560" y2="248"
+        stroke-width="2.5" stroke-dasharray="6 5"/>
+  <rect class="pill-accent" x="277" y="232" width="154" height="33" rx="16.5"
+        stroke-width="2"/>
+  <text class="t pill" x="354" y="253" text-anchor="middle">BIND MOUNTS</text>
+
+  <!-- Privileged container on the host network: nothing is mounted, the
+       badge of the container carries the how -->
+  <g class="flow-mute" stroke-width="2.5" marker-end="url(#arrow-mute)">
+    <line x1="766" y1="200" x2="766" y2="306"/>
+    <line x1="972" y1="200" x2="972" y2="306"/>
+  </g>
+
+  <!-- Container -->
+  <rect class="ctnr-box" x="36" y="312" width="1048" height="170" rx="12"
+        stroke-width="2.5"/>
+  <text class="t cacc" x="64" y="354">BuildBox<tspan class="ctnr" xml:space="preserve"> container</tspan></text>
+  <rect class="badge" x="930" y="333" width="126" height="28" rx="14" stroke-width="1.5"/>
+  <text class="t bdg" x="993" y="352" text-anchor="middle">PRIVILEGED</text>
+
+  <rect class="proc-box" x="64" y="376" width="640" height="84" rx="8"/>
+  <text class="t proc" x="384" y="424" text-anchor="middle">Build, test, release processes</text>
+
+  <g>
+    <circle class="dot" cx="764" cy="403" r="3.5"/>
+    <text class="t bul" x="780" y="408">One container per project</text>
+    <circle class="dot" cx="764" cy="433" r="3.5"/>
+    <text class="t bul" x="780" y="438">Runs with user UID and GID</text>
+  </g>
+
+  <!-- Image -->
+  <line class="flow-accent" x1="560" y1="520" x2="560" y2="488"
+        stroke-width="2.5" marker-end="url(#arrow-accent)"/>
+  <text class="t note" x="574" y="509">created from</text>
+  <g>
+    <rect class="card" x="412" y="524" width="296" height="70" rx="8" stroke-width="1.5"/>
+    <rect class="accent-bar" x="412" y="524" width="5" height="70" rx="2.5"/>
+    <text class="t box" x="560" y="558" text-anchor="middle">Container image</text>
+    <text class="t sub" x="560" y="580" text-anchor="middle">BuildBox base image, or a derived one</text>
+  </g>
+</svg>

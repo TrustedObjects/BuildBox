@@ -1,0 +1,27 @@
+/* This file is part of BuildBox project
+   Copyright (C) 2020-2026 Trusted Objects
+
+   Dark theme palette of buildbox_container_structure.svg, appended to its
+   stylesheet by generate_diagrams.sh to render the _dark PNG. Only colours
+   belong here: the geometry and the type have a single source, the SVG.
+
+   The brand orange carries the same weight on both backgrounds, so the accent
+   bars, the process box, the bullets and the bind mount flow are left
+   untouched. */
+
+.bg          { fill: #1b1b1f; }
+.panel       { fill: #232429; stroke: #3d4149; }
+.home        { fill: #2b2d33; stroke: #454951; }
+.card        { fill: #32353c; stroke: #474b53; }
+.mute-bar    { fill: #7d858e; }
+.ctnr-box    { fill: #15171a; stroke: #ee7214; }
+.flow-mute, .mk-mute { stroke: #7d858e; }
+.mk-mute     { fill: #7d858e; stroke: none; }
+.pill-accent { fill: #232429; stroke: #ee7214; }
+
+.zone  { fill: #7d858e; }
+.group { fill: #949ba3; }
+.box   { fill: #e7e9ec; }
+.sub   { fill: #9aa1a9; }
+.pill  { fill: #f58a3b; }
+.note  { fill: #868e96; }

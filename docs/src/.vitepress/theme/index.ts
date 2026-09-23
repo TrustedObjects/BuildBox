@@ -1,5 +1,6 @@
 import DefaultTheme from 'vitepress/theme'
 import mediumZoom from 'medium-zoom'
+import 'medium-zoom/dist/style.css'
 import { onMounted, watch, nextTick, h } from 'vue'
 import { useRoute } from 'vitepress'
 import VersionSelector from './VersionSelector.vue'
