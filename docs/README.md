@@ -1,102 +1,29 @@
-# Documentation build
+# BuildBox documentation
 
-Several parts of the site are generated, all of them by `npm run build`:
+The BuildBox documentation site, built with [VitePress](https://vitepress.dev).
+The pages are written in Markdown in `src/`.
 
-| Generated file | Script | Source |
-|---|---|---|
-| `src/dev/api.md` | `src/dev/generate_apidoc.sh ../src/` | the `##` comments of the API files |
-| `src/parts/news.md` | `src/dev/generate_news.sh ../ChangeLog src/parts/news.md` | the `ChangeLog` |
-| `src/public/cheatsheet.pdf` | `src/dev/generate_cheatsheet.sh` | `src/dev/cheatsheet.html.template` |
-| `src/public/*.png` diagrams | `src/dev/generate_diagrams.sh` | the SVG files of `src/dev/diagrams/` |
+## Building the documentation
 
-None is versioned except the diagrams, see below. To regenerate the API
-documentation alone, without building the site:
+Install the dependencies once:
 ```
-src/dev/generate_apidoc.sh ../src/
+npm install
 ```
 
-## Diagrams
+### Development
 
-The diagrams of the site are drawn as SVG in `src/dev/diagrams/`, which is
-their source: never edit the PNG. `src/dev/generate_diagrams.sh` renders each
-of them to `src/public/<name>.png`, at twice its SVG size so it stays sharp on
-high density displays, and the pages reference it as `/<name>.png`.
-
-An SVG accompanied by a `<name>.dark.css` file is rendered a second time to
-`src/public/<name>_dark.png`, with that stylesheet appended to the one of the
-SVG. The dark variant holds colours only: the geometry and the type have a
-single source, so a diagram is never drawn twice. This is why every colour of
-an SVG belongs to its `<style>` element, never to a `fill` or a `stroke`
-attribute.
-
-A page carries both PNG and lets the theme hide one, through the
-`.bbx-diagram-light` and `.bbx-diagram-dark` classes of
-`src/.vitepress/styles/index.css`:
-
-```html
-<img class="bbx-diagram-light" src="/foo.png" alt="...">
-<img class="bbx-diagram-dark" src="/foo_dark.png" alt="...">
-```
-
-Two images rather than one swapped source, so the right one is there at first
-paint. VitePress prefixes the `src` of a raw `<img>` with the site base, so
-this keeps working on the versioned deploys.
-
-A diagram is rendered only when its PNG is missing or older than its sources,
-or than the script itself, so a build that changes no diagram costs nothing.
-Pass `--force` to render them all.
-
-Rendering uses the first of `rsvg-convert`, Inkscape, ImageMagick, Chromium or
-Chrome found on the machine. When none is installed the diagrams are skipped
-with a warning instead of failing the build.
-
-Unlike the other generated files the PNG files are committed, because a missing
-diagram would leave a broken image in the pages of anyone building without a
-renderer. A change to an SVG source is therefore committed together with its
-regenerated PNG.
-
-## Cheat sheet
-
-`src/dev/cheatsheet.html.template` is a single page A4 sheet of the usual
-commands, written for people who need to fetch, build and test a project
-without being developers. `src/dev/generate_cheatsheet.sh` renders it to
-`src/public/cheatsheet.pdf`, which the build copies to the site root and serves
-as `/cheatsheet.pdf`.
-
-Rendering uses a headless Chromium or Chrome. When none is installed the sheet
-is skipped with a warning instead of failing the build, so the site stays
-buildable without a browser. The script also warns when the result spans more
-than one page, which is a layout regression: check it after editing the
-template, with `src/dev/generate_cheatsheet.sh` alone.
-
-`npm run dev` does not regenerate it, being a static asset: run the script once
-to get the download working locally.
-
-The releases news of the home page comes from the `ChangeLog`, so publishing a
-release only requires the `ChangeLog` entry. The last three releases are shown,
-with at most four entries each: pass a count as third argument, or set `ITEMS`,
-to change it. The version, and the `and N more` note when entries are truncated,
-link to the GitHub release page of that version (`releases/tag/<VERSION>`, tags
-being plain version numbers).
-
-A release needing a migration also shows a discreet `Migration required` badge linking to it. It is
-detected from `src/user/migration.md` itself: a section titled
-`## From <VERSION> to <VERSION>` marks the second version as needing a
-migration, and the link targets that section. Documenting a migration is
-therefore enough, there is nothing to declare in the `ChangeLog`.
-
-## Development documentation
-
-To test live documentation, which is automatically refreshed on changes:
+To browse the documentation live, refreshed automatically on every change:
 ```
 npm run dev
 ```
 
-## Release documentation
+### Release
 
-### First-time setup
+The site is deployed once per version: the latest one at the root of the web
+server, the older ones under `/v/<VERSION>/`. A version selector lists them,
+reading a `versions.json` file served at the site root.
 
-Create a `versions.json` file at the root of the web server before the first release:
+Before the first release, create that `versions.json` on the server:
 ```json
 {
   "latest": "2.0.0",
@@ -106,43 +33,75 @@ Create a `versions.json` file at the root of the web server before the first rel
 }
 ```
 
-The version selector is hidden when only one version is listed.
+The selector is hidden while a single version is listed.
 
-### Building and deploying a release (e.g. `2.0.0`)
+To deploy a release, for instance `2.0.0`:
 
-**Step 1:** Build for the versioned subdirectory:
-```
-BASE_URL=/v/2.0.0/ SITE_URL=https://buildbox.trusted-objects.com npm run build
-```
-Upload `src/.vitepress/dist/` to the server at `/v/2.0.0/`.
+1. Build it for its versioned directory, and upload `src/.vitepress/dist/` to
+   `/v/2.0.0/` on the server:
+   ```
+   BASE_URL=/v/2.0.0/ SITE_URL=https://buildbox.trusted-objects.com npm run build
+   ```
+   The build warns when `BASE_URL` does not match the version being built:
+   do not ignore it, such a site would redirect its readers to another version.
+2. Build it for the root, and upload `src/.vitepress/dist/` to `/`, replacing
+   the previous latest:
+   ```
+   BASE_URL=/ SITE_URL=https://buildbox.trusted-objects.com npm run build
+   ```
+3. Update `versions.json` on the server: move the previous latest to
+   `"path": "/v/<PREV>/"`, add `{ "tag": "2.0.0", "path": "/" }` at the top,
+   and set `"latest": "2.0.0"`.
 
-The build warns when `BASE_URL` does not match the version of the tree being
-built, which is the one mistake this step cannot survive: the pages of a
-versioned build carrying the base of another version load that version's
-assets, which exist, and its router then redirects every reader to it. The site
-answers 200 and serves the wrong version.
+Older versions are never touched again: they all read the same
+`/versions.json`, so the new list shows up everywhere without a rebuild.
 
-**Step 2:** Build for root (latest):
-```
-BASE_URL=/ SITE_URL=https://buildbox.trusted-objects.com npm run build
-```
-Upload `src/.vitepress/dist/` to the server root `/`, overwriting the previous latest.
-
-**Step 3:** Update `versions.json` on the server:
-- Change the previous latest entry from `"path": "/"` to `"path": "/v/<PREV>/"`.
-- Add a new entry at the top: `{ "tag": "2.0.0", "path": "/" }`.
-- Update `"latest": "2.0.0`.
-
-Old version directories on the server are never touched again. The version
-selector on all deployed versions fetches `/versions.json` at runtime, so the
-up-to-date list appears everywhere without any rebuild.
-
-### Testing the build locally
-
+To check a build locally, serve it and open http://localhost:8000:
 ```
 python -m http.server --directory src/.vitepress/dist
 ```
+Drop a `versions.json` in `src/.vitepress/dist/` to try the version selector.
 
-Reach http://localhost:8000 from the browser.
-To test the version selector locally, place a `versions.json` file in
-`src/.vitepress/dist/` before starting the server.
+## What the build does
+
+Some pages and files are generated before VitePress builds the site:
+
+1. **API reference**: `src/dev/api.md`, extracted from the comments of the
+   BuildBox API files (`../src/_*.sh`).
+2. **Releases news** of the home page, taken from the `ChangeLog`.
+3. **Diagrams**, rendered from SVG to PNG.
+4. **Cheat sheet**, rendered to PDF.
+
+`npm run dev` only runs steps 2 and 3. The generated files are never edited by
+hand: edit their source instead.
+
+## How the documentation works
+
+**Diagrams** are drawn as SVG in `src/dev/diagrams/` and rendered to PNG in
+`src/public/`, with a dark theme variant when needed. The PNG files are
+committed, so the site builds even without an SVG renderer installed: commit a
+modified SVG together with its regenerated PNG.
+
+**Figures** are SVG of `src/dev/figures/` inserted as is into the pages, so
+they follow the site theme and react to the page. The project layout figure,
+for instance, is shown by several pages of the user manual, each one
+highlighting the part it is about:
+```md
+<ProjectLayout highlight="target" />
+```
+
+**Migrations**: a breaking change is described in `src/user/migration.md`, and
+the concerned pages link to it.
+
+## Other files
+
+**Cheat sheet**: `src/dev/cheatsheet.html.template` is a one page summary of
+the usual commands, for people who build and test a project without being
+developers. The build renders it to `/cheatsheet.pdf` with Chromium or Chrome,
+and skips it when neither is installed. Run `src/dev/generate_cheatsheet.sh`
+alone to check it after an edit, or to get the download working with
+`npm run dev`.
+
+**Releases news**: publishing a release on the home page only takes its
+`ChangeLog` entry. A release that requires a migration gets a badge linking to
+it on its own.
