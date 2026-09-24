@@ -27,7 +27,7 @@ function test_target_dist_prebuilt {
 	out="$(unformat_string "${out}")"
 	assertn "$(echo "${out}" | grep "Archiving built files... ok")"
 	assertn "$(echo "${out}" | grep "Releasing archive... ok")"
-	exported="${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/master/v1.0.0/${BB_TARGET}.tar.xz"
+	exported="${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/v1.0.0/${BB_TARGET}.tar.xz"
 	assertf "${exported}"
 	content="$(tar -tJf "${exported}")"
 	asserteq $? 0
@@ -67,7 +67,7 @@ function test_target_dist_prebuilt_project_config {
 	asserteq $? 0
 	target dist-prebuilt > /dev/null
 	asserteq $? 0
-	assertf "${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/master/v1.0.0/${BB_TARGET}.tar.xz"
+	assertf "${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/v1.0.0/${BB_TARGET}.tar.xz"
 	assertn "$(grep "tester@prebuilt.test:/prebuilt/" "${BB_TEST_PREBUILT_SERVER_LOG}")"
 }
 bb_declare_test test_target_dist_prebuilt_project_config

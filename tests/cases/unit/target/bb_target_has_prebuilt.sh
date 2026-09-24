@@ -24,10 +24,27 @@ function test_bb_target_has_prebuilt {
 	asserteq $? 0
 	bb_target_has_prebuilt
 	asserteq $? 0
-	assertn "$(grep "^rsync .*tester@prebuilt.test:/prebuilt/master/v1.0.0/bar.tar.xz" \
+	assertn "$(grep "^rsync .*tester@prebuilt.test:/prebuilt/v1.0.0/bar.tar.xz" \
 		"${BB_TEST_PREBUILT_SERVER_LOG}")"
 }
 bb_declare_test test_bb_target_has_prebuilt
+
+function test_bb_target_has_prebuilt_branches {
+	bb_use_test_project foo_project bar
+	asserteq $? 0
+	bb_use_fake_prebuilt_server
+	asserteq $? 0
+	bb_put_fake_prebuilt > /dev/null
+	asserteq $? 0
+	# Found from any branch holding the tag, and from a detached HEAD
+	git -C "${BB_PROJECT_PROFILE_DIR}" branch zzz_release
+	asserteq $? 0
+	git -C "${BB_PROJECT_PROFILE_DIR}" checkout -q --detach
+	asserteq $? 0
+	bb_target_has_prebuilt
+	asserteq $? 0
+}
+bb_declare_test test_bb_target_has_prebuilt_branches
 
 function test_bb_target_has_prebuilt_none {
 	bb_use_test_project foo_project bar

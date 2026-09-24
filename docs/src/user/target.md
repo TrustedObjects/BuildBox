@@ -334,9 +334,11 @@ for all the users of the machine:
 - `BB_PREBUILT_USERNAME`: username to connect to pre-built targets server
 - `BB_PREBUILT_PATH`: pre-built targets directory on server
 
-Credentials such as `BB_PREBUILT_USERNAME` are usually set in the user file,
-while the server and path are shared by the whole team in the project file. On
-a build machine, the system file is a good place for the server settings.
+`BB_PREBUILT_PATH` belongs to the project file, and is best dedicated to the
+project (`/prebuilt/my_project` for instance): on the server, a pre-built target
+is stored as `<BB_PREBUILT_PATH>/<TAG>/<TARGET>.tar.xz`, so two projects
+sharing a path and a tag would overwrite each other. The server and the
+username go in whichever file fits the context.
 
 Pre-built targets can only be created for tagged projects revisions.
 

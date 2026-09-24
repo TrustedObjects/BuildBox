@@ -204,14 +204,13 @@ EOF
 ## @fn bb_put_fake_prebuilt
 ## Put a prebuilt archive of the current target on the fake prebuilt server
 ## (see bb_use_fake_prebuilt_server), at the place of the current project
-## branch and tag. It holds a single `build/bin/prebuilt_hello` script.
+## tag. It holds a single `build/bin/prebuilt_hello` script.
 ## @param Archive destination path, instead of the server (optional)
 ## @print Archive path
 ## @return 0 on success
 function bb_put_fake_prebuilt () (
-	local project=$(bb_project_get_branch_name)
 	local tag=$(bb_project_get_tag)
-	local archive="${1:-${BB_TEST_PREBUILT_SERVER_ROOT}${BB_PREBUILT_PATH}/${project}/${tag}/${BB_TARGET}.tar.xz}"
+	local archive="${1:-${BB_TEST_PREBUILT_SERVER_ROOT}${BB_PREBUILT_PATH}/${tag}/${BB_TARGET}.tar.xz}"
 	local content=$(mktemp -d)
 	mkdir -p "${content}/build/bin" "$(dirname "${archive}")" || return 1
 	printf '#!/bin/sh\necho "Hello from prebuilt"\n' > "${content}/build/bin/prebuilt_hello"

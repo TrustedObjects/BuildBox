@@ -23,12 +23,28 @@ function test_bb_archive_prebuilt_target {
 	archive=$(bb_archive_prebuilt_target)
 	asserteq $? 0
 	assertd "${archive}"
-	# Laid out as on the server: <branch>/<tag>/<target>.tar.xz
-	assertf "${archive}/master/v1.0.0/bar.tar.xz"
-	asserteq "$(cd "${archive}" && find . -type f)" "./master/v1.0.0/bar.tar.xz"
+	# Laid out as on the server: <tag>/<target>.tar.xz
+	assertf "${archive}/v1.0.0/bar.tar.xz"
+	asserteq "$(cd "${archive}" && find . -type f)" "./v1.0.0/bar.tar.xz"
 	assert_is_subpath_of "${TMPDIR}" "${archive}"
 }
 bb_declare_test test_bb_archive_prebuilt_target
+
+function test_bb_archive_prebuilt_target_branches {
+	bb_use_test_project foo_project bar
+	asserteq $? 0
+	bb_build_package "foo_package@1.0"
+	asserteq $? 0
+	# The tag alone designates the revision, whatever the branches holding it
+	git -C "${BB_PROJECT_PROFILE_DIR}" branch zzz_release
+	asserteq $? 0
+	git -C "${BB_PROJECT_PROFILE_DIR}" checkout -q --detach
+	asserteq $? 0
+	archive=$(bb_archive_prebuilt_target)
+	asserteq $? 0
+	asserteq "$(cd "${archive}" && find . -type f)" "./v1.0.0/bar.tar.xz"
+}
+bb_declare_test test_bb_archive_prebuilt_target_branches
 
 function test_bb_archive_prebuilt_target_content {
 	bb_use_test_project foo_project bar
@@ -39,7 +55,7 @@ function test_bb_archive_prebuilt_target_content {
 	asserteq $? 0
 	archive=$(bb_archive_prebuilt_target)
 	asserteq $? 0
-	content="$(tar -tJf "${archive}/master/v1.0.0/bar.tar.xz")"
+	content="$(tar -tJf "${archive}/v1.0.0/bar.tar.xz")"
 	asserteq $? 0
 	# Installed files
 	assertn "$(echo "${content}" | grep -x "build/bin/foo_package")"
@@ -92,7 +108,7 @@ function test_bb_archive_prebuilt_target_untagged_allowed {
 	# Named after the description of the commit from its last tag
 	tag="$(git -C "${BB_PROJECT_PROFILE_DIR}" describe --tags)"
 	assertne "${tag}" "v1.0.0"
-	assertf "${archive}/master/${tag}/bar.tar.xz"
+	assertf "${archive}/${tag}/bar.tar.xz"
 }
 bb_declare_test test_bb_archive_prebuilt_target_untagged_allowed
 

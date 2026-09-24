@@ -195,7 +195,8 @@ function bb_project_get_tag () {
 bb_exportfn bb_project_get_tag
 
 ## @fn bb_archive_prebuilt_target
-## Archive current target built files.
+## Archive current target built files, as `<TAG>/<TARGET>.tar.xz` in the printed
+## directory, the layout of the pre-built targets server.
 ## The following is archived:
 ## - target `build` directory
 ## - all inside target `src` directory, except shared sources
@@ -204,12 +205,8 @@ bb_exportfn bb_project_get_tag
 ## @print Archive directory path, to be deleted after use.
 ## @return 0 on success, else error
 function bb_archive_prebuilt_target {
-	local project=$(bb_project_get_branch_name)
-	if [ $? -ne 0 ]; then
-		>&2 echo "Unable to get project branch name"
-		return 1
-	fi
-	local tag=$(bb_project_get_tag)
+	local tag
+	tag=$(bb_project_get_tag)
 	if [ $? -ne 0 ]; then
 		>&2 echo "Unable to get project tag"
 		return 1
@@ -229,7 +226,7 @@ function bb_archive_prebuilt_target {
 		return 1
 	fi
 	local archive_dir=$(mktemp -d)
-	local workdir="${archive_dir}/${project}/${tag}"
+	local workdir="${archive_dir}/${tag}"
 	mkdir -p ${workdir}
 	pushd ${BB_TARGET_DIR} > /dev/null
 	if [ $? -ne 0 ]; then
@@ -276,25 +273,25 @@ bb_exportfn bb_export_prebuilt_target
 
 ## @fn bb_target_has_prebuilt
 ## Check on the pre-built targets server if this target has an available
-## pre-built archive.
+## pre-built archive, `$BB_PREBUILT_PATH/<TAG>/<TARGET>.tar.xz`.
 ## @return 0 if there is a pre-built archive for this target
 function bb_target_has_prebuilt {
-	local project=$(bb_project_get_branch_name)
 	local tag=$(bb_project_get_tag)
-	rsync --size-only ${BB_PREBUILT_USERNAME}@${BB_PREBUILT_SERVER}:${BB_PREBUILT_PATH}/${project}/${tag}/${BB_TARGET}.tar.xz > /dev/null 2>&1
+	rsync --size-only ${BB_PREBUILT_USERNAME}@${BB_PREBUILT_SERVER}:${BB_PREBUILT_PATH}/${tag}/${BB_TARGET}.tar.xz > /dev/null 2>&1
 }
 bb_exportfn bb_target_has_prebuilt
 
 ## @fn bb_import_prebuilt_target
+## Get and extract the current target pre-built archive,
+## `$BB_PREBUILT_PATH/<TAG>/<TARGET>.tar.xz` on the pre-built targets server.
 ## @return 0 on success, else error
 function bb_import_prebuilt_target {
-	local project=$(bb_project_get_branch_name)
 	local tag=$(bb_project_get_tag)
 	if [ ! -d ${BB_TARGET_DIR} ]; then
 		mkdir -p ${BB_TARGET_DIR}
 	fi
 	if [ ! -f "${BB_TARGET_DIR}/${BB_TARGET}.tar.xz" ]; then
-		scp -q ${BB_PREBUILT_USERNAME}@${BB_PREBUILT_SERVER}:${BB_PREBUILT_PATH}/${project}/${tag}/${BB_TARGET}.tar.xz ${BB_TARGET_DIR} || true
+		scp -q ${BB_PREBUILT_USERNAME}@${BB_PREBUILT_SERVER}:${BB_PREBUILT_PATH}/${tag}/${BB_TARGET}.tar.xz ${BB_TARGET_DIR} || true
 	fi
 	if [ -f "${BB_TARGET_DIR}/${BB_TARGET}.tar.xz" ]; then
 		cd ${BB_TARGET_DIR}

@@ -26,9 +26,9 @@ function test_bb_export_prebuilt_target {
 	asserteq $? 0
 	bb_export_prebuilt_target "${archive}"
 	asserteq $? 0
-	exported="${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/master/v1.0.0/bar.tar.xz"
+	exported="${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/v1.0.0/bar.tar.xz"
 	assertf "${exported}"
-	assert cmp -s "${exported}" "${archive}/master/v1.0.0/bar.tar.xz"
+	assert cmp -s "${exported}" "${archive}/v1.0.0/bar.tar.xz"
 	# Sent with the configured server, user and path
 	assertn "$(grep "^scp .* tester@prebuilt.test:/prebuilt/" "${BB_TEST_PREBUILT_SERVER_LOG}")"
 }
@@ -40,8 +40,8 @@ function test_bb_export_prebuilt_target_keeps_others {
 	bb_use_fake_prebuilt_server
 	asserteq $? 0
 	# Another release of the same project, and the same release of another target
-	other_tag="${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/master/v0.9.0/bar.tar.xz"
-	other_target="${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/master/v1.0.0/foo.tar.xz"
+	other_tag="${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/v0.9.0/bar.tar.xz"
+	other_target="${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/v1.0.0/foo.tar.xz"
 	mkdir -p "$(dirname "${other_tag}")" "$(dirname "${other_target}")"
 	echo "v0.9.0" > "${other_tag}"
 	echo "foo" > "${other_target}"
@@ -51,7 +51,7 @@ function test_bb_export_prebuilt_target_keeps_others {
 	asserteq $? 0
 	bb_export_prebuilt_target "${archive}"
 	asserteq $? 0
-	assertf "${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/master/v1.0.0/bar.tar.xz"
+	assertf "${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/v1.0.0/bar.tar.xz"
 	asserteq "$(cat "${other_tag}")" "v0.9.0"
 	asserteq "$(cat "${other_target}")" "foo"
 }
@@ -62,7 +62,7 @@ function test_bb_export_prebuilt_target_replace {
 	asserteq $? 0
 	bb_use_fake_prebuilt_server
 	asserteq $? 0
-	exported="${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/master/v1.0.0/bar.tar.xz"
+	exported="${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/v1.0.0/bar.tar.xz"
 	mkdir -p "$(dirname "${exported}")"
 	echo "outdated" > "${exported}"
 	bb_build_package "foo_package@1.0"
@@ -71,7 +71,7 @@ function test_bb_export_prebuilt_target_replace {
 	asserteq $? 0
 	bb_export_prebuilt_target "${archive}"
 	asserteq $? 0
-	assert cmp -s "${exported}" "${archive}/master/v1.0.0/bar.tar.xz"
+	assert cmp -s "${exported}" "${archive}/v1.0.0/bar.tar.xz"
 }
 bb_declare_test test_bb_export_prebuilt_target_replace
 

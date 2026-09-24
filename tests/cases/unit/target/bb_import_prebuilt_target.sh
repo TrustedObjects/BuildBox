@@ -27,7 +27,7 @@ function test_bb_import_prebuilt_target {
 	asserteq $? 0
 	assertf "${BB_TARGET_BUILD_DIR}/bin/prebuilt_hello"
 	asserteq "$(${BB_TARGET_BUILD_DIR}/bin/prebuilt_hello)" "Hello from prebuilt"
-	assertn "$(grep "^scp .*tester@prebuilt.test:/prebuilt/master/v1.0.0/bar.tar.xz" \
+	assertn "$(grep "^scp .*tester@prebuilt.test:/prebuilt/v1.0.0/bar.tar.xz" \
 		"${BB_TEST_PREBUILT_SERVER_LOG}")"
 }
 bb_declare_test test_bb_import_prebuilt_target
@@ -79,7 +79,7 @@ function test_bb_import_prebuilt_target_corrupted {
 	asserteq $? 0
 	bb_use_fake_prebuilt_server
 	asserteq $? 0
-	archive="${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/master/v1.0.0/bar.tar.xz"
+	archive="${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt/v1.0.0/bar.tar.xz"
 	mkdir -p "$(dirname "${archive}")"
 	echo "not an archive" > "${archive}"
 	bb_import_prebuilt_target 2> /dev/null

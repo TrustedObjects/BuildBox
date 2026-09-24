@@ -7,6 +7,24 @@ described in the [installation guide](/getting-started/install.md).
 Only projects using the features listed below are concerned: when nothing
 matches your project, there is nothing to do.
 
+## From 2.1.4 to 2.2.0
+
+### Pre-built targets are no longer stored by branch
+
+On the server, a pre-built target is now stored as
+`<BB_PREBUILT_PATH>/<TAG>/<TARGET>.tar.xz`, instead of
+`<BB_PREBUILT_PATH>/<BRANCH>/<TAG>/<TARGET>.tar.xz`. The tag alone designates
+the project revision, while the branch was guessed, and could differ from one
+clone to another.
+
+**Concerned projects:** projects using [pre-built targets](target.md#pre-built-targets).
+
+**What to do:** give the project a `BB_PREBUILT_PATH` of its own in
+`.bbx/config`, if not done yet. Pre-built targets already released are no
+longer found by `bbx target clone -p`: release them again with
+`bbx target dist-prebuilt`, or move them on the server from `<BRANCH>/<TAG>/` to
+`<TAG>/` under the new `BB_PREBUILT_PATH`.
+
 ## From 2.0.2 to 2.1.0
 
 ### Target build settings are no longer built in
