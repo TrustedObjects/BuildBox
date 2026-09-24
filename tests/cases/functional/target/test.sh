@@ -35,7 +35,33 @@ function test_target_test {
 bb_declare_test test_target_test
 
 function test_target_test_quiet {
-	skip "test not implemented yet"
+	bb_use_test_project foo_project
+	asserteq $? 0
+	target build > /dev/null
+	asserteq $? 0
+	out="$(target test -q 2>&1)"
+	asserteq $? 0
+	out="$(unformat_string "${out}")"
+	# Tests are run
+	assertf "${BB_TARGET_DIR}/tests_out"
+	assertn "$(echo "${out}" | grep "Testing ${BB_TARGET} target ... Success.")"
+	# Their output, stdout and stderr, goes to the log file only
+	assertz "$(echo "${out}" | grep -x "Testing")"
+	assertz "$(echo "${out}" | grep "Test stderr")"
+	assertn "$(grep -x "Testing" "${BB_TARGET_DIR}/tests.log")"
+	assertn "$(grep "Test stderr" "${BB_TARGET_DIR}/tests.log")"
+	# The option is not passed to the test script, the ones after it are
+	rm "${BB_TARGET_DIR}/tests_out"
+	out="$(target test -q fail 2>&1)"
+	assertne $? 0
+	assertnf "${BB_TARGET_DIR}/tests_out"
+	assertz "$(echo "${out}" | grep -x "Fail")"
+	assertn "$(grep -x "Fail" "${BB_TARGET_DIR}/tests.log")"
+	# Unlike tests run without the option
+	out="$(target test 2>&1)"
+	asserteq $? 0
+	assertn "$(echo "${out}" | grep -x "Testing")"
+	assertn "$(echo "${out}" | grep "Test stderr")"
 }
 bb_declare_test test_target_test_quiet
 

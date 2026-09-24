@@ -60,12 +60,56 @@ function test_target_fastbuild_project_not_set {
 bb_declare_test test_target_fastbuild_project_not_set
 
 function test_target_fastbuild_verbose {
-	skip "test not implemented yet"
+	bb_use_test_project foo_project
+	asserteq $? 0
+	target build > /dev/null
+	asserteq $? 0
+	main_c="${BB_TARGET_SRC_DIR}/bar_package.sources/main.c"
+	sed -i 's/MESSAGE\"/MESSAGE\" updated/' "${main_c}"
+	out="$(target fastbuild -v 2>&1)"
+	asserteq $? 0
+	out="$(unformat_string "${out}")"
+	# The package is built again
+	asserteq "$(${BB_TARGET_BUILD_DIR}/bin/bar_package)" "Hello from bar package ! updated"
+	# Build output, compiler warnings included, is shown on the console
+	assertn "$(echo "${out}" | grep "warning: #warning \"A warning\"")"
+	assertn "$(echo "${out}" | grep "bar_package built with 2 warning(s)")"
+	# and still written to the log file
+	assertn "$(grep "warning: #warning \"A warning\"" "${BB_TARGET_DIR}/target_fastbuild.log")"
+	# Unlike a fast build without the option
+	sed -i 's/ updated/ updated again/' "${main_c}"
+	out="$(target fastbuild 2>&1)"
+	asserteq $? 0
+	asserteq "$(${BB_TARGET_BUILD_DIR}/bin/bar_package)" "Hello from bar package ! updated again"
+	assertz "$(echo "${out}" | grep "#warning")"
+	assertn "$(grep "warning: #warning \"A warning\"" "${BB_TARGET_DIR}/target_fastbuild.log")"
 }
 bb_declare_test test_target_fastbuild_verbose
 
 function test_target_fastbuild_continue {
-	skip "test not implemented yet"
+	bb_use_test_project foo_project
+	asserteq $? 0
+	target build > /dev/null
+	asserteq $? 0
+	# Break bar_package, which comes after foo_package@1.0
+	main_c="${BB_TARGET_SRC_DIR}/bar_package.sources/main.c"
+	sed -i '1i #error "broken on purpose"' "${main_c}"
+	target fastbuild > /dev/null 2>&1
+	assertne $? 0
+	asserteq "$(cat "${BB_TARGET_DIR}/target_build.step")" "foo_package@1.0"
+	# Fix it, and remove what foo_package@1.0 installed: a package built again
+	# would install it back
+	sed -i '1d' "${main_c}"
+	sed -i 's/MESSAGE\"/MESSAGE\" updated/' "${main_c}"
+	rm "${BB_TARGET_BUILD_DIR}/bin/foo_package"
+	out="$(target fastbuild -c 2>&1)"
+	asserteq $? 0
+	out="$(unformat_string "${out}")"
+	# Built up to the failed package is skipped, the rest is built
+	assertn "$(echo "${out}" | grep "Building foo_package@1.0 ... skip")"
+	assertnf "${BB_TARGET_BUILD_DIR}/bin/foo_package"
+	asserteq "$(${BB_TARGET_BUILD_DIR}/bin/bar_package)" "Hello from bar package ! updated"
+	assertnf "${BB_TARGET_DIR}/target_build.step"
 }
 bb_declare_test test_target_fastbuild_continue
 

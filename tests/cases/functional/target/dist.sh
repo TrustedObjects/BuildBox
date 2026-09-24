@@ -34,11 +34,6 @@ function test_target_dist {
 }
 bb_declare_test test_target_dist
 
-function test_target_dist_quiet {
-	skip "test not implemented yet"
-}
-bb_declare_test test_target_dist_quiet
-
 function test_target_dist_fail {
 	bb_use_test_project foo_project
 	asserteq $? 0
