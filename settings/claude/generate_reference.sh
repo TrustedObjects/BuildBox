@@ -35,7 +35,7 @@ SKILLS_DIR=$(cd -- "${SKILLS_DIR}" > /dev/null 2>&1 && pwd)
 
 # Pages of each skill, as "<skill> <page> <page> ..."
 SKILL_PAGES=(
-	"buildbox getting-started/install.md user/index.md user/project.md user/target.md user/package.md user/tool.md user/container.md user/shell_plugin.md user/advanced.md user/utils.md user/migration.md"
+	"buildbox getting-started/install.md user/index.md user/project.md user/target.md user/package.md user/tool.md user/container.md user/shell_plugin.md user/advanced.md user/migration.md"
 	"buildbox-scripting dev/scripting.md dev/envvars.md dev/build_modes.md dev/api.md"
 	"buildbox-develop dev/index.md dev/developing.md dev/container.md dev/shell.md"
 )

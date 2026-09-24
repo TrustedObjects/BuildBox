@@ -57,5 +57,5 @@ it was made in, and the project root itself is not versioned.
 
 Read the file matching the subject in `reference/`, generated from the BuildBox
 documentation: `project.md`, `target.md`, `package.md`, `tool.md`, `container.md`,
-`shell_plugin.md`, `advanced.md` (settings and pre-built targets), `utils.md`,
+`shell_plugin.md`, `advanced.md` (settings and pre-built targets),
 `install.md`, and `migration.md` (what to change when upgrading BuildBox).
