@@ -139,6 +139,96 @@ function bb_use_test_project {
 	return 0
 }
 
+## @fn bb_use_fake_prebuilt_server
+## Stand in for the prebuilt targets server, which BuildBox reaches through
+## scp and rsync. Commands of those names, put first in the path, map a
+## `user@host:path` argument to the same path under
+## `BB_TEST_PREBUILT_SERVER_ROOT`, and record each call in
+## `BB_TEST_PREBUILT_SERVER_LOG`. As with a real server, a missing file or
+## directory on the server side is an error.
+## @setenv `BB_PREBUILT_SERVER`, `BB_PREBUILT_USERNAME`, `BB_PREBUILT_PATH`
+## @setenv `BB_TEST_PREBUILT_SERVER_ROOT`: local directory holding the server files
+## @setenv `BB_TEST_PREBUILT_SERVER_LOG`: file logging the calls, one per line
+## @setenv `PATH`, `DEFAULT_PATH`: the latter being the base the local
+## environment rebuilds the former from
+## @return 0 on success
+function bb_use_fake_prebuilt_server {
+	export BB_TEST_PREBUILT_SERVER_ROOT="${BB_TEST_WORKSPACE}/prebuilt_server"
+	export BB_TEST_PREBUILT_SERVER_LOG="${BB_TEST_WORKSPACE}/prebuilt_server.log"
+	local bin_dir="${BB_TEST_WORKSPACE}/prebuilt_server_bin"
+	rm -rf "${BB_TEST_PREBUILT_SERVER_ROOT}" "${BB_TEST_PREBUILT_SERVER_LOG}" "${bin_dir}"
+	mkdir -p "${BB_TEST_PREBUILT_SERVER_ROOT}/prebuilt" "${bin_dir}" || return 1
+	touch "${BB_TEST_PREBUILT_SERVER_LOG}"
+
+	cat > "${bin_dir}/scp" << 'EOF'
+#!/bin/bash
+# Fake scp of the test suite, see bb_use_fake_prebuilt_server
+echo "scp $*" >> "${BB_TEST_PREBUILT_SERVER_LOG}"
+args=()
+for arg in "$@"; do
+	case "${arg}" in
+		-*) ;;
+		*@*:*) args+=("${BB_TEST_PREBUILT_SERVER_ROOT}${arg#*:}") ;;
+		*) args+=("${arg}") ;;
+	esac
+done
+exec cp -r "${args[@]}"
+EOF
+
+	cat > "${bin_dir}/rsync" << 'EOF'
+#!/bin/bash
+# Fake rsync of the test suite, see bb_use_fake_prebuilt_server. Only its use
+# as a remote file existence test is supported: 23 is the code rsync returns
+# when the file is missing.
+echo "rsync $*" >> "${BB_TEST_PREBUILT_SERVER_LOG}"
+for arg in "$@"; do
+	case "${arg}" in
+		*@*:*)
+			[ -f "${BB_TEST_PREBUILT_SERVER_ROOT}${arg#*:}" ] && exit 0
+			exit 23
+			;;
+	esac
+done
+exit 1
+EOF
+	chmod +x "${bin_dir}/scp" "${bin_dir}/rsync"
+
+	export PATH="${bin_dir}:${PATH}"
+	export DEFAULT_PATH="${bin_dir}:${DEFAULT_PATH}"
+	export BB_PREBUILT_SERVER="prebuilt.test"
+	export BB_PREBUILT_USERNAME="tester"
+	export BB_PREBUILT_PATH="/prebuilt"
+	return 0
+}
+
+## @fn bb_put_fake_prebuilt
+## Put a prebuilt archive of the current target on the fake prebuilt server
+## (see bb_use_fake_prebuilt_server), at the place of the current project
+## branch and tag. It holds a single `build/bin/prebuilt_hello` script.
+## @param Archive destination path, instead of the server (optional)
+## @print Archive path
+## @return 0 on success
+function bb_put_fake_prebuilt () (
+	local project=$(bb_project_get_branch_name)
+	local tag=$(bb_project_get_tag)
+	local archive="${1:-${BB_TEST_PREBUILT_SERVER_ROOT}${BB_PREBUILT_PATH}/${project}/${tag}/${BB_TARGET}.tar.xz}"
+	local content=$(mktemp -d)
+	mkdir -p "${content}/build/bin" "$(dirname "${archive}")" || return 1
+	printf '#!/bin/sh\necho "Hello from prebuilt"\n' > "${content}/build/bin/prebuilt_hello"
+	chmod +x "${content}/build/bin/prebuilt_hello"
+	tar -C "${content}" -cJf "${archive}" build || return 1
+	rm -rf "${content}"
+	echo "${archive}"
+)
+
+## @fn bb_commit_test_project_profile
+## Commit on the current project profile, so that HEAD is no longer tagged.
+## @return 0 on success
+function bb_commit_test_project_profile {
+	git -C "${BB_PROJECT_PROFILE_DIR}" -c user.email=test@buildbox -c user.name=BuildBox \
+		commit -q --allow-empty -m "Untagged commit"
+}
+
 function sub_run () (
 	# Running in subshell to avoid affecting environment
 	source buildbox_utils.sh
@@ -213,6 +303,8 @@ function cleanup {
 	if is_subpath_of "${BB_TEST_WORKSPACE}" "${BB_TEST_WORKSPACE}/foo_project" || \
 	   is_subpath_of "${BB_TEST_WORKSPACE}" "${BB_TEST_WORKSPACE}/bar_project"; then
 		rm -rf "${BB_TEST_WORKSPACE}"/foo_project "${BB_TEST_WORKSPACE}"/bar_project
+		rm -rf "${BB_TEST_WORKSPACE}"/prebuilt_server "${BB_TEST_WORKSPACE}"/prebuilt_server.log \
+			"${BB_TEST_WORKSPACE}"/prebuilt_server_bin
 	fi
 	# Temporary directory
 	if is_subpath_of "${BB_TEST_WORKSPACE}" "${TMPDIR}"; then
