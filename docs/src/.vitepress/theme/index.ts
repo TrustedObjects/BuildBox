@@ -4,6 +4,7 @@ import 'medium-zoom/dist/style.css'
 import { onMounted, watch, nextTick, h } from 'vue'
 import { useRoute } from 'vitepress'
 import VersionSelector from './VersionSelector.vue'
+import ProjectLayout from './ProjectLayout.vue'
 import '../styles/index.css'
 
 export default {
@@ -12,6 +13,9 @@ export default {
     return h(DefaultTheme.Layout, null, {
       'nav-bar-content-before': () => h(VersionSelector),
     })
+  },
+  enhanceApp({ app }) {
+    app.component('ProjectLayout', ProjectLayout)
   },
   setup() {
     const route = useRoute()

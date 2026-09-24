@@ -5,6 +5,8 @@ Tools are similar to packages, but with the following differences:
 - they must be prebuilt (using `prebuilt` or `executable` build mode),
 - they are installed globally (required by some targets, but shared between them).
 
+<ProjectLayout highlight="tool" />
+
 As packages, tools are represented by a file in the project profile `.bbx/packages` sub-directory.
 In case of `executable` build mode, the single downloaded file is automatically put into the tool's `bin` directory and made executable.
 

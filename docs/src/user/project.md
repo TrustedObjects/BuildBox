@@ -3,6 +3,8 @@
 A project stands for a deliverable build context, for example to produce a client project's deliverables.
 It encompasses all the software and hardware targets for a particular delivery.
 
+<ProjectLayout highlight="project" />
+
 ## Project profile
 
 A project has a `.bbx/` directory which is a standalone Git repository containing the project profile.

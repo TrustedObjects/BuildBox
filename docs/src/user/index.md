@@ -7,6 +7,8 @@ It is composed of one or several [targets](target.md), which define the platform
 [Targets](target.md) embed [packages](package.md), which are software components built for them.
 And [tools](tool.md) are used by [targets](target.md) and involved in the build, test and distribution to release the deliverable.
 
+<ProjectLayout />
+
 BuildBox is used through the `bbx` command, directly from a project directory.
 It works like any other command-line tool: no shell to enter, no workspace to configure.
 Please run `bbx --help` to get a complete list of supported commands.

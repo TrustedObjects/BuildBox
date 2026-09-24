@@ -223,3 +223,105 @@
 .dark .bbx-diagram-dark {
   display: block;
 }
+
+/* Project layout figure, inlined by theme/ProjectLayout.vue from
+   src/dev/figures/project_layout.svg. One SVG for the five pages that show it:
+   the page names the zone it is about and every other one is dimmed, so the
+   reader sees at a glance where the page stands in a project. The figure
+   itself takes its colours from the theme variables, so nothing here has to be
+   restated for the dark theme. */
+.bbx-figure {
+  margin: 24px 0;
+}
+
+.bbx-project-layout {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* What the page is not about stays readable, only set back: the focus is
+   carried by the ring, not by making the rest disappear. */
+.bbx-figure[data-focus] .bx-zone {
+  opacity: 0.5;
+  transition: opacity 0.25s;
+}
+
+.bbx-figure[data-focus='project'] .bx-z-project,
+.bbx-figure[data-focus='target'] .bx-z-target,
+.bbx-figure[data-focus='package'] .bx-z-package,
+.bbx-figure[data-focus='tool'] .bx-z-tool {
+  opacity: 1;
+}
+
+/* What the page is about is outlined: the border of its box is repainted,
+   rather than a second frame being drawn around it. */
+.bbx-figure[data-focus='project'] .bx-z-project .bx-frame,
+.bbx-figure[data-focus='target'] .bx-z-target .bx-card,
+.bbx-figure[data-focus='package'] .bx-z-package .bx-group,
+.bbx-figure[data-focus='tool'] .bx-z-tool .bx-card {
+  stroke: var(--bx-focus);
+  stroke-width: 2.5;
+}
+
+/* Where something lives on disk is said by the page that is about it, and
+   nowhere else. With nothing in focus, on the introduction, the figure is
+   about the concepts. */
+.bbx-figure .bx-detail {
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.bbx-figure[data-focus='project'] .bx-z-project .bx-detail,
+.bbx-figure[data-focus='target'] .bx-z-target .bx-detail,
+.bbx-figure[data-focus='package'] .bx-z-package .bx-detail,
+.bbx-figure[data-focus='tool'] .bx-z-tool .bx-detail {
+  opacity: 1;
+}
+
+/* A chip holds a name and, when its zone is in focus, a revision under it. The
+   name is placed for the pair and slides down to the middle of the chip when
+   it stands alone, SVG text having no layout of its own to do it. */
+.bbx-figure .bx-chip-name {
+  transform: translateY(8px);
+  transition: transform 0.25s;
+}
+
+.bbx-figure[data-focus='package'] .bx-z-package .bx-chip-name,
+.bbx-figure[data-focus='tool'] .bx-z-tool .bx-chip-name {
+  transform: none;
+}
+
+/* Click to enlarge, the gesture medium-zoom gives the images of a page. Same
+   overlay colour and same stacking order, so both feel like one feature. */
+.bbx-figure-zoomable {
+  cursor: zoom-in;
+}
+
+.bbx-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: var(--vp-c-bg);
+  cursor: zoom-out;
+}
+
+.bbx-zoom-figure {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0;
+}
+
+.bbx-zoom-enter-active,
+.bbx-zoom-leave-active {
+  transition: opacity 0.3s;
+}
+
+.bbx-zoom-enter-from,
+.bbx-zoom-leave-to {
+  opacity: 0;
+}

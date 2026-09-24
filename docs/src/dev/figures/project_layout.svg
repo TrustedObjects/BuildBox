@@ -1,0 +1,154 @@
+<!-- This file is part of BuildBox project
+     Copyright (C) 2020-2026 Trusted Objects
+
+     Inlined in the pages by .vitepress/theme/ProjectLayout.vue, never
+     rendered to PNG: it is a figure, not a diagram of src/dev/diagrams.
+
+     Its palette is built on the VitePress theme variables, each with the
+     light value as fallback, so the figure follows the site theme with no
+     dark variant, and still looks right opened on its own.
+
+     Every element belongs to one of the four bx-z-* zones. A page lights its
+     own zone and fades the others through the [data-focus] rules of
+     styles/index.css, so the reader sees where the page stands in the
+     project. Zones are siblings, never nested, because nesting would multiply
+     their opacities: a package chip is drawn over a target box, not inside
+     its group.
+
+     The zone in focus is outlined: styles/index.css repaints the border of
+     its box with --bx-focus, in place of the usual one. This is why the
+     packages have a bx-group box of their own, which carries that border and
+     nothing else, being transparent the rest of the time. The bx-detail
+     elements, which say where something lives on disk and at which revision,
+     come up with the outline. The figure stays about the concepts everywhere
+     else. -->
+<svg xmlns="http://www.w3.org/2000/svg" class="bbx-project-layout"
+     width="100%" viewBox="0 0 720 456" role="img"
+     aria-labelledby="bx-title bx-desc">
+  <title id="bx-title">Organisation of a BuildBox project</title>
+  <desc id="bx-desc">A project holds one or several targets. Each target
+    embeds the packages built for it, and every target uses the tools, which
+    are installed once and shared.</desc>
+
+  <style>
+    .bbx-project-layout {
+      --bx-frame:  var(--vp-c-bg-soft, #f6f6f7);
+      --bx-card:   var(--vp-c-bg, #ffffff);
+      --bx-line:   var(--vp-c-divider, #e2e2e3);
+      --bx-ink:    var(--vp-c-text-1, #3c3c43);
+      --bx-ink2:   var(--vp-c-text-2, #67676c);
+      --bx-ink3:   var(--vp-c-text-3, #929599);
+      --bx-accent: var(--vp-c-brand-1, #ee7214);
+      --bx-soft:   var(--vp-c-brand-soft, rgba(238, 114, 20, 0.14));
+      --bx-focus:  #f6b93b;
+      font-family: var(--vp-font-family-base, system-ui, sans-serif);
+    }
+    .bbx-project-layout .bx-frame,
+    .bbx-project-layout .bx-card,
+    .bbx-project-layout .bx-group { transition: stroke 0.25s, stroke-width 0.25s; }
+    .bbx-project-layout .bx-frame { fill: var(--bx-frame); stroke: var(--bx-line); }
+    .bbx-project-layout .bx-card  { fill: var(--bx-card); stroke: var(--bx-line); }
+    /* No border of its own: the box is there to carry the highlight */
+    .bbx-project-layout .bx-group { fill: none; stroke: transparent; }
+    .bbx-project-layout .bx-bar   { fill: var(--bx-accent); }
+    .bbx-project-layout .bx-chip  { fill: var(--bx-soft); stroke: var(--bx-accent); }
+    .bbx-project-layout .bx-flow  { stroke: var(--bx-ink3); fill: none; }
+    .bbx-project-layout .bx-head  { fill: var(--bx-ink3); }
+
+    .bbx-project-layout .bx-zone-name { font-size: 18px; font-weight: 700;
+      fill: var(--bx-accent); letter-spacing: 1.6px; }
+    .bbx-project-layout .bx-name  { font-size: 15.5px; font-weight: 700; fill: var(--bx-accent);
+      letter-spacing: 1px; }
+    .bbx-project-layout .bx-label { font-size: 15px; font-weight: 700; fill: var(--bx-ink); }
+    .bbx-project-layout .bx-lead  { font-size: 14px; fill: var(--bx-ink2); }
+    .bbx-project-layout .bx-note  { font-size: 13px; font-style: italic; fill: var(--bx-ink3); }
+    .bbx-project-layout .bx-tag   { font-size: 12px; font-weight: 700; fill: var(--bx-ink3);
+      letter-spacing: 1.3px; }
+    .bbx-project-layout .bx-mono  { font-family: var(--vp-font-family-mono, monospace);
+      font-size: 13px; fill: var(--bx-ink3); }
+    .bbx-project-layout .bx-mono-name { font-family: var(--vp-font-family-mono, monospace);
+      font-size: 15px; fill: var(--bx-ink); }
+  </style>
+
+  <defs>
+    <marker id="bx-arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path class="bx-head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+
+  <!-- The project: the envelope everything else lives in -->
+  <g class="bx-zone bx-z-project">
+    <rect class="bx-frame" x="8" y="8" width="704" height="440" rx="10" stroke-width="1.2"/>
+    <text class="bx-zone-name" x="26" y="40">PROJECT</text>
+    <text class="bx-mono-name" x="136" y="40">my_project/</text>
+    <text class="bx-mono bx-detail" x="694" y="40" text-anchor="end">profile versioned in .bbx/</text>
+    <text class="bx-lead" x="26" y="62">deliverable components, and the way to build them</text>
+  </g>
+
+  <!-- The targets: one per platform to deliver -->
+  <g class="bx-zone bx-z-target">
+    <rect class="bx-card" x="26" y="80" width="326" height="184" rx="8" stroke-width="1.2"/>
+    <rect class="bx-bar" x="26" y="80" width="4" height="184" rx="2"/>
+    <text class="bx-name" x="42" y="110">TARGET</text>
+    <text class="bx-mono-name" x="122" y="110">target1</text>
+    <text class="bx-note" x="336" y="106" text-anchor="end">platform, build,</text>
+    <text class="bx-note" x="336" y="122" text-anchor="end">test and delivery</text>
+    <text class="bx-mono bx-detail" x="42" y="248">.bbx/target.target1</text>
+    <text class="bx-note bx-detail" x="336" y="248" text-anchor="end">builds into target1/build</text>
+
+    <rect class="bx-card" x="368" y="80" width="326" height="184" rx="8" stroke-width="1.2"/>
+    <rect class="bx-bar" x="368" y="80" width="4" height="184" rx="2"/>
+    <text class="bx-name" x="384" y="110">TARGET</text>
+    <text class="bx-mono-name" x="464" y="110">target2</text>
+    <text class="bx-note" x="678" y="106" text-anchor="end">another platform,</text>
+    <text class="bx-note" x="678" y="122" text-anchor="end">same project</text>
+    <text class="bx-mono bx-detail" x="384" y="248">.bbx/target.target2</text>
+    <text class="bx-note bx-detail" x="678" y="248" text-anchor="end">builds into target2/build</text>
+  </g>
+
+  <!-- The tools: prebuilt, installed once, used by every target. The label
+       sits on the junction, where the flow splits towards the two targets -->
+  <g class="bx-zone bx-z-tool">
+    <path class="bx-flow" d="M 328 286 L 189 286 L 189 268"
+          stroke-width="1.4" marker-end="url(#bx-arrow)"/>
+    <path class="bx-flow" d="M 392 286 L 531 286 L 531 268"
+          stroke-width="1.4" marker-end="url(#bx-arrow)"/>
+    <path class="bx-flow" d="M 360 316 L 360 298" stroke-width="1.4"/>
+    <text class="bx-note" x="360" y="291" text-anchor="middle">used by</text>
+
+    <rect class="bx-card" x="170" y="316" width="380" height="112" rx="8" stroke-width="1.2"/>
+    <rect class="bx-bar" x="170" y="316" width="4" height="112" rx="2"/>
+    <text class="bx-name" x="186" y="346">TOOLS</text>
+    <text class="bx-mono-name bx-detail" x="254" y="346">tools/</text>
+    <text class="bx-note" x="534" y="346" text-anchor="end">prebuilt, installed once, shared</text>
+    <rect class="bx-chip" x="237" y="356" width="118" height="56" rx="6" stroke-width="1"/>
+    <text class="bx-label bx-chip-name" x="296" y="381" text-anchor="middle">tool1</text>
+    <text class="bx-mono bx-detail" x="296" y="399" text-anchor="middle">@1.4</text>
+    <rect class="bx-chip" x="365" y="356" width="118" height="56" rx="6" stroke-width="1"/>
+    <text class="bx-label bx-chip-name" x="424" y="381" text-anchor="middle">tool2</text>
+    <text class="bx-mono bx-detail" x="424" y="399" text-anchor="middle">@2.0</text>
+  </g>
+
+  <!-- The packages: built for a target, and shared between them -->
+  <g class="bx-zone bx-z-package">
+    <rect class="bx-group" x="50" y="132" width="278" height="98" rx="8" stroke-width="1.2"/>
+    <text class="bx-tag" x="66" y="150">PACKAGES</text>
+    <text class="bx-mono bx-detail" x="154" y="150">.bbx/packages/</text>
+    <rect class="bx-chip" x="66" y="158" width="118" height="56" rx="6" stroke-width="1"/>
+    <text class="bx-label bx-chip-name" x="125" y="183" text-anchor="middle">package1</text>
+    <text class="bx-mono bx-detail" x="125" y="201" text-anchor="middle">@main</text>
+    <rect class="bx-chip" x="194" y="158" width="118" height="56" rx="6" stroke-width="1"/>
+    <text class="bx-label bx-chip-name" x="253" y="183" text-anchor="middle">package2</text>
+    <text class="bx-mono bx-detail" x="253" y="201" text-anchor="middle">@1.2.3</text>
+
+    <rect class="bx-group" x="392" y="132" width="278" height="98" rx="8" stroke-width="1.2"/>
+    <text class="bx-tag" x="408" y="150">PACKAGES</text>
+    <rect class="bx-chip" x="408" y="158" width="118" height="56" rx="6" stroke-width="1"/>
+    <text class="bx-label bx-chip-name" x="467" y="183" text-anchor="middle">package1</text>
+    <text class="bx-mono bx-detail" x="467" y="201" text-anchor="middle">@main</text>
+    <rect class="bx-chip" x="536" y="158" width="118" height="56" rx="6" stroke-width="1"/>
+    <text class="bx-label bx-chip-name" x="595" y="183" text-anchor="middle">package3</text>
+    <text class="bx-mono bx-detail" x="595" y="201" text-anchor="middle">@dev</text>
+  </g>
+</svg>

@@ -6,6 +6,8 @@ They are collected from Git repositories, or compressed archives, and represente
 A package is built and installed in the targets requiring it, and can be shared across different targets,
 projects and even receive different built options according your needs.
 
+<ProjectLayout highlight="package" />
+
 Packages are all represented by files in project `.bbx/packages` sub-directory.
 
 ## Target packages list

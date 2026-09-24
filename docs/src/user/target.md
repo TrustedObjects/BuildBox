@@ -4,6 +4,8 @@ A target stands for a particular hardware and software context, inside of a proj
 Its purpose is to build a bunch of software component packages for a defined platform with defined options.
 It also allows testing the produced deliveries.
 
+<ProjectLayout highlight="target" />
+
 BuildBox ensures that environment variables are always related to the active target. Paths are pointing to current target paths and to its needed tools.
 
 Environment variables precedence respects the following rule:
