@@ -1,3 +1,9 @@
+2.2.0 - 9/24/2026
+- Remove branch from prebuilt targets remote path
+- Quote the arguments the target dispatcher forwards
+- Keep an argument holding a space in one piece for target test and dist
+- Remove deprecated buildbox_get_prebuilt utility
+
 2.1.4 - 9/15/2026
 - Add '-u' option to 'project clone' and '-a' to 'project update'
 - Abort package update if remote repository history changed
