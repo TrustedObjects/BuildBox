@@ -25,24 +25,23 @@ environment, it is not seen by following commands.
 
 ## Host applications
 
-Host applications can be launched from BuildBox, and passed arguments paths are
-converted from BuildBox container workspace paths to host workspace paths.
-The paths conversion is performed by `path_to_host()` function.
+Host applications can be launched from BuildBox. The project being mounted at
+the same path in the container, argument paths only need to be made absolute,
+by `bb_path_to_host()`.
 
 To start an application on host, pipes are used to communicate between
 container and host. Such pipes are created every time a BuildBox launcher is
 started, then every launcher has its dedicated communication pipes.
-These pipes are stored as temporary files in the project profile directory.
-The following pipes are created:
-- send pipe, to send a command to the host: `$BB_WORKDIR/tmp/launcher-$BB_LAUNCHER_ID_send.pipe`,
-- return pipe, to get back the command return code in the container: `$BB_WORKDIR/tmp/launcher-$BB_LAUNCHER_ID_ret.pipe`.
+These pipes are stored in the project `tmp/` directory:
+- send pipe, to send a command to the host: `$BB_PROJECT_DIR/tmp/launcher-$BB_LAUNCHER_ID_send.pipe`,
+- return pipe, to get back the command return code in the container: `$BB_PROJECT_DIR/tmp/launcher-$BB_LAUNCHER_ID_ret.pipe`.
 
-See `host_send()` function (container side) and `docker/bin/bbx` (host
-side) for details on this pipes communication implementation.
+See `bb_host_send()` (container side) and `docker/bin/bbx` (host side) for
+details on this pipes communication implementation.
 
 Moreover, a file is used to store host application output, also reachable from
-container: `$BB_WORKDIR/tmp/launcher-$BB_LAUNCHER_ID_send.out`. See `host_send_print_out()`
-for details about this.
+container: `$BB_PROJECT_DIR/tmp/launcher-$BB_LAUNCHER_ID_send.out`. See
+`bb_host_send_print_out()` for details about this.
 
 Finally, there are implementation functions for some applications to use this
 mechanism: VS-Code, Meld, Gitk...). See
@@ -51,10 +50,11 @@ mechanism: VS-Code, Meld, Gitk...). See
 ## Goto
 
 Several special commands allow to change current working directory of the shell:
-- `target goto`, to [go to target directory](/user/target.md),
-- `goto <package>`, to [go to package directory](/user/package.md#go-to-package-directory).
+`goto <package>`, `target goto` and `project goto`, see
+[goto commands](/user/shell_plugin.md#goto-commands).
 
-These commands are implemented in `settings/zsh/.zshrc`.
+These commands are implemented in `settings/zsh/.zshrc`, and on the host side
+by the [shell plugin](/user/shell_plugin.md).
 
 ## Completion
 

@@ -36,7 +36,7 @@ Here is a partial list of these variables and their meaning:
 - `BB_TRASH_KEEP_DAYS`: minimum days to keep data in BuildBox trash
 - `BB_BUILD_JOBS`: concurrent build jobs number
 - `BB_BINDIR`: BuildBox public and internal executables paths
-- `BB_DIR`: BuildBox sources directory
+- `BB_DIR`: BuildBox install directory
 - `BB_WORKDIR`: project profile directory path (`.bbx/`), bind-mounted at the same path on both host and container
 - `BB_LAUNCHER_ID`: PID of the host-side `bbx` launcher process; used to locate the named pipes for the [`bb_host_send`](api.md) mechanism
 - `BB_PREBUILT_USERNAME`: [pre-built target](/user/target.md#pre-built-targets) release user name for remote server
@@ -80,4 +80,3 @@ up-to-date the following environment variables:
 active target [build settings](/user/target.md#target-build-settings) flags
 - `LDFLAGS`, target build directory and tools library paths, completed with the
 active target [build settings](/user/target.md#target-build-settings) flags
-- `TMPDIR`, a temporary directory under the project profile directory

@@ -121,7 +121,7 @@ this:
 having one `.sh` file for each API function, including several tests for the
 function.
 - `cases/functional/\<command\>/`: [functional tests](#functional-tests),
-having one `.sh` file for each BuildBox shell command feature.
+having one `.sh` file for each `bbx` command feature.
 
 ### Write test case
 
@@ -226,7 +226,7 @@ Test fixture repositories are stored as **git bundles** in `tests/bundles/`. The
 
 There are two kinds of fixtures:
 
-- **Project fixtures** (`foo_project`, `bar_project`, `projects`): working-copy git repositories with a `.bbx/` profile directory. From test cases, `bb_use_test_project <fixture>` copies the fixture into the test workspace and sets it as the current project.
+- **Project fixtures** (`foo_project`, `bar_project`): project directories whose `.bbx/` profile is a git repository, restored from `<name>_profile.bundle`. From test cases, `bb_use_test_project <fixture>` copies the fixture into the test workspace and sets it as the current project.
 - **Remote package/tool repos** (`tests/repositories/remote/*.git`): bare git repositories used as clone sources. Package definitions reference them via `${BB_TEST_REPOSITORY_URI}`, which resolves to `file://${BB_DIR}/tests/repositories/remote`.
 
 #### Modifying a fixture repository
@@ -240,8 +240,8 @@ When a test requires a change to a fixture (new file, new branch, updated conten
 
 **2. Make your changes inside the reconstructed repo:**
 ```shell
-# Working-copy fixture (foo_project, bar_project, projects):
-cd tests/repositories/foo_project
+# Project fixture profile (foo_project, bar_project):
+cd tests/repositories/foo_project/.bbx
 git commit -am "My change"
 
 # Bare remote repo — apply changes via a temporary working copy:
@@ -253,8 +253,8 @@ git push
 
 **3. Regenerate the bundle:**
 ```shell
-# Working-copy fixture:
-git -C tests/repositories/foo_project bundle create tests/bundles/foo_project.bundle --all
+# Project fixture profile:
+git -C tests/repositories/foo_project/.bbx bundle create tests/bundles/foo_profile.bundle --all
 
 # Bare remote repo:
 git -C tests/repositories/remote/foo_package.git bundle create tests/bundles/remote_foo_package.bundle --all
@@ -262,7 +262,7 @@ git -C tests/repositories/remote/foo_package.git bundle create tests/bundles/rem
 
 **4. Commit the updated bundle to BuildBox.**
 
-The bundle names follow the convention: `<fixture_name>.bundle` for project fixtures and `remote_<repo_name>.bundle` for remote repos.
+The bundle names follow the convention: `<name>_profile.bundle` for project fixtures and `remote_<repo_name>.bundle` for remote repos.
 
 #### Tools
 

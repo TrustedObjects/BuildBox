@@ -22,11 +22,11 @@
 ## This mechanism is prepared by BuildBox launcher, which create the following
 ## resources:
 ## - a pipe where BuildBox can write the command (and its arguments) to run on
-## the host, `workspace/tmp/launcher-ID_send.pipe`,
+## the host, `$BB_PROJECT_DIR/tmp/launcher-ID_send.pipe`,
 ## - a pipe where host command returned code is written,
-## `workspace/tmp/launcher-ID_ret.pipe`,
+## `$BB_PROJECT_DIR/tmp/launcher-ID_ret.pipe`,
 ## - and a filename is reserved to write command output,
-## `workspace/tmp/launcher-ID_send.out`.
+## `$BB_PROJECT_DIR/tmp/launcher-ID_send.out`.
 ##
 ## The launcher ID is the launcher instance process ID, so each launcher can
 ## run host commands without conflict with other launchers instances.

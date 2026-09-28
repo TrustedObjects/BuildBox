@@ -124,8 +124,7 @@ bb_exportfn bb_lock_acquire
 ## Returns immediately.
 ## A stale lock, whose owner process is gone, is taken over.
 ## An exit action is configured to release the lock when the process ends.
-## @param Lock file path (must be located somewhere in BuildBox workspace
-## directory)
+## @param Lock file path (must be located in the project directory)
 ## @return 0 on success, 1 if lock not acquired, 2 on error
 function bb_lock_try_acquire {
 	local lock_file=${1}

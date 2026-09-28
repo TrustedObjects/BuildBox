@@ -25,9 +25,9 @@ BB_LOG_FILE_ENABLED=0
 
 ## @fn bb_get_current_log_file
 ## Get current log file path.
-## If bb_set_current_log_file() was not called, log file is by default stored
-## in session directory and named according to the running command,
-## `COMMAND_NAME.log`.
+## If bb_set_current_log_file() was not called, log file is by default
+## `.bbx/.logs/COMMAND_NAME.log` when a project is active, else it is stored in
+## `$TMPDIR` (or `/tmp`).
 ## @print Log file path
 function bb_get_current_log_file {
 	echo "${BB_CURRENT_LOG_FILE}"

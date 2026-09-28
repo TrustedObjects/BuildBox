@@ -15,7 +15,7 @@
 # <https://www.gnu.org/licenses/>.
 
 ## @brief Trash
-## BuildBox Trash is located in the workspace `trash` directory, and can be
+## BuildBox Trash is located in the project `trash` directory, and can be
 ## referenced through `BB_TRASH_DIR` environment.
 ##
 ## Older files are automatically removed after at least `BB_TRASH_KEEP_DAYS`.
@@ -49,7 +49,7 @@ bb_exportfn bb_trash_clean
 ## The trash older files are automatically cleaned by a call to bb_trash_clean().
 ## @param File or directory path
 ## @print File name in the trash
-## @return 0 on success, 1 if path is not in workspace.
+## @return 0 on success, 1 if path is not in the project.
 function bb_trash {
 	bb_trash_clean
 	local src=$(realpath ${1})
@@ -60,7 +60,7 @@ function bb_trash {
 		touch ${src} # set file last access date to now
 		mv ${src} ${dest}
 	else
-		echo "Unable to trash ${src}: not in workspace"
+		echo "Unable to trash ${src}: not in the project"
 		return 1
 	fi
 	echo "${trash_uuid}"
@@ -77,7 +77,7 @@ bb_exportfn bb_trash
 ## The trash older files are automatically cleaned by a call to bb_trash_clean().
 ## @param Directory path
 ## @print Directory name where the files have been moved to trash.
-## @return 0 on success, 1 if path is not a directory or not in workspace.
+## @return 0 on success, 1 if path is not a directory or not in the project.
 function bb_trash_dir_content {
 	bb_trash_clean
 	local src=$(realpath ${1})
@@ -91,7 +91,7 @@ function bb_trash_dir_content {
 		mkdir -p ${dest}
 		find "${src}/." -not -name '.' -prune -print0 | xargs -0 mv --target-directory="${dest}"
 	else
-		echo "Unable to clear ${src} content: not in workspace"
+		echo "Unable to clear ${src} content: not in the project"
 		return 1
 	fi
 	echo "${trash_uuid}"
